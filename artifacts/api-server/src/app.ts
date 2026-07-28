@@ -3,6 +3,7 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import path from "node:path";
 
 const app: Express = express();
 
@@ -30,5 +31,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+if (process.env.NTC3_DESKTOP_DIST) {
+  const frontendDirectory = path.resolve(process.env.NTC3_DESKTOP_DIST);
+  app.use(express.static(frontendDirectory));
+  app.get(/.*/, (_req, res) => {
+    res.sendFile(path.join(frontendDirectory, "index.html"));
+  });
+}
 
 export default app;

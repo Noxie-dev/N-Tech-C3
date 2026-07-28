@@ -1,146 +1,182 @@
-import { useGetDashboardStats, useGetRecentActivity } from '@workspace/api-client-react';
-import { Card, CardContent, CardHeader, CardTitle, Skeleton, Badge } from '@/components/shared';
-import { BookOpen, Layers, Archive, Image, Library, Activity, ArrowUpRight } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
+import {
+  useGetDashboardStats, useGetRecentActivity, useListProjects, useListStories,
+} from '@workspace/api-client-react';
+import {
+  ArrowUpRight, BookOpen, Box, CalendarDays, CheckCircle2, Circle, CloudUpload,
+  Crosshair, FilePlus2, Flag, FolderOpen, Layers3, Lightbulb, Megaphone,
+  Orbit, Search, ShieldCheck, Sparkles, Target, UploadCloud,
+} from 'lucide-react';
 import { Link } from 'wouter';
+import { formatDate } from '@/lib/utils';
+import ntechMark from '@/assets/ntech-mark.svg';
 
-export function Dashboard() {
-  const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
-  const { data: activity, isLoading: activityLoading } = useGetRecentActivity();
+const PRINCIPLES = [
+  { text: 'Evidence before assumptions.', icon: Sparkles, color: '#2f80ff' },
+  { text: 'Knowledge before action.', icon: Orbit, color: '#885cf6' },
+  { text: 'Quality before speed.', icon: ShieldCheck, color: '#2f80ff' },
+  { text: 'Built for engineers. By engineers.', icon: Target, color: '#a974ff' },
+  { text: '100% Local. 100% Yours.', icon: CheckCircle2, color: '#16c784' },
+];
 
+const START_CARDS = [
+  { title: 'Create Content', description: 'Start a new story, note or piece of engineering content.', action: 'Create New', href: '/stories', icon: FilePlus2, color: '#2f80ff' },
+  { title: 'New Workspace', description: 'Create a new workspace to organize your projects.', action: 'New Workspace', href: '/projects', icon: Layers3, color: '#16c784' },
+  { title: 'See Scheduled Content', description: 'View your content calendar and publishing schedule.', action: 'Open Calendar', href: '/campaigns', icon: CalendarDays, color: '#885cf6' },
+  { title: 'Start Campaign', description: 'Define a new campaign and align stories and assets.', action: 'Start Campaign', href: '/campaigns', icon: Crosshair, color: '#f5a524' },
+  { title: 'Upload Knowledge', description: 'Import files, documents or research into your vault.', action: 'Upload Now', href: '/evidence', icon: CloudUpload, color: '#27c2ff' },
+  { title: 'View Running Campaigns', description: 'Monitor active campaigns and their progress.', action: 'View Campaigns', href: '/campaigns', icon: Flag, color: '#2f80ff' },
+];
+
+function PanelTitle({ children, href }: { children: React.ReactNode; href?: string }) {
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground font-mono">Command Center</h1>
-        <p className="text-muted-foreground">Engineering intelligence system overview and recent signals.</p>
-      </div>
-
-      {/* Top Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <MetricCard title="Stories" value={stats?.totalStories} icon={BookOpen} loading={statsLoading} href="/stories" />
-        <MetricCard title="Active Campaigns" value={stats?.activeCampaigns} icon={Layers} loading={statsLoading} href="/campaigns" highlight />
-        <MetricCard title="Evidence Vault" value={stats?.totalEvidence} icon={Archive} loading={statsLoading} href="/evidence" />
-        <MetricCard title="Knowledge Base" value={stats?.totalKnowledge} icon={Library} loading={statsLoading} href="/knowledge" />
-        <MetricCard title="Assets" value={stats?.totalAssets} icon={Image} loading={statsLoading} href="/assets" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Left Column */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="border-primary/20 shadow-[0_0_30px_rgba(0,229,255,0.05)] bg-background/50 backdrop-blur">
-            <CardHeader className="border-b border-border/50 pb-4">
-              <CardTitle className="flex items-center gap-2 font-mono text-sm uppercase tracking-wider text-muted-foreground">
-                <Activity className="w-4 h-4 text-primary" /> Signal Feed
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {activityLoading ? (
-                <div className="p-6 space-y-4">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                </div>
-              ) : activity && activity.length > 0 ? (
-                <div className="divide-y divide-border/50">
-                  {activity.map((item) => (
-                    <div key={item.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary/50 shadow-[0_0_5px_rgba(0,229,255,0.5)]" />
-                        <div>
-                          <p className="text-sm font-medium">
-                            <span className="text-muted-foreground">{item.action}</span>{' '}
-                            <span className="text-foreground">{item.entityTitle}</span>
-                          </p>
-                          <p className="text-xs text-muted-foreground font-mono mt-1">
-                            {item.entityType.toUpperCase()}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-xs text-muted-foreground font-mono">
-                        {formatDate(item.createdAt)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-8 text-center text-muted-foreground text-sm font-mono">No recent activity detected.</div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Sidebar */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader className="pb-3 border-b border-border/50">
-              <CardTitle className="font-mono text-sm uppercase tracking-wider text-muted-foreground">
-                Pipeline Status
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              {statsLoading ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-5/6" />
-                  <Skeleton className="h-4 w-4/6" />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {stats?.storiesByStatus?.map((statusCount) => {
-                    const statusColors: Record<string, string> = {
-                      Published: 'bg-emerald-500',
-                      Approved: 'bg-blue-500',
-                      Review: 'bg-amber-500',
-                      Draft: 'bg-primary',
-                      Idea: 'bg-purple-500',
-                      Research: 'bg-pink-500'
-                    };
-                    const color = statusColors[statusCount.status] || 'bg-muted-foreground';
-                    const percentage = stats.totalStories > 0 ? (statusCount.count / stats.totalStories) * 100 : 0;
-                    
-                    return (
-                      <div key={statusCount.status} className="space-y-1.5">
-                        <div className="flex justify-between text-xs font-mono">
-                          <span className="text-foreground">{statusCount.status}</span>
-                          <span className="text-muted-foreground">{statusCount.count}</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                          <div className={`h-full ${color}`} style={{ width: `${percentage}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+    <div className="mb-3 flex items-center justify-between">
+      <h2 className="font-mono text-[10px] font-semibold tracking-[0.08em] text-[#d5dbe3]">{children}</h2>
+      {href && <Link href={href} className="text-[10px] text-[#5fa4ff] hover:text-[#8bc0ff]">View All</Link>}
     </div>
   );
 }
 
-function MetricCard({ title, value, icon: Icon, loading, highlight = false, href }: any) {
+export function Dashboard() {
+  const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
+  const { data: activity = [], isLoading: activityLoading } = useGetRecentActivity();
+  const { data: workspaces = [], isLoading: workspacesLoading } = useListProjects();
+  const { data: stories = [] } = useListStories();
+  const focusStories = stories.filter((story) => !['Published', 'Archived'].includes(story.status)).slice(0, 3);
+  const progress = stories.length
+    ? Math.round(stories.filter((story) => ['Approved', 'Published'].includes(story.status)).length / stories.length * 100)
+    : 0;
+  const metrics = [
+    ['Stories', stats?.totalStories ?? 0, '/stories'],
+    ['Evidence Items', stats?.totalEvidence ?? 0, '/evidence'],
+    ['Knowledge Pages', stats?.totalKnowledge ?? 0, '/knowledge'],
+    ['Campaigns', stats?.activeCampaigns ?? 0, '/campaigns'],
+    ['Assets', stats?.totalAssets ?? 0, '/assets'],
+    ['Exports', '—', '/settings'],
+  ] as const;
+
   return (
-    <Link href={href} className="block group">
-      <Card className={`relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${highlight ? 'border-primary/50 shadow-[0_0_15px_rgba(0,229,255,0.1)]' : 'hover:border-muted-foreground/30'}`}>
-        <CardContent className="p-5 flex flex-col justify-between h-full min-h-[120px]">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">{title}</span>
-            <Icon className={`w-4 h-4 ${highlight ? 'text-primary drop-shadow-[0_0_5px_rgba(0,229,255,0.5)]' : 'text-muted-foreground group-hover:text-primary transition-colors'}`} />
+    <div className="space-y-3">
+      <section className="blueprint-grid relative overflow-hidden rounded-2xl border border-[#2f80ff]/20 bg-[#080d15] px-7 py-6 lg:px-12">
+        <div className="absolute -bottom-24 -right-20 h-72 w-72 rounded-full bg-[#0869ff]/20 blur-3xl" />
+        <div className="relative grid items-center gap-8 xl:grid-cols-[1.45fr_0.9fr]">
+          <div className="flex items-center gap-7">
+            <img src={ntechMark} alt="N-Tech C³" className="hidden h-36 w-36 drop-shadow-[0_0_30px_rgba(47,128,255,0.3)] sm:block" />
+            <div>
+              <h1 className="text-4xl font-bold tracking-[0.08em] text-white lg:text-5xl">N-TECH <span className="text-[#2f80ff]">C³</span></h1>
+              <p className="mt-3 max-w-md text-sm font-medium tracking-[0.22em] text-[#d5dbe3]">ENGINEERING INTELLIGENCE<br />OPERATING SYSTEM</p>
+              <p className="mt-5 text-xs text-[#aeb6c2]">Capture reality. Organize knowledge. Produce evidence. Create influence.</p>
+            </div>
           </div>
-          <div className="mt-4 flex items-end justify-between">
-            {loading ? (
-              <Skeleton className="h-8 w-12" />
-            ) : (
-              <span className={`text-3xl font-bold font-mono tracking-tight ${highlight ? 'text-primary' : 'text-foreground'}`}>
-                {value || 0}
-              </span>
+          <div className="space-y-1.5">
+            {PRINCIPLES.map(({ text, icon: Icon, color }) => (
+              <div key={text} className="flex items-center gap-3 rounded-lg border border-[#303b4b] bg-[#111722]/90 px-3 py-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md border bg-[#0a0f17]" style={{ borderColor: `${color}70`, color }}>
+                  <Icon className="h-3.5 w-3.5" />
+                </span>
+                <span className="text-[11px] text-[#c7ced8]">{text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-[#30343d] bg-[#0b1017]/80 p-4">
+        <PanelTitle>GET STARTED</PanelTitle>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {START_CARDS.map(({ title, description, action, href, icon: Icon, color }) => (
+            <article key={title} className="flex min-h-[180px] flex-col items-center rounded-[10px] border border-[#272f3b] bg-[linear-gradient(145deg,#151c26,#101620)] p-4 text-center shadow-[0_8px_32px_rgba(0,0,0,0.16)]">
+              <Icon className="mb-3 h-9 w-9" style={{ color }} strokeWidth={1.8} />
+              <h3 className="text-[13px] font-semibold text-white">{title}</h3>
+              <p className="mt-2 flex-1 text-[10px] leading-5 text-[#aeb6c2]">{description}</p>
+              <Link href={href} className="mt-3 w-full rounded-md border px-3 py-1.5 text-[10px] font-medium transition-colors hover:bg-white/5" style={{ borderColor: `${color}80`, color }}>
+                {action}
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <div className="grid gap-3 xl:grid-cols-[1fr_1.08fr_1.28fr]">
+        <section className="rounded-2xl border border-[#30343d] bg-[#0b1017]/80 p-4">
+          <PanelTitle href="/projects">LAST OPENED WORKSPACES</PanelTitle>
+          <div className="space-y-1">
+            {workspacesLoading ? <p className="py-8 text-center text-xs text-[#7c8593]">Loading workspaces…</p> : workspaces.length ? workspaces.slice(0, 4).map((workspace, index) => (
+              <Link key={workspace.id} href={`/projects/${workspace.id}`} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-[#161c24]">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#2f80ff]/30 bg-[#2f80ff]/10 text-[#5fa4ff]"><Box className="h-4 w-4" /></span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[11px] font-semibold text-[#f5f7fa]">{workspace.name}</p>
+                  <p className="truncate text-[9px] text-[#5f9be7]">/Workspaces/{workspace.name.replace(/\s+/g, '')}</p>
+                </div>
+                <span className="text-right text-[9px] text-[#8b95a3]">{index === 0 ? 'Most recent' : formatDate(workspace.updatedAt)}</span>
+              </Link>
+            )) : (
+              <div className="py-7 text-center"><p className="text-xs text-[#8b95a3]">No workspaces yet.</p><Link href="/projects" className="mt-2 inline-block text-[10px] text-[#5fa4ff]">Create a workspace</Link></div>
             )}
-            <ArrowUpRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
-        </CardContent>
-      </Card>
-    </Link>
+          <Link href="/projects" className="mt-3 flex items-center justify-center gap-2 rounded-md border border-[#303b4b] py-2 text-[10px] text-[#c1c9d4] hover:bg-[#161c24]"><FolderOpen className="h-3.5 w-3.5" /> Open Other Workspace</Link>
+        </section>
+
+        <section className="rounded-2xl border border-[#30343d] bg-[#0b1017]/80 p-4">
+          <PanelTitle href="/evidence">RECENT ACTIVITY</PanelTitle>
+          <div className="space-y-1">
+            {activityLoading ? <p className="py-8 text-center text-xs text-[#7c8593]">Loading activity…</p> : activity.length ? activity.slice(0, 5).map((item) => (
+              <div key={item.id} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-[#161c24]">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#2f80ff]/25 bg-[#2f80ff]/10 text-[#5fa4ff]"><ArrowUpRight className="h-3.5 w-3.5" /></span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[11px] font-semibold text-[#edf1f5]">{item.action} {item.entityType}</p>
+                  <p className="truncate text-[9px] text-[#6da6ee]">{item.entityTitle}</p>
+                </div>
+                <span className="text-[9px] text-[#8b95a3]">{formatDate(item.createdAt)}</span>
+              </div>
+            )) : <p className="py-8 text-center text-xs text-[#7c8593]">Activity appears after your first capture.</p>}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-[#30343d] bg-[#0b1017]/80 p-4">
+          <PanelTitle>AT A GLANCE</PanelTitle>
+          <div className="grid grid-cols-3 gap-2">
+            {metrics.map(([label, value, href]) => (
+              <Link key={label} href={href} className="rounded-lg border border-[#232b36] bg-[#121923] p-3 hover:border-[#2f80ff]/40">
+                <p className="text-[9px] text-[#9ba5b3]">{label}</p>
+                <p className="mt-1 text-xl font-semibold text-[#f5f7fa]">{statsLoading ? '…' : value}</p>
+              </Link>
+            ))}
+          </div>
+          <div className="mt-2 flex items-center gap-4 rounded-lg border border-[#232b36] bg-[#0e141d] p-3">
+            <div className="min-w-0 flex-1">
+              <p className="mb-2 text-[10px] font-medium text-[#d7dde5]">Today's Focus</p>
+              <div className="space-y-1.5">
+                {focusStories.length ? focusStories.map((story) => (
+                  <Link href={`/stories/${story.id}`} key={story.id} className="flex items-center gap-2 text-[9px] text-[#aeb6c2] hover:text-white"><Circle className="h-3 w-3" /> <span className="truncate">{story.title}</span></Link>
+                )) : <p className="text-[9px] text-[#7c8593]">Create a story to establish today's focus.</p>}
+              </div>
+            </div>
+            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full" style={{ background: `conic-gradient(#2f80ff ${progress * 3.6}deg, #202a37 0)` }}>
+              <div className="flex h-16 w-16 flex-col items-center justify-center rounded-full bg-[#0e141d]">
+                <span className="text-lg font-semibold">{progress}%</span>
+                <span className="text-[7px] text-[#8b95a3]">Daily Progress</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section className="grid items-center gap-4 rounded-2xl border border-[#30343d] bg-[#0b1017]/80 px-5 py-4 md:grid-cols-[1fr_1.2fr_1fr]">
+        <div className="flex items-start gap-3">
+          <Lightbulb className="mt-0.5 h-4 w-4 text-[#2f80ff]" />
+          <div><p className="text-[10px] font-semibold text-white">Pro Tip</p><p className="mt-1 text-[9px] leading-4 text-[#9da7b4]">Use Quick Capture from the sidebar to instantly capture evidence while you're in the flow.</p></div>
+        </div>
+        <blockquote className="text-center text-xs leading-5 text-[#58a0fb]">“The best systems don’t just store knowledge.<br />They make it work for you.”</blockquote>
+        <div>
+          <p className="mb-2 text-[10px] font-semibold text-white">Keyboard Shortcuts</p>
+          <div className="grid grid-cols-4 gap-2 text-center text-[8px] text-[#8f99a7]">
+            {[[Search, '⌘ K', 'Search'], [FilePlus2, '⌘ N', 'New Story'], [UploadCloud, '⌘ /', 'Quick Capture'], [Megaphone, '⌘ P', 'Command Menu']].map(([Icon, keys, label]) => {
+              const ShortcutIcon = Icon as typeof Search;
+              return <div key={String(label)}><span className="mx-auto mb-1 flex h-6 items-center justify-center gap-1 rounded border border-[#303b4b] text-[#d3d9e1]"><ShortcutIcon className="h-3 w-3" />{String(keys)}</span>{String(label)}</div>;
+            })}
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

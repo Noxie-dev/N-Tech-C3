@@ -1,96 +1,55 @@
-import { Router, type IRouter } from "express";
-import { eq, and, ilike, SQL } from "drizzle-orm";
-import { db, evidenceTable } from "@workspace/db";
+import { Router, type IRouter } from 'express';
 import {
-  ListEvidenceQueryParams,
-  ListEvidenceResponse,
-  CreateEvidenceBody,
-  CreateEvidenceResponse,
-  GetEvidenceParams,
-  GetEvidenceResponse,
-  UpdateEvidenceParams,
-  UpdateEvidenceBody,
-  UpdateEvidenceResponse,
-  DeleteEvidenceParams,
-} from "@workspace/api-zod";
-import { recordActivity } from "../lib/activity";
+  ListEvidenceQueryParams, ListEvidenceResponse, CreateEvidenceBody, CreateEvidenceResponse,
+  GetEvidenceParams, GetEvidenceResponse, UpdateEvidenceParams, UpdateEvidenceBody,
+  UpdateEvidenceResponse, DeleteEvidenceParams,
+} from '@workspace/api-zod';
+import { createEntity, deleteEntity, entityConfigs, getEntity, listEntities, updateEntity } from '../lib/entity-store';
+import { recordActivity } from '../lib/activity';
 
 const router: IRouter = Router();
+const config = entityConfigs.evidence;
 
-router.get("/evidence", async (req, res): Promise<void> => {
+router.get('/evidence', (req, res) => {
   const query = ListEvidenceQueryParams.safeParse(req.query);
-  if (!query.success) {
-    res.status(400).json({ error: query.error.message });
-    return;
-  }
-  const { type, storyId, search } = query.data;
-  const conditions: SQL[] = [];
-  if (type) conditions.push(eq(evidenceTable.type, type));
-  if (storyId != null) conditions.push(eq(evidenceTable.storyId, storyId));
-  if (search) conditions.push(ilike(evidenceTable.title, `%${search}%`));
-
-  const rows = conditions.length > 0
-    ? await db.select().from(evidenceTable).where(and(...conditions)).orderBy(evidenceTable.createdAt)
-    : await db.select().from(evidenceTable).orderBy(evidenceTable.createdAt);
-
-  res.json(ListEvidenceResponse.parse(rows));
+  if (!query.success) return void res.status(400).json({ error: query.error.message });
+  const conditions: string[] = [];
+  const params: Array<string | number> = [];
+  if (query.data.type) { conditions.push('type = ?'); params.push(query.data.type); }
+  if (query.data.storyId != null) { conditions.push('story_id = ?'); params.push(query.data.storyId); }
+  if (query.data.projectId != null) { conditions.push('project_id = ?'); params.push(query.data.projectId); }
+  if (query.data.search) { conditions.push('title LIKE ?'); params.push(`%${query.data.search}%`); }
+  res.json(ListEvidenceResponse.parse(listEntities(config, {
+    where: conditions.join(' AND ') || undefined, params, orderBy: 'created_at DESC',
+  })));
 });
-
-router.post("/evidence", async (req, res): Promise<void> => {
+router.post('/evidence', async (req, res) => {
   const parsed = CreateEvidenceBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const [row] = await db.insert(evidenceTable).values(parsed.data).returning();
-  await recordActivity("evidence", row.id, row.title, "captured");
+  if (!parsed.success) return void res.status(400).json({ error: parsed.error.message });
+  const row = createEntity(config, parsed.data);
+  if (!row) return void res.status(500).json({ error: 'Evidence creation failed' });
+  await recordActivity('evidence', Number(row.id), String(row.title), 'captured');
   res.status(201).json(CreateEvidenceResponse.parse(row));
 });
-
-router.get("/evidence/:id", async (req, res): Promise<void> => {
+router.get('/evidence/:id', (req, res) => {
   const params = GetEvidenceParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const [row] = await db.select().from(evidenceTable).where(eq(evidenceTable.id, params.data.id));
-  if (!row) {
-    res.status(404).json({ error: "Evidence not found" });
-    return;
-  }
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  const row = getEntity(config, params.data.id);
+  if (!row) return void res.status(404).json({ error: 'Evidence not found' });
   res.json(GetEvidenceResponse.parse(row));
 });
-
-router.patch("/evidence/:id", async (req, res): Promise<void> => {
+router.patch('/evidence/:id', (req, res) => {
   const params = UpdateEvidenceParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const parsed = UpdateEvidenceBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const [row] = await db.update(evidenceTable).set(parsed.data).where(eq(evidenceTable.id, params.data.id)).returning();
-  if (!row) {
-    res.status(404).json({ error: "Evidence not found" });
-    return;
-  }
+  const body = UpdateEvidenceBody.safeParse(req.body);
+  if (!params.success || !body.success) return void res.status(400).json({ error: 'Invalid evidence update' });
+  const row = updateEntity(config, params.data.id, body.data);
+  if (!row) return void res.status(404).json({ error: 'Evidence not found' });
   res.json(UpdateEvidenceResponse.parse(row));
 });
-
-router.delete("/evidence/:id", async (req, res): Promise<void> => {
+router.delete('/evidence/:id', (req, res) => {
   const params = DeleteEvidenceParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const [row] = await db.delete(evidenceTable).where(eq(evidenceTable.id, params.data.id)).returning();
-  if (!row) {
-    res.status(404).json({ error: "Evidence not found" });
-    return;
-  }
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  if (!deleteEntity(config, params.data.id)) return void res.status(404).json({ error: 'Evidence not found' });
   res.sendStatus(204);
 });
 

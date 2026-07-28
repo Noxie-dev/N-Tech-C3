@@ -26,6 +26,8 @@ tags:
     description: Project operations
   - name: dashboard
     description: Dashboard and analytics operations
+  - name: search
+    description: Cross-module full-text search
 
 paths:
   /healthz:
@@ -69,6 +71,58 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ActivityItem"
+
+  /search:
+    get:
+      operationId: globalSearch
+      tags: [search]
+      summary: Search all indexed engineering intelligence
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+        - name: limit
+          in: query
+          schema:
+            type: number
+            minimum: 1
+            maximum: 50
+            default: 20
+        - name: entityType
+          in: query
+          schema:
+            type: string
+            enum: [story, evidence, knowledge, campaign, asset, template, project]
+        - name: projectId
+          in: query
+          schema:
+            type: number
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Ranked search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SearchResult"
 
   # Projects
   /projects:
@@ -392,6 +446,10 @@ paths:
           schema:
             type: string
         - name: storyId
+          in: query
+          schema:
+            type: ["number", "null"]
+        - name: projectId
           in: query
           schema:
             type: ["number", "null"]
@@ -1358,3 +1416,19 @@ components:
           type: ["string", "null"]
         description:
           type: ["string", "null"]
+
+    SearchResult:
+      type: object
+      required: [entityType, entityId, title, snippet, path]
+      properties:
+        entityType:
+          type: string
+          enum: [story, evidence, knowledge, campaign, asset, template, project]
+        entityId:
+          type: number
+        title:
+          type: string
+        snippet:
+          type: string
+        path:
+          type: string

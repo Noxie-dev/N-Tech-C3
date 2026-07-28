@@ -1,90 +1,51 @@
-import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
-import { db, templatesTable } from "@workspace/db";
+import { Router, type IRouter } from 'express';
 import {
-  ListTemplatesQueryParams,
-  ListTemplatesResponse,
-  CreateTemplateBody,
-  CreateTemplateResponse,
-  GetTemplateParams,
-  GetTemplateResponse,
-  UpdateTemplateParams,
-  UpdateTemplateBody,
-  UpdateTemplateResponse,
-  DeleteTemplateParams,
-} from "@workspace/api-zod";
-import { recordActivity } from "../lib/activity";
+  ListTemplatesQueryParams, ListTemplatesResponse, CreateTemplateBody, CreateTemplateResponse,
+  GetTemplateParams, GetTemplateResponse, UpdateTemplateParams, UpdateTemplateBody,
+  UpdateTemplateResponse, DeleteTemplateParams,
+} from '@workspace/api-zod';
+import { createEntity, deleteEntity, entityConfigs, getEntity, listEntities, updateEntity } from '../lib/entity-store';
+import { recordActivity } from '../lib/activity';
 
 const router: IRouter = Router();
+const config = entityConfigs.templates;
 
-router.get("/templates", async (req, res): Promise<void> => {
+router.get('/templates', (req, res) => {
   const query = ListTemplatesQueryParams.safeParse(req.query);
-  if (!query.success) {
-    res.status(400).json({ error: query.error.message });
-    return;
-  }
-  const { type } = query.data;
-  const rows = type
-    ? await db.select().from(templatesTable).where(eq(templatesTable.type, type)).orderBy(templatesTable.createdAt)
-    : await db.select().from(templatesTable).orderBy(templatesTable.createdAt);
-  res.json(ListTemplatesResponse.parse(rows));
+  if (!query.success) return void res.status(400).json({ error: query.error.message });
+  res.json(ListTemplatesResponse.parse(listEntities(config, {
+    where: query.data.type ? 'type = ?' : undefined,
+    params: query.data.type ? [query.data.type] : [],
+    orderBy: 'created_at DESC',
+  })));
 });
-
-router.post("/templates", async (req, res): Promise<void> => {
+router.post('/templates', async (req, res) => {
   const parsed = CreateTemplateBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const [row] = await db.insert(templatesTable).values(parsed.data).returning();
-  await recordActivity("template", row.id, row.title, "created");
+  if (!parsed.success) return void res.status(400).json({ error: parsed.error.message });
+  const row = createEntity(config, parsed.data);
+  if (!row) return void res.status(500).json({ error: 'Template creation failed' });
+  await recordActivity('template', Number(row.id), String(row.title), 'created');
   res.status(201).json(CreateTemplateResponse.parse(row));
 });
-
-router.get("/templates/:id", async (req, res): Promise<void> => {
+router.get('/templates/:id', (req, res) => {
   const params = GetTemplateParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const [row] = await db.select().from(templatesTable).where(eq(templatesTable.id, params.data.id));
-  if (!row) {
-    res.status(404).json({ error: "Template not found" });
-    return;
-  }
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  const row = getEntity(config, params.data.id);
+  if (!row) return void res.status(404).json({ error: 'Template not found' });
   res.json(GetTemplateResponse.parse(row));
 });
-
-router.patch("/templates/:id", async (req, res): Promise<void> => {
+router.patch('/templates/:id', (req, res) => {
   const params = UpdateTemplateParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const parsed = UpdateTemplateBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const [row] = await db.update(templatesTable).set(parsed.data).where(eq(templatesTable.id, params.data.id)).returning();
-  if (!row) {
-    res.status(404).json({ error: "Template not found" });
-    return;
-  }
+  const body = UpdateTemplateBody.safeParse(req.body);
+  if (!params.success || !body.success) return void res.status(400).json({ error: 'Invalid template update' });
+  const row = updateEntity(config, params.data.id, body.data);
+  if (!row) return void res.status(404).json({ error: 'Template not found' });
   res.json(UpdateTemplateResponse.parse(row));
 });
-
-router.delete("/templates/:id", async (req, res): Promise<void> => {
+router.delete('/templates/:id', (req, res) => {
   const params = DeleteTemplateParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const [row] = await db.delete(templatesTable).where(eq(templatesTable.id, params.data.id)).returning();
-  if (!row) {
-    res.status(404).json({ error: "Template not found" });
-    return;
-  }
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  if (!deleteEntity(config, params.data.id)) return void res.status(404).json({ error: 'Template not found' });
   res.sendStatus(204);
 });
 

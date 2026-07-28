@@ -1,95 +1,53 @@
-import { Router, type IRouter } from "express";
-import { eq, and, SQL } from "drizzle-orm";
-import { db, assetsTable } from "@workspace/db";
+import { Router, type IRouter } from 'express';
 import {
-  ListAssetsQueryParams,
-  ListAssetsResponse,
-  CreateAssetBody,
-  CreateAssetResponse,
-  GetAssetParams,
-  GetAssetResponse,
-  UpdateAssetParams,
-  UpdateAssetBody,
-  UpdateAssetResponse,
-  DeleteAssetParams,
-} from "@workspace/api-zod";
-import { recordActivity } from "../lib/activity";
+  ListAssetsQueryParams, ListAssetsResponse, CreateAssetBody, CreateAssetResponse,
+  GetAssetParams, GetAssetResponse, UpdateAssetParams, UpdateAssetBody,
+  UpdateAssetResponse, DeleteAssetParams,
+} from '@workspace/api-zod';
+import { createEntity, deleteEntity, entityConfigs, getEntity, listEntities, updateEntity } from '../lib/entity-store';
+import { recordActivity } from '../lib/activity';
 
 const router: IRouter = Router();
+const config = entityConfigs.assets;
 
-router.get("/assets", async (req, res): Promise<void> => {
+router.get('/assets', (req, res) => {
   const query = ListAssetsQueryParams.safeParse(req.query);
-  if (!query.success) {
-    res.status(400).json({ error: query.error.message });
-    return;
-  }
-  const { type, storyId } = query.data;
-  const conditions: SQL[] = [];
-  if (type) conditions.push(eq(assetsTable.type, type));
-  if (storyId != null) conditions.push(eq(assetsTable.storyId, storyId));
-
-  const rows = conditions.length > 0
-    ? await db.select().from(assetsTable).where(and(...conditions)).orderBy(assetsTable.createdAt)
-    : await db.select().from(assetsTable).orderBy(assetsTable.createdAt);
-
-  res.json(ListAssetsResponse.parse(rows));
+  if (!query.success) return void res.status(400).json({ error: query.error.message });
+  const conditions: string[] = [];
+  const params: Array<string | number> = [];
+  if (query.data.type) { conditions.push('type = ?'); params.push(query.data.type); }
+  if (query.data.storyId != null) { conditions.push('story_id = ?'); params.push(query.data.storyId); }
+  res.json(ListAssetsResponse.parse(listEntities(config, {
+    where: conditions.join(' AND ') || undefined, params, orderBy: 'created_at DESC',
+  })));
 });
-
-router.post("/assets", async (req, res): Promise<void> => {
+router.post('/assets', async (req, res) => {
   const parsed = CreateAssetBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const [row] = await db.insert(assetsTable).values(parsed.data).returning();
-  await recordActivity("asset", row.id, row.title, "added");
+  if (!parsed.success) return void res.status(400).json({ error: parsed.error.message });
+  const row = createEntity(config, parsed.data);
+  if (!row) return void res.status(500).json({ error: 'Asset creation failed' });
+  await recordActivity('asset', Number(row.id), String(row.title), 'created');
   res.status(201).json(CreateAssetResponse.parse(row));
 });
-
-router.get("/assets/:id", async (req, res): Promise<void> => {
+router.get('/assets/:id', (req, res) => {
   const params = GetAssetParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const [row] = await db.select().from(assetsTable).where(eq(assetsTable.id, params.data.id));
-  if (!row) {
-    res.status(404).json({ error: "Asset not found" });
-    return;
-  }
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  const row = getEntity(config, params.data.id);
+  if (!row) return void res.status(404).json({ error: 'Asset not found' });
   res.json(GetAssetResponse.parse(row));
 });
-
-router.patch("/assets/:id", async (req, res): Promise<void> => {
+router.patch('/assets/:id', (req, res) => {
   const params = UpdateAssetParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const parsed = UpdateAssetBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const [row] = await db.update(assetsTable).set(parsed.data).where(eq(assetsTable.id, params.data.id)).returning();
-  if (!row) {
-    res.status(404).json({ error: "Asset not found" });
-    return;
-  }
+  const body = UpdateAssetBody.safeParse(req.body);
+  if (!params.success || !body.success) return void res.status(400).json({ error: 'Invalid asset update' });
+  const row = updateEntity(config, params.data.id, body.data);
+  if (!row) return void res.status(404).json({ error: 'Asset not found' });
   res.json(UpdateAssetResponse.parse(row));
 });
-
-router.delete("/assets/:id", async (req, res): Promise<void> => {
+router.delete('/assets/:id', (req, res) => {
   const params = DeleteAssetParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const [row] = await db.delete(assetsTable).where(eq(assetsTable.id, params.data.id)).returning();
-  if (!row) {
-    res.status(404).json({ error: "Asset not found" });
-    return;
-  }
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  if (!deleteEntity(config, params.data.id)) return void res.status(404).json({ error: 'Asset not found' });
   res.sendStatus(204);
 });
 

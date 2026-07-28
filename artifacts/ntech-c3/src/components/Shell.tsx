@@ -1,82 +1,126 @@
 import { Link, useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, BookOpen, Layers, Archive, Library, Image, FileText, Settings, FolderKanban } from 'lucide-react';
+import {
+  Bell, BookOpen, Box, CalendarDays, ChevronDown, CircleHelp, Code2,
+  FileArchive, FileText, FolderKanban, Home, Image, Import, Library, Mic,
+  Megaphone, PlusCircle, ScrollText, Settings, TerminalSquare,
+} from 'lucide-react';
+import { QuickCapture } from '@/components/QuickCapture';
+import ntechMark from '@/assets/ntech-mark.svg';
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Home', icon: Home },
+  { href: '/projects', label: 'Workspaces', icon: Box },
   { href: '/stories', label: 'Stories', icon: BookOpen },
-  { href: '/campaigns', label: 'Campaigns', icon: Layers },
-  { href: '/evidence', label: 'Evidence', icon: Archive },
+  { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
   { href: '/knowledge', label: 'Knowledge Base', icon: Library },
+  { href: '/evidence', label: 'Evidence Vault', icon: FileArchive },
+  { href: '/calendar', label: 'Calendar', icon: CalendarDays, planned: true },
   { href: '/assets', label: 'Assets', icon: Image },
   { href: '/templates', label: 'Templates', icon: FileText },
-  { href: '/projects', label: 'Projects', icon: FolderKanban },
+  { href: '/exports', label: 'Exports', icon: ScrollText, planned: true },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
+const CAPTURE_ITEMS = [
+  { label: 'Screenshot', icon: Image, type: 'Screenshot' },
+  { label: 'Terminal Output', icon: TerminalSquare, type: 'TerminalOutput' },
+  { label: 'Code Snippet', icon: Code2, type: 'CodeSnippet' },
+  { label: 'Voice Note', icon: Mic, type: 'VoiceRecording' },
+  { label: 'Import File', icon: Import, href: '/evidence' },
+  { label: 'New Quick Note', icon: FileText, type: 'MeetingNotes' },
+] as const;
+
+function openCapture(type: string) {
+  window.dispatchEvent(new CustomEvent('ntc3:quick-capture', { detail: { type } }));
+}
+
 export function Shell({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
 
   return (
-    <div className="min-h-[100dvh] flex w-full bg-background text-foreground">
-      <aside className="w-64 border-r border-border bg-card flex-col hidden md:flex shrink-0">
-        <div className="h-16 flex items-center px-6 border-b border-border">
-          <Link href="/dashboard" className="flex items-center gap-3 text-primary hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 rounded bg-primary/10 border border-primary/30 flex items-center justify-center shadow-[0_0_15px_rgba(0,229,255,0.15)]">
-              <span className="text-primary font-bold font-mono text-xs">C³</span>
+    <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[#090b10] text-foreground">
+      <header className="flex h-14 shrink-0 items-center border-b border-[#272b34] bg-[#090b10] px-5">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
+          <img src={ntechMark} alt="" className="h-8 w-8" />
+          <span className="text-[15px] font-bold tracking-[0.16em] text-[#f5f7fa]">N-TECH <span className="text-[#2f80ff]">C³</span></span>
+        </Link>
+        <div className="ml-auto flex items-center gap-1">
+          <button aria-label="Notifications" className="rounded-md p-2 text-[#aeb6c2] hover:bg-[#161c24] hover:text-white"><Bell className="h-[18px] w-[18px]" /></button>
+          <button aria-label="Help" className="rounded-md p-2 text-[#aeb6c2] hover:bg-[#161c24] hover:text-white"><CircleHelp className="h-[18px] w-[18px]" /></button>
+          <Link href="/settings" aria-label="Settings" className="rounded-md p-2 text-[#aeb6c2] hover:bg-[#161c24] hover:text-white"><Settings className="h-[18px] w-[18px]" /></Link>
+          <div className="mx-2 h-5 w-px bg-[#30343d]" />
+          <button className="flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-[#161c24]">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2f80ff] text-xs font-semibold text-white">N</span>
+            <span className="hidden text-xs text-[#f5f7fa] sm:inline">NaniTech</span>
+            <ChevronDown className="h-3 w-3 text-[#7c8593]" />
+          </button>
+        </div>
+      </header>
+
+      <div className="flex min-h-0 flex-1">
+        <aside className="hidden w-[204px] shrink-0 flex-col border-r border-[#272b34] bg-[#090b10] px-3 py-5 md:flex">
+          <nav aria-label="Primary navigation" className="space-y-1">
+            {NAV_ITEMS.map((item) => {
+              const active = location === item.href || (item.href !== '/dashboard' && location.startsWith(item.href));
+              const content = (
+                <>
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  <span>{item.label}</span>
+                </>
+              );
+              return item.planned ? (
+                <span key={item.href} title={`${item.label} is planned`} aria-disabled="true" className="flex cursor-not-allowed items-center gap-3 rounded-md px-3 py-2 text-xs text-[#687281] opacity-70">
+                  {content}
+                </span>
+              ) : (
+                <Link key={item.href} href={item.href} className={cn(
+                  'flex items-center gap-3 rounded-md border px-3 py-2 text-xs transition-[background,border-color,color,box-shadow] duration-150',
+                  active
+                    ? 'border-[#2f80ff]/70 bg-[#2f80ff]/20 text-[#72b1ff] shadow-[0_0_16px_rgba(47,128,255,0.25)]'
+                    : 'border-transparent text-[#c3c9d2] hover:bg-[#161c24] hover:text-white',
+                )}>
+                  {content}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <section className="mt-auto rounded-[10px] border border-[#30343d] bg-[#0d1118] p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="font-mono text-[10px] font-semibold tracking-[0.08em] text-[#cbd2dc]">QUICK CAPTURE</h2>
+              <PlusCircle className="h-3.5 w-3.5 text-[#7c8593]" />
             </div>
-            <span className="font-bold tracking-widest text-sm font-mono text-foreground">N-TECH OS</span>
-          </Link>
-        </div>
-        
-        <div className="p-4 border-b border-border bg-background/50">
-          <div className="text-[10px] uppercase font-mono text-muted-foreground tracking-wider mb-2 flex justify-between">
-            <span>System Status</span>
-            <span className="text-primary flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>Online</span>
+            <div className="space-y-0.5">
+              {CAPTURE_ITEMS.map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => 'href' in item ? setLocation(item.href) : openCapture(item.type)}
+                  className="flex w-full items-center gap-3 rounded-md px-1.5 py-1.5 text-left text-[11px] text-[#c3c9d2] hover:bg-[#161c24] hover:text-white"
+                >
+                  <item.icon className="h-3.5 w-3.5 text-[#9ea8b6]" />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </section>
+          <div className="mt-5 flex items-center gap-2 px-3 text-[10px] text-[#7c8593]">
+            <span className="h-1.5 w-1.5 rounded-full border border-[#16c784] bg-[#16c784]/30" />
+            v0.1.0 Alpha
           </div>
-          <div className="text-xs font-mono text-muted-foreground/80 space-y-1">
-            <div className="flex justify-between"><span>Core Load</span><span className="text-foreground">12%</span></div>
-            <div className="flex justify-between"><span>Memory</span><span className="text-foreground">2.4 GB</span></div>
-          </div>
-        </div>
+        </aside>
 
-        <nav className="flex-1 overflow-y-auto py-4 flex flex-col gap-1 px-3 custom-scrollbar">
-          <div className="text-[10px] uppercase font-mono text-muted-foreground tracking-wider px-3 mb-2">Modules</div>
-          {NAV_ITEMS.map((item) => {
-            const active = location === item.href || (item.href !== '/dashboard' && location.startsWith(item.href));
-            return (
-              <Link key={item.href} href={item.href} className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200 group relative",
-                active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}>
-                {active && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary rounded-r-full shadow-[0_0_10px_rgba(0,229,255,0.5)]"></span>
-                )}
-                <item.icon className={cn("w-4 h-4 transition-transform group-hover:scale-110", active ? "text-primary" : "text-muted-foreground")} />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="mt-auto border-t border-border p-3">
-          <Link href="/settings" className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors duration-200 group",
-            location.startsWith('/settings') ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
-          )}>
-            <Settings className="w-4 h-4 group-hover:rotate-45 transition-transform duration-500" />
-            Settings
-          </Link>
-        </div>
-      </aside>
-      
-      <main className="flex-1 flex flex-col min-w-0 relative">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" style={{ maskImage: 'radial-gradient(ellipse 60% 50% at 50% 0%, #000 70%, transparent 100%)', WebkitMaskImage: 'radial-gradient(ellipse 60% 50% at 50% 0%, #000 70%, transparent 100%)' }}></div>
-        <div className="flex-1 overflow-y-auto z-10 custom-scrollbar">
-          <div className="container mx-auto p-6 max-w-6xl">
-            {children}
+        <main className="relative min-w-0 flex-1 overflow-hidden bg-[#090b10]">
+          <div className="checker-bg pointer-events-none absolute inset-0" />
+          <div className="relative h-full overflow-y-auto p-4 custom-scrollbar">
+            <div className="glass-panel mx-auto min-h-full max-w-[1440px] rounded-2xl p-4 lg:p-6">
+              {children}
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
+      <QuickCapture hideTrigger />
     </div>
   );
 }

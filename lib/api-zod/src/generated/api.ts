@@ -48,6 +48,36 @@ export const GetRecentActivityResponse = zod.array(GetRecentActivityResponseItem
 
 
 /**
+ * @summary Search all indexed engineering intelligence
+ */
+export const globalSearchQueryQMin = 2;
+
+export const globalSearchQueryLimitDefault = 20;
+export const globalSearchQueryLimitMax = 50;
+
+
+
+export const GlobalSearchQueryParams = zod.object({
+  "q": zod.coerce.string().min(globalSearchQueryQMin),
+  "limit": zod.coerce.number().min(1).max(globalSearchQueryLimitMax).default(globalSearchQueryLimitDefault),
+  "entityType": zod.enum(['story', 'evidence', 'knowledge', 'campaign', 'asset', 'template', 'project']).optional(),
+  "projectId": zod.coerce.number().optional(),
+  "status": zod.coerce.string().optional(),
+  "from": zod.date().optional(),
+  "to": zod.date().optional()
+})
+
+export const GlobalSearchResponseItem = zod.object({
+  "entityType": zod.enum(['story', 'evidence', 'knowledge', 'campaign', 'asset', 'template', 'project']),
+  "entityId": zod.number(),
+  "title": zod.string(),
+  "snippet": zod.string(),
+  "path": zod.string()
+})
+export const GlobalSearchResponse = zod.array(GlobalSearchResponseItem)
+
+
+/**
  * @summary List all projects
  */
 export const ListProjectsResponseItem = zod.object({
@@ -408,6 +438,7 @@ export const DeleteCampaignResponse = zod.void()
 export const ListEvidenceQueryParams = zod.object({
   "type": zod.coerce.string().optional(),
   "storyId": zod.coerce.number().nullish(),
+  "projectId": zod.coerce.number().nullish(),
   "search": zod.coerce.string().optional()
 })
 

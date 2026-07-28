@@ -1,4 +1,4 @@
-import { db, activityTable } from "@workspace/db";
+import { run } from '@workspace/db';
 
 export async function recordActivity(
   entityType: string,
@@ -7,8 +7,11 @@ export async function recordActivity(
   action: string,
 ): Promise<void> {
   try {
-    await db.insert(activityTable).values({ entityType, entityId, entityTitle, action });
+    run(
+      'INSERT INTO activity (entity_type, entity_id, entity_title, action) VALUES (?, ?, ?, ?)',
+      [entityType, entityId, entityTitle, action],
+    );
   } catch {
-    // Non-critical — swallow errors silently
+    // Activity is non-critical and must never block the primary write.
   }
 }

@@ -1,112 +1,53 @@
-import { Router, type IRouter } from "express";
-import { eq, and, ilike, SQL } from "drizzle-orm";
-import { db, knowledgeTable } from "@workspace/db";
+import { Router, type IRouter } from 'express';
 import {
-  ListKnowledgeQueryParams,
-  ListKnowledgeResponse,
-  CreateKnowledgeBody,
-  CreateKnowledgeResponse,
-  GetKnowledgeParams,
-  GetKnowledgeResponse,
-  UpdateKnowledgeParams,
-  UpdateKnowledgeBody,
-  UpdateKnowledgeResponse,
-  DeleteKnowledgeParams,
-} from "@workspace/api-zod";
-import { recordActivity } from "../lib/activity";
+  ListKnowledgeQueryParams, ListKnowledgeResponse, CreateKnowledgeBody, CreateKnowledgeResponse,
+  GetKnowledgeParams, GetKnowledgeResponse, UpdateKnowledgeParams, UpdateKnowledgeBody,
+  UpdateKnowledgeResponse, DeleteKnowledgeParams,
+} from '@workspace/api-zod';
+import { createEntity, deleteEntity, entityConfigs, getEntity, listEntities, updateEntity } from '../lib/entity-store';
+import { recordActivity } from '../lib/activity';
 
 const router: IRouter = Router();
+const config = entityConfigs.knowledge;
 
-// Convert stored string array of IDs back to number array for the response
-function parseLinkedIds(row: typeof knowledgeTable.$inferSelect) {
-  return {
-    ...row,
-    linkedPageIds: (row.linkedPageIds ?? []).map(Number).filter((n: number) => !isNaN(n)),
-  };
-}
-
-router.get("/knowledge", async (req, res): Promise<void> => {
+router.get('/knowledge', (req, res) => {
   const query = ListKnowledgeQueryParams.safeParse(req.query);
-  if (!query.success) {
-    res.status(400).json({ error: query.error.message });
-    return;
-  }
-  const { category, search } = query.data;
-  const conditions: SQL[] = [];
-  if (category) conditions.push(eq(knowledgeTable.category, category));
-  if (search) conditions.push(ilike(knowledgeTable.title, `%${search}%`));
-
-  const rows = conditions.length > 0
-    ? await db.select().from(knowledgeTable).where(and(...conditions)).orderBy(knowledgeTable.updatedAt)
-    : await db.select().from(knowledgeTable).orderBy(knowledgeTable.updatedAt);
-
-  res.json(ListKnowledgeResponse.parse(rows.map(parseLinkedIds)));
+  if (!query.success) return void res.status(400).json({ error: query.error.message });
+  const conditions: string[] = [];
+  const params: string[] = [];
+  if (query.data.category) { conditions.push('category = ?'); params.push(query.data.category); }
+  if (query.data.search) { conditions.push('title LIKE ?'); params.push(`%${query.data.search}%`); }
+  res.json(ListKnowledgeResponse.parse(listEntities(config, {
+    where: conditions.join(' AND ') || undefined, params, orderBy: 'updated_at DESC',
+  })));
 });
-
-router.post("/knowledge", async (req, res): Promise<void> => {
+router.post('/knowledge', async (req, res) => {
   const parsed = CreateKnowledgeBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  // Store linkedPageIds as string[] in the DB
-  const data = {
-    ...parsed.data,
-    linkedPageIds: (parsed.data.linkedPageIds ?? []).map(String),
-  };
-  const [row] = await db.insert(knowledgeTable).values(data).returning();
-  await recordActivity("knowledge", row.id, row.title, "created");
-  res.status(201).json(CreateKnowledgeResponse.parse(parseLinkedIds(row)));
+  if (!parsed.success) return void res.status(400).json({ error: parsed.error.message });
+  const row = createEntity(config, parsed.data);
+  if (!row) return void res.status(500).json({ error: 'Knowledge creation failed' });
+  await recordActivity('knowledge', Number(row.id), String(row.title), 'created');
+  res.status(201).json(CreateKnowledgeResponse.parse(row));
 });
-
-router.get("/knowledge/:id", async (req, res): Promise<void> => {
+router.get('/knowledge/:id', (req, res) => {
   const params = GetKnowledgeParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const [row] = await db.select().from(knowledgeTable).where(eq(knowledgeTable.id, params.data.id));
-  if (!row) {
-    res.status(404).json({ error: "Knowledge page not found" });
-    return;
-  }
-  res.json(GetKnowledgeResponse.parse(parseLinkedIds(row)));
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  const row = getEntity(config, params.data.id);
+  if (!row) return void res.status(404).json({ error: 'Knowledge page not found' });
+  res.json(GetKnowledgeResponse.parse(row));
 });
-
-router.patch("/knowledge/:id", async (req, res): Promise<void> => {
+router.patch('/knowledge/:id', (req, res) => {
   const params = UpdateKnowledgeParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const parsed = UpdateKnowledgeBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const data: Record<string, unknown> = { ...parsed.data };
-  if (parsed.data.linkedPageIds != null) {
-    data.linkedPageIds = parsed.data.linkedPageIds.map(String);
-  }
-  const [row] = await db.update(knowledgeTable).set(data).where(eq(knowledgeTable.id, params.data.id)).returning();
-  if (!row) {
-    res.status(404).json({ error: "Knowledge page not found" });
-    return;
-  }
-  res.json(UpdateKnowledgeResponse.parse(parseLinkedIds(row)));
+  const body = UpdateKnowledgeBody.safeParse(req.body);
+  if (!params.success || !body.success) return void res.status(400).json({ error: 'Invalid knowledge update' });
+  const row = updateEntity(config, params.data.id, body.data);
+  if (!row) return void res.status(404).json({ error: 'Knowledge page not found' });
+  res.json(UpdateKnowledgeResponse.parse(row));
 });
-
-router.delete("/knowledge/:id", async (req, res): Promise<void> => {
+router.delete('/knowledge/:id', (req, res) => {
   const params = DeleteKnowledgeParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const [row] = await db.delete(knowledgeTable).where(eq(knowledgeTable.id, params.data.id)).returning();
-  if (!row) {
-    res.status(404).json({ error: "Knowledge page not found" });
-    return;
-  }
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  if (!deleteEntity(config, params.data.id)) return void res.status(404).json({ error: 'Knowledge page not found' });
   res.sendStatus(204);
 });
 

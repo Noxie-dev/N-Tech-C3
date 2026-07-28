@@ -1,7 +1,26 @@
 import { Card, CardContent, CardHeader, CardTitle, Button, Input } from '@/components/shared';
-import { Settings as SettingsIcon, Shield, Server, Palette } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, Server, Palette, Archive, Download, RotateCcw } from 'lucide-react';
+import { useState } from 'react';
 
 export function Settings() {
+  const [vaultStatus, setVaultStatus] = useState('');
+
+  const runVaultAction = async (
+    label: string,
+    action: 'exportVault' | 'backupVault' | 'restoreVault',
+  ) => {
+    if (!window.ntc3Vault) {
+      setVaultStatus(`${label} is available in the desktop app.`);
+      return;
+    }
+    setVaultStatus(`${label} in progress…`);
+    try {
+      const result = await window.ntc3Vault[action]();
+      setVaultStatus(result ? `${label} completed.` : `${label} cancelled.`);
+    } catch {
+      setVaultStatus(`${label} failed. The existing vault was preserved.`);
+    }
+  };
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -41,6 +60,29 @@ export function Settings() {
                 <label className="text-xs font-mono text-muted-foreground uppercase">Version</label>
                 <div className="text-sm font-mono p-2 bg-muted/30 border border-border rounded-md inline-block max-w-md w-full">v0.1.0-alpha.99</div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="border-b border-border/50">
+              <CardTitle className="font-mono text-sm uppercase tracking-wider text-muted-foreground">Vault portability</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-6">
+              <p className="text-sm text-muted-foreground">
+                Export human-readable Markdown and JSON, create a complete compressed backup, or restore a trusted backup.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Button variant="outline" className="gap-2" onClick={() => void runVaultAction('Export', 'exportVault')}>
+                  <Download className="h-4 w-4" /> Export Markdown + JSON
+                </Button>
+                <Button variant="outline" className="gap-2" onClick={() => void runVaultAction('Backup', 'backupVault')}>
+                  <Archive className="h-4 w-4" /> Back up vault
+                </Button>
+                <Button variant="outline" className="gap-2 border-amber-500/50 text-amber-400" onClick={() => void runVaultAction('Restore', 'restoreVault')}>
+                  <RotateCcw className="h-4 w-4" /> Restore backup
+                </Button>
+              </div>
+              {vaultStatus && <p role="status" className="font-mono text-xs text-muted-foreground">{vaultStatus}</p>}
             </CardContent>
           </Card>
 

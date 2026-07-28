@@ -1,0 +1,33 @@
+#1 - Add a rich text editor so stories can be written and formatted inside the app
+What & Why
+Stories currently have a plain textarea for content. The spec calls for a TipTap-powered editor with Markdown support, tables, code blocks, images, and callouts — the full writing experience that makes N-Tech C³ feel like a real authoring tool rather than a form.
+
+Done looks like
+Story detail page (/stories/:id) has a TipTap rich text editor replacing the plain textarea
+Supports: headings, bold/italic, code blocks, blockquotes, bullet/numbered lists, tables, image embeds
+Content is saved as HTML or Markdown to the existing content field on the story
+Editor autosaves or has a Save button with visual feedback
+Knowledge Base pages (/knowledge/:id) use the same editor component
+Relevant files
+artifacts/ntech-c3/src/ — frontend pages and components
+The story content field already exists in the DB schema and API at lib/db/src/schema/stories.ts
+
+
+
+#2 - Let engineers capture evidence by pasting terminal output or dropping files directly
+What & Why
+Evidence capture is the "capture in two clicks" core promise from the spec. The current flow is a manual form. Real capture should support: paste clipboard text as a TerminalOutput evidence item, drag-and-drop files, and a global quick-capture shortcut (Cmd+K or similar).
+
+Done looks like
+A global Quick Capture command palette or floating button accessible from any page
+Paste-to-capture: pasting text anywhere opens a pre-filled evidence form with type=TerminalOutput
+Drag-and-drop a file onto the Evidence page to start a new evidence item
+The quick capture creates an evidence item in 2 clicks or fewer
+Relevant files
+artifacts/ntech-c3/src/ — frontend (add a global keyboard listener and Command component)
+lib/api-spec/openapi.yaml — evidence endpoints already exist, no backend changes needed
+
+
+
+
+

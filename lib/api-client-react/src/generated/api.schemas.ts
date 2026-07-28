@@ -638,6 +638,57 @@ export interface TemplatePatch {
   description?: string | null;
 }
 
+export type SearchResultEntityType = typeof SearchResultEntityType[keyof typeof SearchResultEntityType];
+
+
+export const SearchResultEntityType = {
+  story: 'story',
+  evidence: 'evidence',
+  knowledge: 'knowledge',
+  campaign: 'campaign',
+  asset: 'asset',
+  template: 'template',
+  project: 'project',
+} as const;
+
+export interface SearchResult {
+  entityType: SearchResultEntityType;
+  entityId: number;
+  title: string;
+  snippet: string;
+  path: string;
+}
+
+export type GlobalSearchParams = {
+/**
+ * @minLength 2
+ */
+q: string;
+/**
+ * @minimum 1
+ * @maximum 50
+ */
+limit?: number;
+entityType?: GlobalSearchEntityType;
+projectId?: number;
+status?: string;
+from?: string;
+to?: string;
+};
+
+export type GlobalSearchEntityType = typeof GlobalSearchEntityType[keyof typeof GlobalSearchEntityType];
+
+
+export const GlobalSearchEntityType = {
+  story: 'story',
+  evidence: 'evidence',
+  knowledge: 'knowledge',
+  campaign: 'campaign',
+  asset: 'asset',
+  template: 'template',
+  project: 'project',
+} as const;
+
 export type ListStoriesParams = {
 status?: string;
 /**
@@ -653,6 +704,10 @@ type?: string;
  * @nullable
  */
 storyId?: number | null;
+/**
+ * @nullable
+ */
+projectId?: number | null;
 search?: string;
 };
 

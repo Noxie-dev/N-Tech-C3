@@ -13,7 +13,7 @@ export function CampaignDetail() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
-  const { data: campaign, isLoading } = useGetCampaign(id, { query: { enabled: !!id } });
+  const { data: campaign, isLoading } = useGetCampaign(id);
   const updateCampaign = useUpdateCampaign();
   const deleteCampaign = useDeleteCampaign();
 

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
+  <title id="title">N-Tech C³ cube mark</title>
+  <defs>
+    <linearGradient id="top" x1="18" y1="18" x2="78" y2="44" gradientUnits="userSpaceOnUse"><stop stop-color="#52a8ff"/><stop offset="1" stop-color="#1263df"/></linearGradient>
+    <linearGradient id="left" x1="16" y1="35" x2="47" y2="82" gradientUnits="userSpaceOnUse"><stop stop-color="#2f80ff"/><stop offset="1" stop-color="#0d3f9e"/></linearGradient>
+    <linearGradient id="right" x1="80" y1="35" x2="48" y2="82" gradientUnits="userSpaceOnUse"><stop stop-color="#1488ff"/><stop offset="1" stop-color="#082b71"/></linearGradient>
+  </defs>
+  <path fill="url(#top)" d="M48 8 86 29 48 50 10 29 48 8Z"/>
+  <path fill="url(#left)" d="M10 29 48 50v38L10 67V29Z"/>
+  <path fill="url(#right)" d="M86 29 48 50v38l38-21V29Z"/>
+  <path fill="#090b10" d="m48 22 16 9-16 9-16-9 16-9Zm-24 17 14 8v23l-14-8V39Zm48 0v23l-14 8V47l14-8Z"/>
+  <path fill="#75bdff" d="m48 50 10-5v25L48 76V50Z" opacity=".72"/>
+</svg>

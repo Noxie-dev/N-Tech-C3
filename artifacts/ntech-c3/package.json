@@ -1,13 +1,19 @@
 {
   "name": "@workspace/ntech-c3",
   "version": "0.0.0",
+  "description": "Local-first Engineering Intelligence Operating System for NaniTech",
+  "author": "NaniTech",
   "private": true,
   "type": "module",
+  "main": "electron/main.mjs",
   "scripts": {
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
     "build": "vite build --config vite.config.ts",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "desktop": "pnpm -w run build && electron .",
+    "package:dir": "pnpm -w run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --dir --publish never",
+    "package:mac": "pnpm -w run build && electron-builder --mac dmg zip --publish never"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -72,6 +78,59 @@
     "vaul": "^1.1.2",
     "vite": "catalog:",
     "wouter": "^3.3.5",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "@tiptap/extension-blockquote": "^3.29.1",
+    "@tiptap/extension-code-block-lowlight": "^3.29.1",
+    "@tiptap/extension-image": "^3.29.1",
+    "@tiptap/extension-placeholder": "^3.29.1",
+    "@tiptap/extension-table": "^3.29.1",
+    "@tiptap/extension-table-cell": "^3.29.1",
+    "@tiptap/extension-table-header": "^3.29.1",
+    "@tiptap/extension-table-row": "^3.29.1",
+    "@tiptap/extension-typography": "^3.29.1",
+    "@tiptap/pm": "^3.29.1",
+    "@tiptap/react": "^3.29.1",
+    "@tiptap/starter-kit": "^3.29.1",
+    "lowlight": "^3.3.0"
+  },
+  "build": {
+    "appId": "za.co.nanitech.ntc3",
+    "productName": "N-Tech C3",
+    "asar": true,
+    "files": [
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../api-server/dist",
+        "to": "api"
+      },
+      {
+        "from": "dist/public",
+        "to": "frontend"
+      }
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "mac": {
+      "icon": "build/icon.png",
+      "category": "public.app-category.developer-tools",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "dmg": {
+      "title": "N-Tech C3 ${version}"
+    },
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
   }
 }

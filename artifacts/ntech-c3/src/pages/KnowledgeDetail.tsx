@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useGetKnowledge, useUpdateKnowledge, useDeleteKnowledge, getGetKnowledgeQueryKey } from '@workspace/api-client-react';
-import { Card, Button, Input, Textarea, Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/shared';
+import { Card, Button, Input, Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/shared';
 import { Save, Trash2, ArrowLeft, Clock } from 'lucide-react';
 import { Link, useParams, useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatShortDate } from '@/lib/utils';
+import { RichTextEditor } from '@/components/RichTextEditor';
 
 export function KnowledgeDetail() {
   const params = useParams();
@@ -12,7 +13,7 @@ export function KnowledgeDetail() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
-  const { data: page, isLoading } = useGetKnowledge(id, { query: { enabled: !!id } });
+  const { data: page, isLoading } = useGetKnowledge(id);
   const updateKnowledge = useUpdateKnowledge();
   const deleteKnowledge = useDeleteKnowledge();
 
@@ -105,12 +106,11 @@ export function KnowledgeDetail() {
         </div>
       </div>
 
-      <Card className="flex-1 flex flex-col border-border shadow-sm min-h-0">
-        <Textarea 
+      <Card className="flex-1 flex flex-col border-border shadow-sm min-h-0 overflow-hidden">
+        <RichTextEditor
           value={content}
-          onChange={(e) => { setContent(e.target.value); setIsDirty(true); }}
+          onChange={(html) => { setContent(html); setIsDirty(true); }}
           placeholder="Start typing..."
-          className="flex-1 resize-none border-0 focus-visible:ring-0 bg-transparent p-6 font-mono text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/30 h-full rounded-b-lg"
         />
         <div className="bg-muted/20 border-t border-border/50 p-2 px-4 flex justify-between items-center text-[10px] font-mono text-muted-foreground shrink-0 rounded-b-lg">
           <span>{content.length} bytes</span>

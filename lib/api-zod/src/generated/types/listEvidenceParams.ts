@@ -12,5 +12,9 @@ type?: string;
  * @nullable
  */
 storyId?: number | null;
+/**
+ * @nullable
+ */
+projectId?: number | null;
 search?: string;
 };

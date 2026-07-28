@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useGetStory, useUpdateStory, useDeleteStory, getGetStoryQueryKey } from '@workspace/api-client-react';
-import { Card, CardContent, CardHeader, CardTitle, Button, Input, Textarea, Select, Badge, Skeleton, Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/shared';
+import { Card, CardContent, CardHeader, CardTitle, Button, Input, Textarea, Select, Skeleton, Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/shared';
 import { BookOpen, Save, Trash2, ArrowLeft, Clock, Tag } from 'lucide-react';
 import { Link, useParams, useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatShortDate } from '@/lib/utils';
 import type { StoryPatch } from '@workspace/api-client-react';
+import { RichTextEditor } from '@/components/RichTextEditor';
 
 export function StoryDetail() {
   const params = useParams();
@@ -13,7 +14,7 @@ export function StoryDetail() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
-  const { data: story, isLoading } = useGetStory(id, { query: { enabled: !!id } });
+  const { data: story, isLoading } = useGetStory(id);
   const updateStory = useUpdateStory();
   const deleteStory = useDeleteStory();
 
@@ -103,15 +104,11 @@ export function StoryDetail() {
             </Button>
           </div>
 
-          <Card className="border-border shadow-sm min-h-[500px] flex flex-col">
-            <div className="border-b border-border/50 p-2 flex gap-2 bg-muted/20">
-              <Badge variant="secondary" className="font-mono text-[10px]">CONTENT_EDITOR</Badge>
-            </div>
-            <Textarea 
+          <Card className="border-border shadow-sm min-h-[500px] flex flex-col overflow-hidden">
+            <RichTextEditor
               value={content}
-              onChange={(e) => { setContent(e.target.value); setIsDirty(true); }}
+              onChange={(html) => { setContent(html); setIsDirty(true); }}
               placeholder="Initialize narrative content here..."
-              className="flex-1 resize-none border-0 focus-visible:ring-0 bg-transparent p-6 font-mono text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/30"
             />
           </Card>
 

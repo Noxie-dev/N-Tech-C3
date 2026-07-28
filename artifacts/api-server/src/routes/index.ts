@@ -8,6 +8,7 @@ import evidenceRouter from "./evidence";
 import assetsRouter from "./assets";
 import knowledgeRouter from "./knowledge";
 import templatesRouter from "./templates";
+import searchRouter from "./search";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(evidenceRouter);
 router.use(assetsRouter);
 router.use(knowledgeRouter);
 router.use(templatesRouter);
+router.use(searchRouter);
 
 export default router;

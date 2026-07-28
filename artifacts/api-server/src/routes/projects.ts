@@ -1,81 +1,49 @@
-import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
-import { db, projectsTable } from "@workspace/db";
+import { Router, type IRouter } from 'express';
 import {
-  ListProjectsResponse,
-  CreateProjectBody,
-  CreateProjectResponse,
-  GetProjectParams,
-  GetProjectResponse,
-  UpdateProjectParams,
-  UpdateProjectBody,
-  UpdateProjectResponse,
-  DeleteProjectParams,
-} from "@workspace/api-zod";
-import { recordActivity } from "../lib/activity";
+  ListProjectsResponse, CreateProjectBody, CreateProjectResponse,
+  GetProjectParams, GetProjectResponse, UpdateProjectParams, UpdateProjectBody,
+  UpdateProjectResponse, DeleteProjectParams,
+} from '@workspace/api-zod';
+import { createEntity, deleteEntity, entityConfigs, getEntity, listEntities, updateEntity } from '../lib/entity-store';
+import { recordActivity } from '../lib/activity';
 
 const router: IRouter = Router();
+const config = entityConfigs.projects;
 
-router.get("/projects", async (_req, res): Promise<void> => {
-  const rows = await db.select().from(projectsTable).orderBy(projectsTable.createdAt);
-  res.json(ListProjectsResponse.parse(rows));
+router.get('/projects', (_req, res) => {
+  res.json(ListProjectsResponse.parse(listEntities(config, { orderBy: 'created_at DESC' })));
 });
 
-router.post("/projects", async (req, res): Promise<void> => {
+router.post('/projects', async (req, res) => {
   const parsed = CreateProjectBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const [row] = await db.insert(projectsTable).values(parsed.data).returning();
-  await recordActivity("project", row.id, row.name, "created");
+  if (!parsed.success) return void res.status(400).json({ error: parsed.error.message });
+  const row = createEntity(config, parsed.data);
+  if (!row) return void res.status(500).json({ error: 'Project creation failed' });
+  await recordActivity('project', Number(row.id), String(row.name), 'created');
   res.status(201).json(CreateProjectResponse.parse(row));
 });
 
-router.get("/projects/:id", async (req, res): Promise<void> => {
+router.get('/projects/:id', (req, res) => {
   const params = GetProjectParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const [row] = await db.select().from(projectsTable).where(eq(projectsTable.id, params.data.id));
-  if (!row) {
-    res.status(404).json({ error: "Project not found" });
-    return;
-  }
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  const row = getEntity(config, params.data.id);
+  if (!row) return void res.status(404).json({ error: 'Project not found' });
   res.json(GetProjectResponse.parse(row));
 });
 
-router.patch("/projects/:id", async (req, res): Promise<void> => {
+router.patch('/projects/:id', (req, res) => {
   const params = UpdateProjectParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const parsed = UpdateProjectBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const [row] = await db.update(projectsTable).set(parsed.data).where(eq(projectsTable.id, params.data.id)).returning();
-  if (!row) {
-    res.status(404).json({ error: "Project not found" });
-    return;
-  }
+  const body = UpdateProjectBody.safeParse(req.body);
+  if (!params.success || !body.success) return void res.status(400).json({ error: 'Invalid project update' });
+  const row = updateEntity(config, params.data.id, body.data);
+  if (!row) return void res.status(404).json({ error: 'Project not found' });
   res.json(UpdateProjectResponse.parse(row));
 });
 
-router.delete("/projects/:id", async (req, res): Promise<void> => {
+router.delete('/projects/:id', (req, res) => {
   const params = DeleteProjectParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const [row] = await db.delete(projectsTable).where(eq(projectsTable.id, params.data.id)).returning();
-  if (!row) {
-    res.status(404).json({ error: "Project not found" });
-    return;
-  }
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  if (!deleteEntity(config, params.data.id)) return void res.status(404).json({ error: 'Project not found' });
   res.sendStatus(204);
 });
 

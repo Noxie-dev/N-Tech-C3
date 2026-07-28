@@ -1,50 +1,40 @@
-import { Router, type IRouter } from "express";
-import { count, desc, eq } from "drizzle-orm";
-import { db, storiesTable, campaignsTable, evidenceTable, assetsTable, knowledgeTable, activityTable } from "@workspace/db";
-import { GetDashboardStatsResponse, GetRecentActivityResponse } from "@workspace/api-zod";
+import { Router, type IRouter } from 'express';
+import { GetDashboardStatsResponse, GetRecentActivityResponse } from '@workspace/api-zod';
+import { all, get } from '@workspace/db';
 
 const router: IRouter = Router();
 
-router.get("/dashboard/stats", async (_req, res): Promise<void> => {
-  const [storyCount] = await db.select({ count: count() }).from(storiesTable);
-  const [campaignCount] = await db.select({ count: count() }).from(campaignsTable);
-  const [evidenceCount] = await db.select({ count: count() }).from(evidenceTable);
-  const [assetCount] = await db.select({ count: count() }).from(assetsTable);
-  const [knowledgeCount] = await db.select({ count: count() }).from(knowledgeTable);
+function count(table: string, where = '', params: Array<string | number> = []) {
+  const row = get(`SELECT COUNT(*) AS count FROM ${table}${where ? ` WHERE ${where}` : ''}`, params);
+  return Number(row?.count ?? 0);
+}
 
-  const [activeCount] = await db
-    .select({ count: count() })
-    .from(campaignsTable)
-    .where(eq(campaignsTable.status, "Active"));
-
-  // Stories by status
-  const allStories = await db.select({ status: storiesTable.status }).from(storiesTable);
-  const statusMap: Record<string, number> = {};
-  for (const s of allStories) {
-    statusMap[s.status] = (statusMap[s.status] ?? 0) + 1;
-  }
-  const storiesByStatus = Object.entries(statusMap).map(([status, cnt]) => ({ status, count: cnt }));
-
-  const stats = {
-    totalStories: storyCount?.count ?? 0,
-    totalCampaigns: campaignCount?.count ?? 0,
-    totalEvidence: evidenceCount?.count ?? 0,
-    totalAssets: assetCount?.count ?? 0,
-    totalKnowledge: knowledgeCount?.count ?? 0,
-    activeCampaigns: activeCount?.count ?? 0,
+router.get('/dashboard/stats', (_req, res) => {
+  const storiesByStatus = all('SELECT status, COUNT(*) AS count FROM stories GROUP BY status')
+    .map((row) => ({ status: String(row.status), count: Number(row.count) }));
+  res.json(GetDashboardStatsResponse.parse({
+    totalStories: count('stories'),
+    totalCampaigns: count('campaigns'),
+    totalEvidence: count('evidence'),
+    totalAssets: count('assets'),
+    totalKnowledge: count('knowledge'),
+    activeCampaigns: count('campaigns', 'status = ?', ['Active']),
     storiesByStatus,
-  };
-
-  res.json(GetDashboardStatsResponse.parse(stats));
+  }));
 });
 
-router.get("/activity", async (_req, res): Promise<void> => {
-  const items = await db
-    .select()
-    .from(activityTable)
-    .orderBy(desc(activityTable.createdAt))
-    .limit(30);
-
+router.get('/activity', (_req, res) => {
+  const items = all(`
+    SELECT id, entity_type, entity_id, entity_title, action, created_at
+    FROM activity ORDER BY created_at DESC LIMIT 30
+  `).map((row) => ({
+    id: Number(row.id),
+    entityType: row.entity_type,
+    entityId: Number(row.entity_id),
+    entityTitle: row.entity_title,
+    action: row.action,
+    createdAt: row.created_at,
+  }));
   res.json(GetRecentActivityResponse.parse(items));
 });
 
