@@ -1,0 +1,1422 @@
+Before writing code, I'd actually make one strategic adjustment.
+
+Don't build **N-Tech C³** as a social media manager.
+
+Build it as an **Engineering Content Operating System (ECOS)**.
+
+That subtle change keeps the scope focused while giving you room to grow. Version 1 should be optimized for **one user (you)**, **offline**, **fast**, and **beautiful**. Every feature should reduce the friction between *doing engineering* and *documenting engineering*.
+
+Below is the specification I'd hand to a development team.
+
+---
+
+# Project Specification (PS)
+
+# N-Tech C³
+
+## Engineering Content Operating System
+
+**Codename**
+
+N-Tech C³
+
+**Version**
+
+v0.1 Alpha
+
+**Target Platform**
+
+Native Desktop (Electron)
+
+**Architecture**
+
+Local First
+
+**Primary User**
+
+NaniTech Engineering Team (currently single-user)
+
+---
+
+# Vision
+
+N-Tech C³ is a local-first Engineering Content Operating System designed to transform software engineering activities into structured, reusable, evidence-backed content.
+
+Unlike traditional content management systems that begin with publishing, N-Tech C³ begins with engineering work. Every repository audit, architecture decision, screenshot, benchmark, meeting note, and development milestone becomes searchable evidence that can later be curated into articles, blog posts, social media campaigns, presentations, and documentation.
+
+The application serves as the single source of truth for NaniTech's engineering storytelling.
+
+---
+
+# Core Philosophy
+
+```
+Capture
+
+↓
+
+Organize
+
+↓
+
+Understand
+
+↓
+
+Create
+
+↓
+
+Publish
+```
+
+NOT
+
+```
+Open editor
+
+↓
+
+Try think of something
+
+↓
+
+Write post
+```
+
+---
+
+# Goals
+
+The system shall
+
+• document engineering work
+
+• eliminate duplicate effort
+
+• centralize engineering knowledge
+
+• create reusable content
+
+• maintain evidence
+
+• support campaign planning
+
+• operate completely offline
+
+---
+
+# Non Goals
+
+Version 1 will NOT include
+
+Authentication
+
+User accounts
+
+Cloud sync
+
+Subscriptions
+
+Publishing APIs
+
+Analytics from social media
+
+Comments
+
+Multi-user collaboration
+
+AI agents
+
+Notifications
+
+Email marketing
+
+CRM
+
+These belong in future milestones.
+
+---
+
+# High Level Modules
+
+```
+Dashboard
+
+Stories
+
+Campaigns
+
+Calendar
+
+Evidence Vault
+
+Knowledge Base
+
+Assets
+
+Templates
+
+Workspace
+
+Exports
+
+Settings
+```
+
+---
+
+# Folder Structure
+
+```
+N-TechC3/
+
+database/
+
+stories/
+
+campaigns/
+
+knowledge/
+
+evidence/
+
+assets/
+
+exports/
+
+drafts/
+
+templates/
+
+backups/
+
+logs/
+
+settings/
+```
+
+Everything remains human-readable where practical. Markdown and structured JSON are preferred for content portability, while SQLite stores indexes and relationships.
+
+---
+
+# Navigation
+
+```
+Home
+
+Dashboard
+
+Stories
+
+Campaigns
+
+Calendar
+
+Evidence Vault
+
+Knowledge
+
+Assets
+
+Templates
+
+Exports
+
+Settings
+```
+
+---
+
+# Dashboard
+
+Displays
+
+Today's focus
+
+Active campaign
+
+Recent captures
+
+Recent stories
+
+Queue
+
+Calendar
+
+Repository snapshots
+
+Productivity metrics
+
+Recent exports
+
+Quick capture
+
+Quick story
+
+---
+
+# Stories Module
+
+The heart of the application.
+
+Each Story represents
+
+One engineering concept.
+
+Example
+
+```
+Evidence-Based Development
+
+Status
+
+Research
+
+Idea
+
+Draft
+
+Review
+
+Approved
+
+Published
+
+Archived
+```
+
+Each story contains
+
+Overview
+
+Summary
+
+Long-form notes
+
+Tasks
+
+Evidence
+
+Assets
+
+Related campaigns
+
+Related stories
+
+Platform outputs
+
+Version history
+
+---
+
+# Story Metadata
+
+```
+Title
+
+Slug
+
+Summary
+
+Category
+
+Status
+
+Created
+
+Modified
+
+Tags
+
+Priority
+
+Audience
+
+Estimated Read Time
+
+Difficulty
+
+Related Projects
+
+Related Repositories
+```
+
+---
+
+# Campaign Module
+
+A campaign groups related stories.
+
+Example
+
+```
+Campaign
+
+Evidence-Based Development
+
+Duration
+
+8 Weeks
+
+Objective
+
+Introduce NaniTech Engineering Philosophy
+
+Stories
+
+12
+
+Assets
+
+47
+
+Platforms
+
+LinkedIn
+
+Blog
+
+Facebook
+
+X
+```
+
+Campaign dashboard
+
+Progress
+
+Publishing queue
+
+Content coverage
+
+Missing assets
+
+Completion percentage
+
+---
+
+# Evidence Vault
+
+This is the flagship feature.
+
+Everything that supports engineering decisions lives here.
+
+Supported evidence
+
+Repository audits
+
+Screenshots
+
+Terminal output
+
+Git logs
+
+Performance benchmarks
+
+Architecture diagrams
+
+Meeting notes
+
+Research PDFs
+
+Images
+
+Videos
+
+Voice recordings
+
+Code snippets
+
+Issue reports
+
+Build logs
+
+Each evidence item stores
+
+Title
+
+Type
+
+Source
+
+Project
+
+Repository
+
+Tags
+
+Date
+
+Related stories
+
+Checksum
+
+Notes
+
+Preview
+
+---
+
+# Evidence Relationships
+
+One evidence item can belong to
+
+Multiple stories
+
+Multiple campaigns
+
+Multiple projects
+
+No duplication.
+
+Only references.
+
+---
+
+# Asset Library
+
+Stores
+
+Images
+
+Icons
+
+Illustrations
+
+Logos
+
+Videos
+
+SVG
+
+PDF
+
+Brand Assets
+
+Screen recordings
+
+Organized by
+
+Project
+
+Campaign
+
+Story
+
+Tags
+
+---
+
+# Knowledge Base
+
+Personal engineering wiki.
+
+Example
+
+```
+Development
+
+Evidence-Based Development
+
+Documentation First
+
+Source Of Truth
+
+AI Assisted Development
+
+Git Workflow
+
+Architecture
+
+Testing
+
+Security
+```
+
+Each page supports
+
+Markdown
+
+Tables
+
+Images
+
+Links
+
+Code
+
+References
+
+Attachments
+
+---
+
+# Templates
+
+Reusable templates
+
+LinkedIn
+
+Blog
+
+X Thread
+
+Facebook
+
+Release Notes
+
+Case Study
+
+Engineering Journal
+
+Repository Audit
+
+Architecture Review
+
+Sprint Review
+
+Retrospective
+
+---
+
+# Calendar
+
+Month
+
+Week
+
+Agenda
+
+Supports
+
+Drag and drop
+
+Publishing schedule
+
+Campaign timeline
+
+Milestones
+
+Engineering events
+
+---
+
+# Queue
+
+Publishing queue
+
+```
+Ready
+
+Waiting
+
+Needs Review
+
+Blocked
+
+Completed
+```
+
+Although Version 1 exports manually, the queue models future automated publishing.
+
+---
+
+# Workspace
+
+Three-panel layout
+
+```
+Left
+
+Explorer
+
+Center
+
+Editor
+
+Right
+
+Properties
+
+Evidence
+
+Assets
+
+References
+```
+
+Inspired by
+
+VS Code
+
+Notion
+
+Obsidian
+
+---
+
+# Search
+
+Global search
+
+Searches
+
+Stories
+
+Campaigns
+
+Knowledge
+
+Evidence
+
+Assets
+
+Templates
+
+Supports
+
+Full text
+
+Tags
+
+Dates
+
+Projects
+
+Status
+
+SQLite FTS5 powers indexing.
+
+---
+
+# Export Engine
+
+Export formats
+
+Markdown
+
+HTML
+
+PDF
+
+DOCX
+
+Plain Text
+
+JSON
+
+Future versions will add direct publishing connectors.
+
+---
+
+# Version History
+
+Every save creates
+
+Timestamp
+
+Revision
+
+Change summary
+
+Diff
+
+Rollback capability
+
+---
+
+# Local Backup
+
+Automatic
+
+Daily
+
+Weekly
+
+Manual
+
+Compressed archives
+
+Restore wizard
+
+---
+
+# Repository Integration
+
+Each Story may reference
+
+Repository
+
+Branch
+
+Commit
+
+Issue
+
+Pull Request
+
+Current implementation is manual, with optional automation later.
+
+---
+
+# Design Language
+
+Theme
+
+Dark-first
+
+Accent
+
+Electric Blue
+
+Typography
+
+Inter
+
+Visual Style
+
+Modern IDE
+
+Glass panels
+
+Minimal chrome
+
+Low distraction
+
+---
+
+# Recommended Tech Stack
+
+| Layer         | Technology                      |
+| ------------- | ------------------------------- |
+| Desktop       | Electron                        |
+| Frontend      | React 19                        |
+| Language      | TypeScript                      |
+| Styling       | Tailwind CSS v4                 |
+| Components    | Radix UI                        |
+| State         | Zustand                         |
+| Data Fetching | TanStack Query (local adapters) |
+| Rich Editor   | TipTap                          |
+| Database      | SQLite                          |
+| ORM           | Drizzle ORM                     |
+| Search        | SQLite FTS5                     |
+| File Storage  | Local filesystem                |
+| Markdown      | MDX-compatible                  |
+| Validation    | Zod                             |
+| Charts        | Recharts                        |
+| Packaging     | Electron Builder                |
+
+---
+
+# Development Milestones
+
+## Day 1 — Foundation
+
+* Project scaffold
+* Electron shell
+* React UI
+* Tailwind configuration
+* SQLite database
+* Application layout
+* Navigation
+* Theme system
+* Local storage abstraction
+
+**Deliverable:** A running desktop application with persistent local storage and navigation.
+
+---
+
+## Day 2 — Core Content Engine
+
+* Stories CRUD
+* Campaigns CRUD
+* Evidence Vault CRUD
+* Asset Library
+* Knowledge Base
+* Search
+* Relationships between entities
+
+**Deliverable:** The complete content model with searchable, linked data.
+
+---
+
+## Day 3 — Productivity Features
+
+* Calendar
+* Publishing Queue
+* Templates
+* Export engine (Markdown/HTML/PDF)
+* Dashboard metrics
+* Backup system
+* Version history
+* Settings
+
+**Deliverable:** A feature-complete Alpha suitable for daily use.
+
+---
+
+# Success Criteria
+
+At the end of three days, you should be able to:
+
+1. Capture a repository audit and save it as evidence.
+2. Create a story such as **"Evidence-Based Development"**.
+3. Link screenshots, terminal logs, and diagrams as supporting evidence.
+4. Organize the story into a campaign.
+5. Schedule related posts in the content calendar.
+6. Generate platform-specific drafts.
+7. Export the article as Markdown, HTML, or PDF for publishing.
+8. Search your entire engineering knowledge base instantly.
+
+---
+
+## Long-term Vision
+
+While this project starts as an internal productivity tool, its architecture should anticipate growth into a complete **Engineering Knowledge & Content Platform**. Future milestones can introduce optional AI-assisted drafting, Git integration, automated evidence capture, cloud synchronization, collaborative workspaces, and direct publishing to platforms like LinkedIn, X, Facebook, and your website—without requiring changes to the core domain model established in Version 1. By keeping the data model platform-agnostic and local-first from the outset, you'll have a solid foundation that scales naturally as N-Tech C³ evolves.
+Given your existing ecosystem and the fact that this is **your** daily tool, I'd optimize for **developer velocity**, **maintainability**, and **future scalability** rather than trying to minimize dependencies.
+
+I would also make one architectural decision that will save you months later:
+
+> **Build the Desktop app exactly like a SaaS app, except swap the backend API for a local service layer.**
+
+That means when you eventually build the online version, 80–90% of your code can be reused.
+
+---
+
+# Recommended Tech Stack
+
+## Frontend
+
+| Component     | Technology               | Why                                            |
+| ------------- | ------------------------ | ---------------------------------------------- |
+| Framework     | React 19                 | You're already proficient with it.             |
+| Language      | TypeScript 5.x           | Full type safety across the app.               |
+| Desktop Shell | Electron 38+             | Mature ecosystem, Node integration, packaging. |
+| Build Tool    | Vite                     | Fast HMR and Electron support.                 |
+| Routing       | Wouter                   | Lightweight and matches your existing stack.   |
+| Styling       | Tailwind CSS v4          | Consistent with your projects.                 |
+| Components    | Radix UI                 | Accessible primitives.                         |
+| Variants      | class-variance-authority | Clean component variants.                      |
+| Icons         | Lucide React             | Lightweight and modern.                        |
+| Animation     | Framer Motion            | Subtle transitions and layout animations.      |
+
+---
+
+# State Management
+
+| Purpose           | Library         |
+| ----------------- | --------------- |
+| UI State          | Zustand         |
+| Server/Data Cache | TanStack Query  |
+| Forms             | React Hook Form |
+| Validation        | Zod             |
+
+Even though it's local-first, I'd still use TanStack Query.
+
+Instead of calling HTTP:
+
+```text
+Query
+
+↓
+
+Local Service
+
+↓
+
+SQLite
+```
+
+Later:
+
+```text
+Query
+
+↓
+
+tRPC
+
+↓
+
+Cloud API
+
+↓
+
+Postgres
+```
+
+No UI rewrite.
+
+---
+
+# Desktop Layer
+
+| Component       | Technology            |
+| --------------- | --------------------- |
+| Runtime         | Electron              |
+| IPC             | electron-safe-ipc     |
+| File Access     | Node fs/promises      |
+| Background Jobs | Electron Main Process |
+| Packaging       | electron-builder      |
+
+---
+
+# Database
+
+I would **not** use JSON files as the primary storage.
+
+Instead:
+
+```text
+SQLite
+
++
+
+Markdown
+
++
+
+Filesystem
+```
+
+SQLite stores metadata.
+
+Markdown stores content.
+
+Filesystem stores assets.
+
+Exactly like Obsidian.
+
+---
+
+## Database
+
+SQLite
+
+Using
+
+Drizzle ORM
+
+Benefits
+
+* typed schema
+* migrations
+* future PostgreSQL compatibility
+
+Example
+
+```text
+stories
+
+campaigns
+
+evidence
+
+assets
+
+knowledge
+
+tags
+
+projects
+
+relationships
+
+templates
+```
+
+---
+
+# Search
+
+SQLite FTS5
+
+No external search engine.
+
+Supports
+
+* instant search
+* ranking
+* fuzzy lookup
+
+---
+
+# Rich Editor
+
+## TipTap
+
+Reasons
+
+Markdown support
+
+Tables
+
+Images
+
+Callouts
+
+Code blocks
+
+Embeds
+
+Future AI plugins
+
+Version history
+
+Huge ecosystem.
+
+---
+
+# Charts
+
+Recharts
+
+Only for
+
+Dashboard
+
+Campaign progress
+
+Writing statistics
+
+Publishing metrics
+
+---
+
+# Markdown
+
+Store every document as
+
+```text
+.md
+```
+
+Metadata
+
+```yaml
+---
+title:
+slug:
+campaign:
+tags:
+status:
+---
+```
+
+This makes everything Git-friendly.
+
+---
+
+# Images
+
+Sharp
+
+Handles
+
+Resize
+
+Compression
+
+Thumbnail generation
+
+Metadata
+
+---
+
+# PDF Export
+
+I'd use
+
+```text
+React PDF
+```
+
+instead of HTML printing.
+
+Produces cleaner exports.
+
+---
+
+# Backup
+
+Compression
+
+```text
+zip
+
+tar.gz
+```
+
+Incremental snapshots.
+
+---
+
+# AI Layer
+
+Do **not** bake AI directly into the editor.
+
+Create an abstraction.
+
+```text
+AIProvider
+
+↓
+
+OpenAI
+
+Claude
+
+Gemini
+
+Ollama
+
+GPT-OSS
+
+Future
+```
+
+Then changing providers becomes trivial.
+
+---
+
+# Local Service Layer
+
+Instead of
+
+```text
+UI
+
+↓
+
+Database
+```
+
+Use
+
+```text
+UI
+
+↓
+
+React Query
+
+↓
+
+Service
+
+↓
+
+Repository
+
+↓
+
+SQLite
+```
+
+Example
+
+```text
+StoryService
+
+CampaignService
+
+KnowledgeService
+
+EvidenceService
+
+AssetService
+
+ExportService
+
+CalendarService
+```
+
+This mirrors what will eventually become your backend.
+
+---
+
+# File Structure
+
+```text
+n-tech-c3/
+│
+├── apps/
+│   └── desktop/
+│
+├── packages/
+│   ├── ui/
+│   ├── database/
+│   ├── services/
+│   ├── shared/
+│   ├── editor/
+│   ├── exporters/
+│   ├── ai/
+│   ├── search/
+│   ├── filesystem/
+│   └── validation/
+│
+├── content/
+│
+├── assets/
+│
+├── backups/
+│
+├── templates/
+│
+└── docs/
+```
+
+Notice this is already a monorepo.
+
+Adding
+
+```text
+apps/web
+```
+
+later becomes straightforward.
+
+---
+
+# Future Server Migration
+
+Today
+
+```text
+Desktop
+
+↓
+
+SQLite
+```
+
+Later
+
+```text
+Desktop
+
+↓
+
+tRPC
+
+↓
+
+PostgreSQL
+```
+
+or
+
+```text
+Desktop
+
+↓
+
+Cloud API
+
+↓
+
+SQLite Sync
+
+↓
+
+Postgres
+```
+
+No changes to the React components.
+
+---
+
+# Internal Architecture
+
+I'd use a **Domain-Driven** approach rather than organizing by file type.
+
+```text
+src/
+
+domains/
+
+story/
+
+campaign/
+
+knowledge/
+
+evidence/
+
+asset/
+
+calendar/
+
+template/
+
+settings/
+
+dashboard/
+```
+
+Each domain contains
+
+```text
+components/
+
+hooks/
+
+services/
+
+repository/
+
+schemas/
+
+types/
+
+utils/
+
+pages/
+```
+
+This scales much better than having separate global `components`, `hooks`, and `utils` folders.
+
+---
+
+# Performance Targets
+
+| Metric           | Goal         |
+| ---------------- | ------------ |
+| Cold startup     | <2 seconds   |
+| Search response  | <50 ms       |
+| Story open       | <100 ms      |
+| Save latency     | <30 ms       |
+| Dashboard render | <200 ms      |
+| Memory usage     | <300 MB idle |
+
+---
+
+# My biggest recommendation
+
+Since this is your **personal engineering operating system**, I'd invest in a **plugin architecture from day one**.
+
+Everything—Git integration, AI providers, exporters, importers, future social publishing, even dashboard widgets—should be plugins behind stable interfaces.
+
+```text
+Core
+│
+├── Story Engine
+├── Campaign Engine
+├── Evidence Engine
+├── Knowledge Engine
+├── Calendar Engine
+└── Plugin Manager
+     │
+     ├── Markdown Export
+     ├── PDF Export
+     ├── LinkedIn (future)
+     ├── Facebook (future)
+     ├── X (future)
+     ├── Git (future)
+     ├── Ollama
+     ├── OpenAI
+     └── Canva (future)
+```
+
+That one decision will keep N-Tech C³ from becoming tightly coupled as it grows from a three-day MVP into a long-term internal platform. It also aligns with your broader engineering philosophy: **keep the core stable, and let capabilities evolve through well-defined, replaceable modules.**

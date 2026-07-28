@@ -3,20 +3,36 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: N-Tech C³ Engineering Intelligence Operating System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: stories
+    description: Story operations
+  - name: campaigns
+    description: Campaign operations
+  - name: evidence
+    description: Evidence vault operations
+  - name: assets
+    description: Asset library operations
+  - name: knowledge
+    description: Knowledge base operations
+  - name: templates
+    description: Template operations
+  - name: projects
+    description: Project operations
+  - name: dashboard
+    description: Dashboard and analytics operations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +40,758 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # Dashboard
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get dashboard statistics
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recent activity feed
+      responses:
+        "200":
+          description: Recent activity items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  # Projects
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all projects
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectPatch"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  # Stories
+  /stories:
+    get:
+      operationId: listStories
+      tags: [stories]
+      summary: List stories
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: campaignId
+          in: query
+          schema:
+            type: ["number", "null"]
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of stories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Story"
+    post:
+      operationId: createStory
+      tags: [stories]
+      summary: Create a story
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+
+  /stories/{id}:
+    get:
+      operationId: getStory
+      tags: [stories]
+      summary: Get a story
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Story
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateStory
+      tags: [stories]
+      summary: Update a story
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryPatch"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteStory
+      tags: [stories]
+      summary: Delete a story
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /stories/by-status:
+    get:
+      operationId: getStoriesByStatus
+      tags: [stories]
+      summary: Get story counts grouped by status
+      responses:
+        "200":
+          description: Story counts by status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StatusCount"
+
+  # Campaigns
+  /campaigns:
+    get:
+      operationId: listCampaigns
+      tags: [campaigns]
+      summary: List campaigns
+      responses:
+        "200":
+          description: List of campaigns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Campaign"
+    post:
+      operationId: createCampaign
+      tags: [campaigns]
+      summary: Create a campaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+
+  /campaigns/{id}:
+    get:
+      operationId: getCampaign
+      tags: [campaigns]
+      summary: Get a campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateCampaign
+      tags: [campaigns]
+      summary: Update a campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignPatch"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteCampaign
+      tags: [campaigns]
+      summary: Delete a campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  # Evidence Vault
+  /evidence:
+    get:
+      operationId: listEvidence
+      tags: [evidence]
+      summary: List evidence items
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: storyId
+          in: query
+          schema:
+            type: ["number", "null"]
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of evidence
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Evidence"
+    post:
+      operationId: createEvidence
+      tags: [evidence]
+      summary: Create an evidence item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvidenceInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evidence"
+
+  /evidence/{id}:
+    get:
+      operationId: getEvidence
+      tags: [evidence]
+      summary: Get an evidence item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Evidence item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evidence"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateEvidence
+      tags: [evidence]
+      summary: Update an evidence item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvidencePatch"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evidence"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteEvidence
+      tags: [evidence]
+      summary: Delete an evidence item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  # Assets
+  /assets:
+    get:
+      operationId: listAssets
+      tags: [assets]
+      summary: List assets
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: storyId
+          in: query
+          schema:
+            type: ["number", "null"]
+      responses:
+        "200":
+          description: List of assets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Asset"
+    post:
+      operationId: createAsset
+      tags: [assets]
+      summary: Create an asset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssetInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+
+  /assets/{id}:
+    get:
+      operationId: getAsset
+      tags: [assets]
+      summary: Get an asset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Asset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateAsset
+      tags: [assets]
+      summary: Update an asset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssetPatch"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteAsset
+      tags: [assets]
+      summary: Delete an asset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  # Knowledge Base
+  /knowledge:
+    get:
+      operationId: listKnowledge
+      tags: [knowledge]
+      summary: List knowledge base pages
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of knowledge pages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/KnowledgePage"
+    post:
+      operationId: createKnowledge
+      tags: [knowledge]
+      summary: Create a knowledge page
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KnowledgeInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KnowledgePage"
+
+  /knowledge/{id}:
+    get:
+      operationId: getKnowledge
+      tags: [knowledge]
+      summary: Get a knowledge page
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Knowledge page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KnowledgePage"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateKnowledge
+      tags: [knowledge]
+      summary: Update a knowledge page
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KnowledgePatch"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KnowledgePage"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteKnowledge
+      tags: [knowledge]
+      summary: Delete a knowledge page
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  # Templates
+  /templates:
+    get:
+      operationId: listTemplates
+      tags: [templates]
+      summary: List templates
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Template"
+    post:
+      operationId: createTemplate
+      tags: [templates]
+      summary: Create a template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TemplateInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+
+  /templates/{id}:
+    get:
+      operationId: getTemplate
+      tags: [templates]
+      summary: Get a template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateTemplate
+      tags: [templates]
+      summary: Update a template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TemplatePatch"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteTemplate
+      tags: [templates]
+      summary: Delete a template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +802,559 @@ components:
       required:
         - status
 
+    # Dashboard
+    DashboardStats:
+      type: object
+      required: [totalStories, totalCampaigns, totalEvidence, totalAssets, totalKnowledge, storiesByStatus, activeCampaigns]
+      properties:
+        totalStories:
+          type: number
+        totalCampaigns:
+          type: number
+        totalEvidence:
+          type: number
+        totalAssets:
+          type: number
+        totalKnowledge:
+          type: number
+        activeCampaigns:
+          type: number
+        storiesByStatus:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusCount"
+
+    StatusCount:
+      type: object
+      required: [status, count]
+      properties:
+        status:
+          type: string
+        count:
+          type: number
+
+    ActivityItem:
+      type: object
+      required: [id, entityType, entityId, entityTitle, action, createdAt]
+      properties:
+        id:
+          type: number
+        entityType:
+          type: string
+        entityId:
+          type: number
+        entityTitle:
+          type: string
+        action:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    # Projects
+    Project:
+      type: object
+      required: [id, name, createdAt, updatedAt]
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        color:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ProjectInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        color:
+          type: string
+
+    ProjectPatch:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        color:
+          type: ["string", "null"]
+
+    # Stories
+    Story:
+      type: object
+      required: [id, title, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: number
+        title:
+          type: string
+        slug:
+          type: ["string", "null"]
+        summary:
+          type: ["string", "null"]
+        content:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [Research, Idea, Draft, Review, Approved, Published, Archived]
+        category:
+          type: ["string", "null"]
+        priority:
+          type: ["string", "null"]
+          enum: [Low, Medium, High, Critical, null]
+        audience:
+          type: ["string", "null"]
+        difficulty:
+          type: ["string", "null"]
+          enum: [Beginner, Intermediate, Advanced, null]
+        tags:
+          type: array
+          items:
+            type: string
+        projectId:
+          type: ["number", "null"]
+        campaignId:
+          type: ["number", "null"]
+        evidenceScore:
+          type: ["number", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    StoryInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        summary:
+          type: string
+        content:
+          type: string
+        status:
+          type: string
+          enum: [Research, Idea, Draft, Review, Approved, Published, Archived]
+        category:
+          type: string
+        priority:
+          type: string
+          enum: [Low, Medium, High, Critical]
+        audience:
+          type: string
+        difficulty:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+        tags:
+          type: array
+          items:
+            type: string
+        projectId:
+          type: ["number", "null"]
+        campaignId:
+          type: ["number", "null"]
+
+    StoryPatch:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        summary:
+          type: ["string", "null"]
+        content:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [Research, Idea, Draft, Review, Approved, Published, Archived]
+        category:
+          type: ["string", "null"]
+        priority:
+          type: ["string", "null"]
+          enum: [Low, Medium, High, Critical, null]
+        audience:
+          type: ["string", "null"]
+        difficulty:
+          type: ["string", "null"]
+          enum: [Beginner, Intermediate, Advanced, null]
+        tags:
+          type: array
+          items:
+            type: string
+        projectId:
+          type: ["number", "null"]
+        campaignId:
+          type: ["number", "null"]
+
+    # Campaigns
+    Campaign:
+      type: object
+      required: [id, title, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: number
+        title:
+          type: string
+        objective:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [Planning, Active, Paused, Completed, Archived]
+        platforms:
+          type: array
+          items:
+            type: string
+        durationWeeks:
+          type: ["number", "null"]
+        storyCount:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CampaignInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        objective:
+          type: string
+        status:
+          type: string
+          enum: [Planning, Active, Paused, Completed, Archived]
+        platforms:
+          type: array
+          items:
+            type: string
+        durationWeeks:
+          type: number
+
+    CampaignPatch:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        objective:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [Planning, Active, Paused, Completed, Archived]
+        platforms:
+          type: array
+          items:
+            type: string
+        durationWeeks:
+          type: ["number", "null"]
+
+    # Evidence
+    Evidence:
+      type: object
+      required: [id, title, type, createdAt, updatedAt]
+      properties:
+        id:
+          type: number
+        title:
+          type: string
+        type:
+          type: string
+          enum: [Screenshot, TerminalOutput, GitLog, Benchmark, Diagram, MeetingNotes, ResearchPDF, Image, Video, VoiceRecording, CodeSnippet, IssueReport, BuildLog, RepositoryAudit, Other]
+        source:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        content:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        storyId:
+          type: ["number", "null"]
+        projectId:
+          type: ["number", "null"]
+        repository:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EvidenceInput:
+      type: object
+      required: [title, type]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          enum: [Screenshot, TerminalOutput, GitLog, Benchmark, Diagram, MeetingNotes, ResearchPDF, Image, Video, VoiceRecording, CodeSnippet, IssueReport, BuildLog, RepositoryAudit, Other]
+        source:
+          type: string
+        notes:
+          type: string
+        content:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        storyId:
+          type: ["number", "null"]
+        projectId:
+          type: ["number", "null"]
+        repository:
+          type: string
+
+    EvidencePatch:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          enum: [Screenshot, TerminalOutput, GitLog, Benchmark, Diagram, MeetingNotes, ResearchPDF, Image, Video, VoiceRecording, CodeSnippet, IssueReport, BuildLog, RepositoryAudit, Other]
+        source:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        content:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        storyId:
+          type: ["number", "null"]
+        projectId:
+          type: ["number", "null"]
+        repository:
+          type: ["string", "null"]
+
+    # Assets
+    Asset:
+      type: object
+      required: [id, title, type, createdAt, updatedAt]
+      properties:
+        id:
+          type: number
+        title:
+          type: string
+        type:
+          type: string
+          enum: [Image, Icon, Illustration, Logo, Video, SVG, PDF, BrandAsset, ScreenRecording, Other]
+        url:
+          type: ["string", "null"]
+        filePath:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        storyId:
+          type: ["number", "null"]
+        campaignId:
+          type: ["number", "null"]
+        projectId:
+          type: ["number", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AssetInput:
+      type: object
+      required: [title, type]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          enum: [Image, Icon, Illustration, Logo, Video, SVG, PDF, BrandAsset, ScreenRecording, Other]
+        url:
+          type: string
+        filePath:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        storyId:
+          type: ["number", "null"]
+        campaignId:
+          type: ["number", "null"]
+        projectId:
+          type: ["number", "null"]
+
+    AssetPatch:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          enum: [Image, Icon, Illustration, Logo, Video, SVG, PDF, BrandAsset, ScreenRecording, Other]
+        url:
+          type: ["string", "null"]
+        filePath:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        storyId:
+          type: ["number", "null"]
+        campaignId:
+          type: ["number", "null"]
+        projectId:
+          type: ["number", "null"]
+
+    # Knowledge Base
+    KnowledgePage:
+      type: object
+      required: [id, title, createdAt, updatedAt]
+      properties:
+        id:
+          type: number
+        title:
+          type: string
+        content:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        linkedPageIds:
+          type: array
+          items:
+            type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    KnowledgeInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        content:
+          type: string
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        linkedPageIds:
+          type: array
+          items:
+            type: number
+
+    KnowledgePatch:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        content:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        linkedPageIds:
+          type: array
+          items:
+            type: number
+
+    # Templates
+    Template:
+      type: object
+      required: [id, title, type, createdAt, updatedAt]
+      properties:
+        id:
+          type: number
+        title:
+          type: string
+        type:
+          type: string
+          enum: [LinkedIn, Blog, XThread, Facebook, ReleaseNotes, CaseStudy, EngineeringJournal, RepositoryAudit, ArchitectureReview, SprintReview, Retrospective, Other]
+        content:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TemplateInput:
+      type: object
+      required: [title, type]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          enum: [LinkedIn, Blog, XThread, Facebook, ReleaseNotes, CaseStudy, EngineeringJournal, RepositoryAudit, ArchitectureReview, SprintReview, Retrospective, Other]
+        content:
+          type: string
+        description:
+          type: string
+
+    TemplatePatch:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          enum: [LinkedIn, Blog, XThread, Facebook, ReleaseNotes, CaseStudy, EngineeringJournal, RepositoryAudit, ArchitectureReview, SprintReview, Retrospective, Other]
+        content:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
