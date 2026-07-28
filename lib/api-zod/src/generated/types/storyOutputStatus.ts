@@ -6,17 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type StoryStatus = typeof StoryStatus[keyof typeof StoryStatus];
+export type StoryOutputStatus = typeof StoryOutputStatus[keyof typeof StoryOutputStatus];
 
 
-export const StoryStatus = {
-  Idea: 'Idea',
-  Research: 'Research',
-  EvidenceGathering: 'EvidenceGathering',
-  Outline: 'Outline',
+export const StoryOutputStatus = {
   Draft: 'Draft',
   Review: 'Review',
-  Approved: 'Approved',
+  Ready: 'Ready',
   Published: 'Published',
   Archived: 'Archived',
 } as const;

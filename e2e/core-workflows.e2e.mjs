@@ -45,6 +45,7 @@ test('authors rich text and imports a file through the evidence UI', async ({ pa
   const storyRecord = await story.json();
 
   await page.goto(`/stories/${storyRecord.id}`);
+  await page.getByRole('button', { name: 'Editor' }).click();
   const editor = page.locator('.ProseMirror');
   await editor.fill('Browser-authored engineering narrative');
   await page.getByRole('button', { name: /sync changes/i }).click();

@@ -8,6 +8,7 @@
 import type { StoryPatchDifficulty } from './storyPatchDifficulty';
 import type { StoryPatchPriority } from './storyPatchPriority';
 import type { StoryPatchStatus } from './storyPatchStatus';
+import type { StoryPatchStoryType } from './storyPatchStoryType';
 
 export interface StoryPatch {
   /** @minLength 1 */
@@ -29,5 +30,16 @@ export interface StoryPatch {
   /** @nullable */
   projectId?: number | null;
   /** @nullable */
+  workspaceId?: number | null;
+  /** @nullable */
   campaignId?: number | null;
+  storyType?: StoryPatchStoryType;
+  /** @nullable */
+  author?: string | null;
+  /** @nullable */
+  objective?: string | null;
+  targetPlatforms?: string[];
+  /** @nullable */
+  publishAt?: Date | null;
+  expectedVersion?: number;
 }

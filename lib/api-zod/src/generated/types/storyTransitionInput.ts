@@ -5,14 +5,8 @@
  * N-Tech C³ Engineering Intelligence Operating System API
  * OpenAPI spec version: 0.1.0
  */
+import type { StoryTransitionInputStatus } from './storyTransitionInputStatus';
 
-export type ListStoriesParams = {
-status?: string;
-/**
- * @nullable
- */
-campaignId?: number | null;
-workspaceId?: number;
-storyType?: string;
-search?: string;
-};
+export interface StoryTransitionInput {
+  status: StoryTransitionInputStatus;
+}

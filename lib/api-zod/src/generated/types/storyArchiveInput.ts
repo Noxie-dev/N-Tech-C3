@@ -6,13 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ListStoriesParams = {
-status?: string;
-/**
- * @nullable
- */
-campaignId?: number | null;
-workspaceId?: number;
-storyType?: string;
-search?: string;
-};
+export interface StoryArchiveInput {
+  archived: boolean;
+}

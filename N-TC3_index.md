@@ -136,8 +136,9 @@ V1 is committed to Electron + SQLite + filesystem vault. The local Express servi
 | `/workspaces` | Workspace picker | Search/filter, create, open, favorite, pin, duplicate, archive/restore, and manifest export |
 | `/workspaces/:id` | Workspace overview | Scoped metrics, health breakdown, recent activity, current work, quick actions, and archive/corruption states |
 | `/workspaces/:id/settings` | Workspace settings | Edit identity, current goal, repositories, tags, and initial Workspace DNA fields |
-| `/stories` | Stories | List, filter/search, create |
-| `/stories/:id` | Story detail | Read, manually save text content/summary, status/priority update, delete |
+| `/stories` | Global Story catalogue | Workspace/status/type/search filters and Workspace-required creation |
+| `/workspaces/:workspaceId/stories` | Scoped Story catalogue | Stories belonging to one Workspace |
+| `/stories/:id` | Story studio | Overview, ordered outline, TipTap editor, Evidence, Assets, References, Outputs, Timeline, health inspector, lifecycle, version-safe save, and archive/restore |
 | `/campaigns` | Campaigns | List and create |
 | `/campaigns/:id` | Campaign detail | Read, edit core fields, delete |
 | `/evidence` | Evidence Vault | List, type/search filter, manual metadata capture |
@@ -179,6 +180,9 @@ Current SQLite tables:
 - `knowledge`
 - `templates`
 - `activity`
+- Story Engine graph tables: `story_outline_items`, `story_evidence`,
+  `story_knowledge`, `story_assets`, `story_campaigns`, `story_relations`,
+  `story_outputs`, `story_versions`, and `story_events`
 
 The physical `projects` table is retained as a backward-compatible storage detail;
 the canonical product and API domain term is **Workspace**. Migration v3 extends it
@@ -201,8 +205,8 @@ Legend: **Implemented**, **Partial**, **Not implemented**.
 | Capability | Status | Evidence/current limitation |
 | --- | --- | --- |
 | Home landing | Partial | Approved wireframe composition, brand hero, six Get Started cards, workspaces, activity, live metrics/focus, and bottom strip exist; Calendar/Exports routes and production logo exports remain |
-| Stories CRUD | Implemented | API and primary UI flows exist |
-| Story authoring | Implemented | Shared TipTap editor with HTML persistence and manual save feedback |
+| Stories (Route 02) | Implemented | Global/Workspace catalogues, Story studio sections, lifecycle, outline, relationship graph, Outputs, deterministic health, timeline, versions, optimistic concurrency, and archive/restore |
+| Story authoring | Implemented | Shared TipTap editor with canonical HTML persistence, word/read-time derivation, version-safe explicit saves, and conflict rejection |
 | Campaigns CRUD | Implemented | Core records only; no timeline/tasks/metrics/outputs |
 | Evidence Vault CRUD | Partial | Metadata, paste/file capture, SHA-256 recording, text/image/PDF/audio/video preview, safe vault reveal, filtering, and story/project linking exist; large/unsupported files remain reveal-only |
 | Knowledge Base CRUD | Partial | TipTap authoring and a stored linked-ID array exist; no rendered wiki graph/backlinks |
@@ -223,7 +227,8 @@ Legend: **Implemented**, **Partial**, **Not implemented**.
 | Repository integration | Partial | Secure desktop folder selection captures branch, commit, package manager, frameworks, dependencies, TODOs, README, readiness, and optional project association |
 | Repository Intelligence Engine | Partial | Deterministic, fingerprinted snapshots become searchable `RepositoryAudit` evidence with per-project history counts and metric diffs; deeper dependency/security analysis remains |
 | Workspace health score | Implemented | Server calculates and explains recency, evidence, campaign, knowledge, and asset components with insufficient-data handling |
-| Evidence/knowledge/story health scores | Not implemented | Workspace health exists; entity-specific health engines remain |
+| Story health score | Implemented | Deterministic weighted outline, Evidence, Knowledge, Asset, metadata, readability, and Output components with blockers |
+| Evidence/knowledge health scores | Not implemented | Workspace and Story health exist; standalone Evidence/Knowledge engines remain |
 | Local vault/filesystem | Implemented | SQLite database and documented vault directories initialize locally |
 | Electron desktop shell | Implemented | Main/preload lifecycle, local API launch, static UI serving, secure file IPC |
 | Branded application shell | Partial | Approved palette/typography, preserved checkered background, top bar, wireframe navigation, Quick Capture panel, and local SVG mark exist; compact/mobile drawer and final exported brand artwork remain |
@@ -259,9 +264,9 @@ Current state: implemented. Terminal paste uses `content`; dropped files are cop
 
 ### Next implementation order
 
-1. Propagate canonical `workspaceId` through every child create/list contract and remove remaining user-facing Project terminology.
-2. Implement Route 02 — Stories against the Route Discovery Framework.
-3. Add append-only entity version history with restore/compare controls.
+1. Implement Route 03 — Evidence Vault against the Route Discovery Framework.
+2. Add Story version compare/restore controls on top of stored checkpoints.
+3. Propagate canonical `workspaceId` through remaining legacy child contracts.
 4. Add the actionable dashboard queue and recent export/backup history.
 
 ## 8. Contract and data workflow
@@ -382,15 +387,21 @@ This is the governing interface specification. Its aspirational screen behavior 
 ### `Docs/N-Tech-C³-product architecture-design.md`
 
 Route-oriented product architecture using the Route Discovery Framework. It currently
-defines Route 01 Workspaces, Route 02 Stories, and Route 03 Evidence Vault. Route 01
-has been implemented; later route sections remain product intent until their own
-execution plans are approved and delivered.
+defines Workspaces, Stories, Evidence Vault, Knowledge Base, Campaigns, Publishing
+Pipeline, and Repository Intelligence. Routes 01 and 02 have been implemented;
+later route sections remain product intent until their execution plans are approved.
 
 ### `Docs/Route-01-Workspaces-execution-plan.md`
 
 Audit and implementation contract for the first router. It resolves Project versus
 Workspace terminology, defines the canonical frontend/API surface, prescribes
 backward-compatible storage, and records Route 01 acceptance criteria and deferrals.
+
+### `Docs/Route-02-Stories-execution-plan.md`
+
+Audit and implementation contract for the Story Engine. It defines the Story
+lifecycle, catalogue/studio routes, graph relationships, outline, Outputs, health,
+timeline, version/concurrency rules, compatibility strategy, and acceptance criteria.
 
 ### `wireframe.png` and `branding-brief.png`
 
@@ -432,7 +443,7 @@ Validation completed:
 - Electron and esbuild install scripts — explicitly approved through the workspace supply-chain guard.
 - Electron runtime — installed at version 38.8.6.
 - SQLite/API smoke test — passed health, Workspace lifecycle/overview, legacy Project compatibility, and scoped evidence search against a disposable vault.
-- `pnpm test` — 11 tests passed across migrations/FTS, Workspace lifecycle, API capture/filtered search, and frontend capture utilities.
+- `pnpm test` — 13 tests passed across migrations/FTS, Workspace and Story Engine lifecycles, API capture/filtered search, and frontend capture utilities.
 - `pnpm run test:e2e` — 2 Playwright workflows passed for Workspace creation/detail/search, TipTap persistence, and evidence file ingestion.
 - Electron Builder directory packaging — passed and produced an unsigned arm64 `.app` with bundled API/frontend resources.
 - `git diff --check` — passed.

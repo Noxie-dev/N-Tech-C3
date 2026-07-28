@@ -77,6 +77,90 @@ describe('local API', () => {
       .expect(200);
   });
 
+  it('supports the Story Engine outline, graph, output, health, versions, and archive lifecycle', async () => {
+    const workspace = await request(app)
+      .post('/api/workspaces')
+      .send({ name: 'Story Engine Workspace', purpose: 'Product' })
+      .expect(201);
+    const story = await request(app)
+      .post('/api/stories')
+      .send({
+        title: 'Evidence-based architecture',
+        workspaceId: workspace.body.id,
+        storyType: 'TechnicalDocumentation',
+        status: 'Idea',
+        summary: 'A supported engineering narrative',
+      })
+      .expect(201);
+    expect(story.body).toMatchObject({
+      workspaceId: workspace.body.id,
+      storyType: 'TechnicalDocumentation',
+      version: 1,
+    });
+
+    const outline = await request(app)
+      .put(`/api/stories/${story.body.id}/outline`)
+      .send([
+        { title: 'Problem', completionStatus: 'Complete' },
+        { title: 'Evidence', completionStatus: 'InProgress' },
+      ])
+      .expect(200);
+    expect(outline.body).toHaveLength(2);
+
+    const evidence = await request(app)
+      .post('/api/evidence')
+      .send({ title: 'Architecture trace', type: 'Diagram', projectId: workspace.body.id })
+      .expect(201);
+    await request(app)
+      .post(`/api/stories/${story.body.id}/links`)
+      .send({ entityType: 'evidence', entityId: evidence.body.id })
+      .expect(201);
+    const links = await request(app).get(`/api/stories/${story.body.id}/links`).expect(200);
+    expect(links.body.evidence[0]).toMatchObject({ id: evidence.body.id, title: 'Architecture trace' });
+
+    const output = await request(app)
+      .post(`/api/stories/${story.body.id}/outputs`)
+      .send({ title: 'Architecture article', type: 'Blog', status: 'Ready' })
+      .expect(201);
+    expect(output.body).toMatchObject({ status: 'Ready', type: 'Blog' });
+
+    const health = await request(app).get(`/api/stories/${story.body.id}/health`).expect(200);
+    expect(health.body).toMatchObject({
+      score: expect.any(Number),
+      blockers: expect.any(Array),
+      components: expect.arrayContaining([expect.objectContaining({ key: 'evidence' })]),
+    });
+
+    const updated = await request(app)
+      .patch(`/api/stories/${story.body.id}`)
+      .send({ content: '<p>Engineering evidence supports this decision.</p>', expectedVersion: 1 })
+      .expect(200);
+    expect(updated.body.version).toBe(2);
+    await request(app)
+      .patch(`/api/stories/${story.body.id}`)
+      .send({ content: '<p>Stale overwrite</p>', expectedVersion: 1 })
+      .expect(409);
+
+    await request(app)
+      .post(`/api/stories/${story.body.id}/archive`)
+      .send({ archived: true })
+      .expect(200);
+    await request(app)
+      .patch(`/api/stories/${story.body.id}`)
+      .send({ title: 'Blocked edit' })
+      .expect(409);
+    await request(app)
+      .post(`/api/stories/${story.body.id}/archive`)
+      .send({ archived: false })
+      .expect(200);
+
+    const timeline = await request(app).get(`/api/stories/${story.body.id}/timeline`).expect(200);
+    expect(timeline.body).toEqual(expect.arrayContaining([
+      expect.objectContaining({ eventType: 'created' }),
+      expect.objectContaining({ eventType: 'version' }),
+    ]));
+  });
+
   it('captures terminal evidence content', async () => {
     const response = await request(app)
       .post('/api/evidence')

@@ -397,6 +397,14 @@ paths:
           in: query
           schema:
             type: ["number", "null"]
+        - name: workspaceId
+          in: query
+          schema:
+            type: number
+        - name: storyType
+          in: query
+          schema:
+            type: string
         - name: search
           in: query
           schema:
@@ -503,6 +511,253 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/StatusCount"
+
+  /stories/{id}/transition:
+    post:
+      operationId: transitionStory
+      tags: [stories]
+      summary: Validate and apply a Story lifecycle transition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryTransitionInput"
+      responses:
+        "200":
+          description: Transitioned Story
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+        "409":
+          description: Transition blocked
+
+  /stories/{id}/outline:
+    get:
+      operationId: getStoryOutline
+      tags: [stories]
+      summary: Get ordered Story outline
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Story outline
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoryOutlineItem"
+    put:
+      operationId: replaceStoryOutline
+      tags: [stories]
+      summary: Atomically replace ordered Story outline
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/StoryOutlineItemInput"
+      responses:
+        "200":
+          description: Updated outline
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoryOutlineItem"
+
+  /stories/{id}/links:
+    get:
+      operationId: getStoryLinks
+      tags: [stories]
+      summary: Get Story Evidence, Knowledge, Asset, Campaign, and related Story links
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Story links
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoryLinks"
+    post:
+      operationId: linkStoryEntity
+      tags: [stories]
+      summary: Link an entity to a Story
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryLinkInput"
+      responses:
+        "201":
+          description: Link created
+  /stories/{id}/links/{entityType}/{entityId}:
+    delete:
+      operationId: unlinkStoryEntity
+      tags: [stories]
+      summary: Unlink an entity from a Story
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+        - name: entityType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [evidence, knowledge, asset, campaign, story]
+        - name: entityId
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Link removed
+
+  /stories/{id}/outputs:
+    get:
+      operationId: getStoryOutputs
+      tags: [stories]
+      summary: List Story outputs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Story outputs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoryOutput"
+    post:
+      operationId: createStoryOutput
+      tags: [stories]
+      summary: Create a Story output
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryOutputInput"
+      responses:
+        "201":
+          description: Created output
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoryOutput"
+
+  /stories/{id}/health:
+    get:
+      operationId: getStoryHealth
+      tags: [stories]
+      summary: Calculate explained Story health
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Story health
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoryHealth"
+
+  /stories/{id}/timeline:
+    get:
+      operationId: getStoryTimeline
+      tags: [stories]
+      summary: Get Story events and version checkpoints
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Story timeline
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoryEvent"
+
+  /stories/{id}/archive:
+    post:
+      operationId: archiveStory
+      tags: [stories]
+      summary: Archive or restore a Story
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryArchiveInput"
+      responses:
+        "200":
+          description: Updated Story
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
 
   # Campaigns
   /campaigns:
@@ -1386,7 +1641,7 @@ components:
           type: ["string", "null"]
         status:
           type: string
-          enum: [Research, Idea, Draft, Review, Approved, Published, Archived]
+          enum: [Idea, Research, EvidenceGathering, Outline, Draft, Review, Approved, Published, Archived]
         category:
           type: ["string", "null"]
         priority:
@@ -1403,10 +1658,35 @@ components:
             type: string
         projectId:
           type: ["number", "null"]
+        workspaceId:
+          type: ["number", "null"]
         campaignId:
           type: ["number", "null"]
         evidenceScore:
           type: ["number", "null"]
+        storyType:
+          type: string
+          enum: [EngineeringJournal, BlogArticle, SocialSeries, CaseStudy, TechnicalDocumentation, ADR, ResearchNote, LearningNote, ProductUpdate, ChangelogNarrative, InternalMemo, Presentation, Other]
+        author:
+          type: ["string", "null"]
+        objective:
+          type: ["string", "null"]
+        targetPlatforms:
+          type: array
+          items:
+            type: string
+        publishAt:
+          type: ["string", "null"]
+          format: date-time
+        wordCount:
+          type: number
+        estimatedReadMinutes:
+          type: number
+        version:
+          type: number
+        archivedAt:
+          type: ["string", "null"]
+          format: date-time
         createdAt:
           type: string
           format: date-time
@@ -1427,7 +1707,7 @@ components:
           type: string
         status:
           type: string
-          enum: [Research, Idea, Draft, Review, Approved, Published, Archived]
+          enum: [Idea, Research, EvidenceGathering, Outline, Draft, Review, Approved, Published, Archived]
         category:
           type: string
         priority:
@@ -1444,8 +1724,24 @@ components:
             type: string
         projectId:
           type: ["number", "null"]
+        workspaceId:
+          type: ["number", "null"]
         campaignId:
           type: ["number", "null"]
+        storyType:
+          type: string
+          enum: [EngineeringJournal, BlogArticle, SocialSeries, CaseStudy, TechnicalDocumentation, ADR, ResearchNote, LearningNote, ProductUpdate, ChangelogNarrative, InternalMemo, Presentation, Other]
+        author:
+          type: string
+        objective:
+          type: string
+        targetPlatforms:
+          type: array
+          items:
+            type: string
+        publishAt:
+          type: string
+          format: date-time
 
     StoryPatch:
       type: object
@@ -1459,7 +1755,7 @@ components:
           type: ["string", "null"]
         status:
           type: string
-          enum: [Research, Idea, Draft, Review, Approved, Published, Archived]
+          enum: [Idea, Research, EvidenceGathering, Outline, Draft, Review, Approved, Published, Archived]
         category:
           type: ["string", "null"]
         priority:
@@ -1476,8 +1772,163 @@ components:
             type: string
         projectId:
           type: ["number", "null"]
+        workspaceId:
+          type: ["number", "null"]
         campaignId:
           type: ["number", "null"]
+        storyType:
+          type: string
+          enum: [EngineeringJournal, BlogArticle, SocialSeries, CaseStudy, TechnicalDocumentation, ADR, ResearchNote, LearningNote, ProductUpdate, ChangelogNarrative, InternalMemo, Presentation, Other]
+        author:
+          type: ["string", "null"]
+        objective:
+          type: ["string", "null"]
+        targetPlatforms:
+          type: array
+          items:
+            type: string
+        publishAt:
+          type: ["string", "null"]
+          format: date-time
+        expectedVersion:
+          type: number
+
+    StoryTransitionInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [Idea, Research, EvidenceGathering, Outline, Draft, Review, Approved, Published, Archived]
+
+    StoryArchiveInput:
+      type: object
+      required: [archived]
+      properties:
+        archived:
+          type: boolean
+
+    StoryOutlineItem:
+      type: object
+      required: [id, storyId, position, title, completionStatus, createdAt, updatedAt]
+      properties:
+        id: { type: number }
+        storyId: { type: number }
+        parentId: { type: ["number", "null"] }
+        position: { type: number }
+        title: { type: string }
+        notes: { type: ["string", "null"] }
+        completionStatus:
+          type: string
+          enum: [Planned, InProgress, Complete]
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    StoryOutlineItemInput:
+      type: object
+      required: [title, completionStatus]
+      properties:
+        id: { type: number }
+        parentId: { type: ["number", "null"] }
+        title: { type: string, minLength: 1 }
+        notes: { type: ["string", "null"] }
+        completionStatus:
+          type: string
+          enum: [Planned, InProgress, Complete]
+
+    StoryLinkInput:
+      type: object
+      required: [entityType, entityId]
+      properties:
+        entityType:
+          type: string
+          enum: [evidence, knowledge, asset, campaign, story]
+        entityId: { type: number }
+        relationshipType: { type: string }
+        notes: { type: string }
+
+    StoryLinkedEntity:
+      type: object
+      required: [id, title, entityType]
+      properties:
+        id: { type: number }
+        title: { type: string }
+        entityType: { type: string }
+        relationshipType: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+
+    StoryLinks:
+      type: object
+      required: [evidence, knowledge, assets, campaigns, stories]
+      properties:
+        evidence: { type: array, items: { $ref: "#/components/schemas/StoryLinkedEntity" } }
+        knowledge: { type: array, items: { $ref: "#/components/schemas/StoryLinkedEntity" } }
+        assets: { type: array, items: { $ref: "#/components/schemas/StoryLinkedEntity" } }
+        campaigns: { type: array, items: { $ref: "#/components/schemas/StoryLinkedEntity" } }
+        stories: { type: array, items: { $ref: "#/components/schemas/StoryLinkedEntity" } }
+
+    StoryOutput:
+      type: object
+      required: [id, storyId, type, title, status, createdAt, updatedAt]
+      properties:
+        id: { type: number }
+        storyId: { type: number }
+        type: { type: string }
+        title: { type: string }
+        status:
+          type: string
+          enum: [Draft, Review, Ready, Published, Archived]
+        content: { type: ["string", "null"] }
+        format: { type: ["string", "null"] }
+        destination: { type: ["string", "null"] }
+        publishedAt: { type: ["string", "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    StoryOutputInput:
+      type: object
+      required: [type, title]
+      properties:
+        type: { type: string }
+        title: { type: string, minLength: 1 }
+        status:
+          type: string
+          enum: [Draft, Review, Ready, Published, Archived]
+        content: { type: string }
+        format: { type: string }
+        destination: { type: string }
+
+    StoryHealthComponent:
+      type: object
+      required: [key, label, score, applicable, explanation]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        score: { type: number }
+        applicable: { type: boolean }
+        explanation: { type: string }
+
+    StoryHealth:
+      type: object
+      required: [score, insufficientData, blockers, components]
+      properties:
+        score: { type: number }
+        insufficientData: { type: boolean }
+        blockers: { type: array, items: { type: string } }
+        components:
+          type: array
+          items:
+            $ref: "#/components/schemas/StoryHealthComponent"
+
+    StoryEvent:
+      type: object
+      required: [id, eventType, actor, payload, createdAt]
+      properties:
+        id: { type: number }
+        eventType: { type: string }
+        actor: { type: string }
+        payload: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
 
     # Campaigns
     Campaign:

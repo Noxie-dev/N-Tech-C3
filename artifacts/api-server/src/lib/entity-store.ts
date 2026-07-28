@@ -37,8 +37,12 @@ export const entityConfigs = {
       status: 'status', category: 'category', priority: 'priority',
       audience: 'audience', difficulty: 'difficulty', tags: 'tags',
       projectId: 'project_id', campaignId: 'campaign_id', evidenceScore: 'evidence_score',
+      storyType: 'story_type', author: 'author', objective: 'objective',
+      targetPlatforms: 'target_platforms', publishAt: 'publish_at',
+      wordCount: 'word_count', estimatedReadMinutes: 'estimated_read_minutes',
+      version: 'version', archivedAt: 'archived_at',
     },
-    jsonFields: ['tags'],
+    jsonFields: ['tags', 'targetPlatforms'],
   },
   evidence: {
     table: 'evidence',

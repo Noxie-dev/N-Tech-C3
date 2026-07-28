@@ -8,6 +8,7 @@
 import type { StoryDifficulty } from './storyDifficulty';
 import type { StoryPriority } from './storyPriority';
 import type { StoryStatus } from './storyStatus';
+import type { StoryStoryType } from './storyStoryType';
 
 export interface Story {
   id: number;
@@ -31,9 +32,24 @@ export interface Story {
   /** @nullable */
   projectId?: number | null;
   /** @nullable */
+  workspaceId?: number | null;
+  /** @nullable */
   campaignId?: number | null;
   /** @nullable */
   evidenceScore?: number | null;
+  storyType?: StoryStoryType;
+  /** @nullable */
+  author?: string | null;
+  /** @nullable */
+  objective?: string | null;
+  targetPlatforms?: string[];
+  /** @nullable */
+  publishAt?: Date | null;
+  wordCount?: number;
+  estimatedReadMinutes?: number;
+  version?: number;
+  /** @nullable */
+  archivedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -245,8 +245,10 @@ export type StoryStatus = typeof StoryStatus[keyof typeof StoryStatus];
 
 
 export const StoryStatus = {
-  Research: 'Research',
   Idea: 'Idea',
+  Research: 'Research',
+  EvidenceGathering: 'EvidenceGathering',
+  Outline: 'Outline',
   Draft: 'Draft',
   Review: 'Review',
   Approved: 'Approved',
@@ -279,6 +281,25 @@ export const StoryDifficulty = {
   Advanced: 'Advanced',
 } as const;
 
+export type StoryStoryType = typeof StoryStoryType[keyof typeof StoryStoryType];
+
+
+export const StoryStoryType = {
+  EngineeringJournal: 'EngineeringJournal',
+  BlogArticle: 'BlogArticle',
+  SocialSeries: 'SocialSeries',
+  CaseStudy: 'CaseStudy',
+  TechnicalDocumentation: 'TechnicalDocumentation',
+  ADR: 'ADR',
+  ResearchNote: 'ResearchNote',
+  LearningNote: 'LearningNote',
+  ProductUpdate: 'ProductUpdate',
+  ChangelogNarrative: 'ChangelogNarrative',
+  InternalMemo: 'InternalMemo',
+  Presentation: 'Presentation',
+  Other: 'Other',
+} as const;
+
 export interface Story {
   id: number;
   title: string;
@@ -301,9 +322,24 @@ export interface Story {
   /** @nullable */
   projectId?: number | null;
   /** @nullable */
+  workspaceId?: number | null;
+  /** @nullable */
   campaignId?: number | null;
   /** @nullable */
   evidenceScore?: number | null;
+  storyType?: StoryStoryType;
+  /** @nullable */
+  author?: string | null;
+  /** @nullable */
+  objective?: string | null;
+  targetPlatforms?: string[];
+  /** @nullable */
+  publishAt?: string | null;
+  wordCount?: number;
+  estimatedReadMinutes?: number;
+  version?: number;
+  /** @nullable */
+  archivedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -312,8 +348,10 @@ export type StoryInputStatus = typeof StoryInputStatus[keyof typeof StoryInputSt
 
 
 export const StoryInputStatus = {
-  Research: 'Research',
   Idea: 'Idea',
+  Research: 'Research',
+  EvidenceGathering: 'EvidenceGathering',
+  Outline: 'Outline',
   Draft: 'Draft',
   Review: 'Review',
   Approved: 'Approved',
@@ -340,6 +378,25 @@ export const StoryInputDifficulty = {
   Advanced: 'Advanced',
 } as const;
 
+export type StoryInputStoryType = typeof StoryInputStoryType[keyof typeof StoryInputStoryType];
+
+
+export const StoryInputStoryType = {
+  EngineeringJournal: 'EngineeringJournal',
+  BlogArticle: 'BlogArticle',
+  SocialSeries: 'SocialSeries',
+  CaseStudy: 'CaseStudy',
+  TechnicalDocumentation: 'TechnicalDocumentation',
+  ADR: 'ADR',
+  ResearchNote: 'ResearchNote',
+  LearningNote: 'LearningNote',
+  ProductUpdate: 'ProductUpdate',
+  ChangelogNarrative: 'ChangelogNarrative',
+  InternalMemo: 'InternalMemo',
+  Presentation: 'Presentation',
+  Other: 'Other',
+} as const;
+
 export interface StoryInput {
   /** @minLength 1 */
   title: string;
@@ -354,15 +411,24 @@ export interface StoryInput {
   /** @nullable */
   projectId?: number | null;
   /** @nullable */
+  workspaceId?: number | null;
+  /** @nullable */
   campaignId?: number | null;
+  storyType?: StoryInputStoryType;
+  author?: string;
+  objective?: string;
+  targetPlatforms?: string[];
+  publishAt?: string;
 }
 
 export type StoryPatchStatus = typeof StoryPatchStatus[keyof typeof StoryPatchStatus];
 
 
 export const StoryPatchStatus = {
-  Research: 'Research',
   Idea: 'Idea',
+  Research: 'Research',
+  EvidenceGathering: 'EvidenceGathering',
+  Outline: 'Outline',
   Draft: 'Draft',
   Review: 'Review',
   Approved: 'Approved',
@@ -395,6 +461,25 @@ export const StoryPatchDifficulty = {
   Advanced: 'Advanced',
 } as const;
 
+export type StoryPatchStoryType = typeof StoryPatchStoryType[keyof typeof StoryPatchStoryType];
+
+
+export const StoryPatchStoryType = {
+  EngineeringJournal: 'EngineeringJournal',
+  BlogArticle: 'BlogArticle',
+  SocialSeries: 'SocialSeries',
+  CaseStudy: 'CaseStudy',
+  TechnicalDocumentation: 'TechnicalDocumentation',
+  ADR: 'ADR',
+  ResearchNote: 'ResearchNote',
+  LearningNote: 'LearningNote',
+  ProductUpdate: 'ProductUpdate',
+  ChangelogNarrative: 'ChangelogNarrative',
+  InternalMemo: 'InternalMemo',
+  Presentation: 'Presentation',
+  Other: 'Other',
+} as const;
+
 export interface StoryPatch {
   /** @minLength 1 */
   title?: string;
@@ -415,7 +500,195 @@ export interface StoryPatch {
   /** @nullable */
   projectId?: number | null;
   /** @nullable */
+  workspaceId?: number | null;
+  /** @nullable */
   campaignId?: number | null;
+  storyType?: StoryPatchStoryType;
+  /** @nullable */
+  author?: string | null;
+  /** @nullable */
+  objective?: string | null;
+  targetPlatforms?: string[];
+  /** @nullable */
+  publishAt?: string | null;
+  expectedVersion?: number;
+}
+
+export type StoryTransitionInputStatus = typeof StoryTransitionInputStatus[keyof typeof StoryTransitionInputStatus];
+
+
+export const StoryTransitionInputStatus = {
+  Idea: 'Idea',
+  Research: 'Research',
+  EvidenceGathering: 'EvidenceGathering',
+  Outline: 'Outline',
+  Draft: 'Draft',
+  Review: 'Review',
+  Approved: 'Approved',
+  Published: 'Published',
+  Archived: 'Archived',
+} as const;
+
+export interface StoryTransitionInput {
+  status: StoryTransitionInputStatus;
+}
+
+export interface StoryArchiveInput {
+  archived: boolean;
+}
+
+export type StoryOutlineItemCompletionStatus = typeof StoryOutlineItemCompletionStatus[keyof typeof StoryOutlineItemCompletionStatus];
+
+
+export const StoryOutlineItemCompletionStatus = {
+  Planned: 'Planned',
+  InProgress: 'InProgress',
+  Complete: 'Complete',
+} as const;
+
+export interface StoryOutlineItem {
+  id: number;
+  storyId: number;
+  /** @nullable */
+  parentId?: number | null;
+  position: number;
+  title: string;
+  /** @nullable */
+  notes?: string | null;
+  completionStatus: StoryOutlineItemCompletionStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type StoryOutlineItemInputCompletionStatus = typeof StoryOutlineItemInputCompletionStatus[keyof typeof StoryOutlineItemInputCompletionStatus];
+
+
+export const StoryOutlineItemInputCompletionStatus = {
+  Planned: 'Planned',
+  InProgress: 'InProgress',
+  Complete: 'Complete',
+} as const;
+
+export interface StoryOutlineItemInput {
+  id?: number;
+  /** @nullable */
+  parentId?: number | null;
+  /** @minLength 1 */
+  title: string;
+  /** @nullable */
+  notes?: string | null;
+  completionStatus: StoryOutlineItemInputCompletionStatus;
+}
+
+export type StoryLinkInputEntityType = typeof StoryLinkInputEntityType[keyof typeof StoryLinkInputEntityType];
+
+
+export const StoryLinkInputEntityType = {
+  evidence: 'evidence',
+  knowledge: 'knowledge',
+  asset: 'asset',
+  campaign: 'campaign',
+  story: 'story',
+} as const;
+
+export interface StoryLinkInput {
+  entityType: StoryLinkInputEntityType;
+  entityId: number;
+  relationshipType?: string;
+  notes?: string;
+}
+
+export interface StoryLinkedEntity {
+  id: number;
+  title: string;
+  entityType: string;
+  /** @nullable */
+  relationshipType?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface StoryLinks {
+  evidence: StoryLinkedEntity[];
+  knowledge: StoryLinkedEntity[];
+  assets: StoryLinkedEntity[];
+  campaigns: StoryLinkedEntity[];
+  stories: StoryLinkedEntity[];
+}
+
+export type StoryOutputStatus = typeof StoryOutputStatus[keyof typeof StoryOutputStatus];
+
+
+export const StoryOutputStatus = {
+  Draft: 'Draft',
+  Review: 'Review',
+  Ready: 'Ready',
+  Published: 'Published',
+  Archived: 'Archived',
+} as const;
+
+export interface StoryOutput {
+  id: number;
+  storyId: number;
+  type: string;
+  title: string;
+  status: StoryOutputStatus;
+  /** @nullable */
+  content?: string | null;
+  /** @nullable */
+  format?: string | null;
+  /** @nullable */
+  destination?: string | null;
+  /** @nullable */
+  publishedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type StoryOutputInputStatus = typeof StoryOutputInputStatus[keyof typeof StoryOutputInputStatus];
+
+
+export const StoryOutputInputStatus = {
+  Draft: 'Draft',
+  Review: 'Review',
+  Ready: 'Ready',
+  Published: 'Published',
+  Archived: 'Archived',
+} as const;
+
+export interface StoryOutputInput {
+  type: string;
+  /** @minLength 1 */
+  title: string;
+  status?: StoryOutputInputStatus;
+  content?: string;
+  format?: string;
+  destination?: string;
+}
+
+export interface StoryHealthComponent {
+  key: string;
+  label: string;
+  score: number;
+  applicable: boolean;
+  explanation: string;
+}
+
+export interface StoryHealth {
+  score: number;
+  insufficientData: boolean;
+  blockers: string[];
+  components: StoryHealthComponent[];
+}
+
+export type StoryEventPayload = { [key: string]: unknown };
+
+export interface StoryEvent {
+  id: number;
+  eventType: string;
+  actor: string;
+  payload: StoryEventPayload;
+  createdAt: string;
 }
 
 export type CampaignStatus = typeof CampaignStatus[keyof typeof CampaignStatus];
@@ -893,6 +1166,8 @@ status?: string;
  * @nullable
  */
 campaignId?: number | null;
+workspaceId?: number;
+storyType?: string;
 search?: string;
 };
 

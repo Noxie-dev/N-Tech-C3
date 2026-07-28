@@ -271,6 +271,130 @@ export const migrations: Migration[] = [
       END;
     `,
   },
+  {
+    version: 4,
+    name: 'story_engine',
+    sql: `
+      ALTER TABLE stories ADD COLUMN story_type TEXT NOT NULL DEFAULT 'Other';
+      ALTER TABLE stories ADD COLUMN author TEXT;
+      ALTER TABLE stories ADD COLUMN objective TEXT;
+      ALTER TABLE stories ADD COLUMN target_platforms TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE stories ADD COLUMN publish_at TEXT;
+      ALTER TABLE stories ADD COLUMN word_count INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE stories ADD COLUMN estimated_read_minutes INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE stories ADD COLUMN version INTEGER NOT NULL DEFAULT 1;
+      ALTER TABLE stories ADD COLUMN archived_at TEXT;
+
+      CREATE TABLE story_outline_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+        parent_id INTEGER REFERENCES story_outline_items(id) ON DELETE CASCADE,
+        position INTEGER NOT NULL DEFAULT 0,
+        title TEXT NOT NULL,
+        notes TEXT,
+        completion_status TEXT NOT NULL DEFAULT 'Planned',
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+      CREATE TABLE story_evidence (
+        story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+        evidence_id INTEGER NOT NULL REFERENCES evidence(id) ON DELETE CASCADE,
+        relevance INTEGER NOT NULL DEFAULT 100,
+        notes TEXT,
+        position INTEGER NOT NULL DEFAULT 0,
+        linked_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        PRIMARY KEY (story_id, evidence_id)
+      );
+      CREATE TABLE story_knowledge (
+        story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+        knowledge_id INTEGER NOT NULL REFERENCES knowledge(id) ON DELETE CASCADE,
+        relationship_type TEXT NOT NULL DEFAULT 'Reference',
+        notes TEXT,
+        linked_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        PRIMARY KEY (story_id, knowledge_id)
+      );
+      CREATE TABLE story_assets (
+        story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+        asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+        role TEXT NOT NULL DEFAULT 'Supporting',
+        position INTEGER NOT NULL DEFAULT 0,
+        linked_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        PRIMARY KEY (story_id, asset_id)
+      );
+      CREATE TABLE story_campaigns (
+        story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+        campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+        is_primary INTEGER NOT NULL DEFAULT 0,
+        linked_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        PRIMARY KEY (story_id, campaign_id)
+      );
+      CREATE TABLE story_relations (
+        source_story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+        target_story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+        relationship_type TEXT NOT NULL DEFAULT 'Related',
+        notes TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        PRIMARY KEY (source_story_id, target_story_id),
+        CHECK (source_story_id != target_story_id)
+      );
+      CREATE TABLE story_outputs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'Draft',
+        content TEXT,
+        format TEXT,
+        destination TEXT,
+        published_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+      CREATE TABLE story_versions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+        version INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        summary TEXT,
+        content TEXT,
+        metadata TEXT NOT NULL DEFAULT '{}',
+        change_summary TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        UNIQUE (story_id, version)
+      );
+      CREATE TABLE story_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+        event_type TEXT NOT NULL,
+        actor TEXT NOT NULL DEFAULT 'Local Owner',
+        payload TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+
+      INSERT OR IGNORE INTO story_campaigns (story_id, campaign_id, is_primary)
+        SELECT id, campaign_id, 1 FROM stories WHERE campaign_id IS NOT NULL;
+      INSERT OR IGNORE INTO story_evidence (story_id, evidence_id)
+        SELECT story_id, id FROM evidence WHERE story_id IS NOT NULL;
+      INSERT OR IGNORE INTO story_assets (story_id, asset_id)
+        SELECT story_id, id FROM assets WHERE story_id IS NOT NULL;
+      INSERT OR IGNORE INTO story_versions (story_id, version, title, summary, content, metadata, change_summary)
+        SELECT id, 1, title, summary, content,
+          json_object('status', status, 'priority', priority, 'tags', json(tags)),
+          'Migrated into Story Engine'
+        FROM stories;
+
+      CREATE INDEX story_outline_story_position_idx ON story_outline_items(story_id, position);
+      CREATE INDEX story_evidence_evidence_idx ON story_evidence(evidence_id);
+      CREATE INDEX story_knowledge_knowledge_idx ON story_knowledge(knowledge_id);
+      CREATE INDEX story_assets_asset_idx ON story_assets(asset_id);
+      CREATE INDEX story_campaigns_campaign_idx ON story_campaigns(campaign_id);
+      CREATE INDEX story_relations_target_idx ON story_relations(target_story_id);
+      CREATE INDEX story_outputs_story_status_idx ON story_outputs(story_id, status);
+      CREATE INDEX story_versions_story_version_idx ON story_versions(story_id, version DESC);
+      CREATE INDEX story_events_story_created_idx ON story_events(story_id, created_at DESC);
+      CREATE INDEX stories_type_status_idx ON stories(story_type, status);
+    `,
+  },
 ];
 
 export function runMigrations(database: DatabaseSync): number[] {

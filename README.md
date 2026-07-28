@@ -14,8 +14,10 @@ loopback-only Express API through generated OpenAPI clients.
   initial Workspace DNA, scoped metrics and activity, explainable health score,
   favorite/pin, metadata duplicate, archive/restore, integrity check, and JSON
   manifest export.
-- **Stories:** list, filtering, creation, detail editing, status/priority, and TipTap
-  HTML authoring.
+- **Stories (Route 02):** global and Workspace-scoped catalogues, lifecycle-aware
+  Story studio, ordered outlines, TipTap HTML authoring, many-to-many links,
+  independently tracked Outputs, deterministic health, timeline/version
+  checkpoints, optimistic concurrency, and archive/restore.
 - **Evidence Vault:** structured/manual capture, two-click quick capture, desktop
   file ingestion, SHA-256 recording, previews, repository audits, and linking.
 - **Knowledge:** searchable pages with TipTap authoring and stored page links.
@@ -36,7 +38,9 @@ and executable code mark them as implemented.
 | `/workspaces` | Canonical Workspace picker and management |
 | `/workspaces/:id` | Workspace-scoped overview and health |
 | `/workspaces/:id/settings` | Workspace identity and DNA settings |
-| `/stories`, `/stories/:id` | Story catalogue and authoring |
+| `/stories` | Global Story catalogue |
+| `/workspaces/:workspaceId/stories` | Workspace-scoped Story catalogue |
+| `/stories/:id` | Story studio, graph, Outputs, health, and timeline |
 | `/evidence` | Evidence capture and vault |
 | `/knowledge`, `/knowledge/:id` | Knowledge catalogue and authoring |
 | `/campaigns`, `/campaigns/:id` | Campaign catalogue and detail |
@@ -191,6 +195,11 @@ Migrations are ordered, transactional, and recorded in `schema_migrations`.
 Route 01 uses a compatibility strategy: Workspace is the canonical domain term, but
 the physical `projects` table remains during the migration window.
 
+Route 02 appends a Story Engine migration with ordered outlines, many-to-many
+Evidence/Knowledge/Asset/Campaign/Story links, Outputs, version checkpoints, and
+domain events. TipTap HTML remains canonical stored authoring content; Markdown is
+an output format.
+
 ## Desktop packaging
 
 ```bash
@@ -219,7 +228,10 @@ pnpm package:mac
 
 - Child APIs still expose legacy `projectId` fields while the canonical Workspace
   migration is completed.
-- Cross-domain many-to-many graph relationships are not yet implemented.
+- Story graph relationships are implemented; other cross-domain graph surfaces
+  still require their route-specific work.
+- Story versions are stored and visible on the timeline, but compare/restore UI is
+  deferred.
 - Calendar and full export pipeline routes are planned.
 - Entity version history, collaboration, cloud sync, and AI providers are not
   implemented.
@@ -230,4 +242,5 @@ pnpm package:mac
 - [`N-TC3_index.md`](N-TC3_index.md) — canonical current state
 - [`Docs/N-Tech-C³-product architecture-design.md`](Docs/N-Tech-C³-product%20architecture-design.md) — route architecture
 - [`Docs/Route-01-Workspaces-execution-plan.md`](Docs/Route-01-Workspaces-execution-plan.md) — Route 01 audit and implementation plan
+- [`Docs/Route-02-Stories-execution-plan.md`](Docs/Route-02-Stories-execution-plan.md) — Route 02 audit and implementation plan
 - [`Docs/NTC3_UI-UX_Spec.md`](Docs/NTC3_UI-UX_Spec.md) — governing UI/UX specification

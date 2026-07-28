@@ -62,4 +62,30 @@ describe('SQLite migrations', () => {
       'SELECT project_id FROM campaigns WHERE title = ?',
     ).get('Launch')).toEqual({ project_id: workspace.lastInsertRowid });
   });
+
+  it('migrates legacy story links into the Story Engine graph', () => {
+    const database = new DatabaseSync(':memory:');
+    database.exec('PRAGMA foreign_keys = ON');
+    migrations.slice(0, 3).forEach((migration) => database.exec(migration.sql));
+    const workspace = database.prepare("INSERT INTO projects (name, slug) VALUES ('Workspace', 'workspace')").run();
+    const campaign = database.prepare("INSERT INTO campaigns (title, project_id) VALUES ('Campaign', ?)").run(workspace.lastInsertRowid);
+    const story = database.prepare("INSERT INTO stories (title, project_id, campaign_id) VALUES ('Story', ?, ?)").run(workspace.lastInsertRowid, campaign.lastInsertRowid);
+    const evidence = database.prepare("INSERT INTO evidence (title, story_id) VALUES ('Proof', ?)").run(story.lastInsertRowid);
+    database.prepare("INSERT INTO assets (title, story_id) VALUES ('Diagram', ?)").run(story.lastInsertRowid);
+
+    database.exec(migrations[3].sql);
+
+    expect(database.prepare('SELECT story_id, campaign_id FROM story_campaigns').get()).toEqual({
+      story_id: story.lastInsertRowid,
+      campaign_id: campaign.lastInsertRowid,
+    });
+    expect(database.prepare('SELECT story_id, evidence_id FROM story_evidence').get()).toEqual({
+      story_id: story.lastInsertRowid,
+      evidence_id: evidence.lastInsertRowid,
+    });
+    expect(database.prepare('SELECT version, title FROM story_versions').get()).toEqual({
+      version: 1,
+      title: 'Story',
+    });
+  });
 });

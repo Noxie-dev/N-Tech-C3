@@ -78,6 +78,7 @@ function Router() {
           <Route path="/assets" component={Assets} />
           <Route path="/templates" component={Templates} />
           <Route path="/workspaces" component={Workspaces} />
+          <Route path="/workspaces/:workspaceId/stories" component={Stories} />
           <Route path="/workspaces/:id/settings" component={WorkspaceSettings} />
           <Route path="/workspaces/:id" component={WorkspaceDetail} />
           <Route path="/projects/:id" component={ProjectsRedirect} />

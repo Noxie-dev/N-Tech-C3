@@ -4646,3 +4646,631 @@ At this stage, the platform architecture becomes remarkably clear:
 This is no longer a content management application.
 
 It is an **Engineering Intelligence Platform** that happens to produce exceptional technical content as one of its outputs. In my view, this is the feature that gives N-Tech C³ a genuinely distinctive identity.
+
+
+Approved. We've now designed what I call the **Intelligence Engine**.
+
+At this point, there is a fork in the road.
+
+```
+Creation Path
+─────────────
+Workspace
+Repository Intelligence
+Evidence
+Knowledge
+Stories
+Campaigns
+Publishing
+
+Operational Path
+────────────────
+Dashboard
+Media Library
+Templates
+Search
+Exports
+Settings
+```
+
+Most products would build the Dashboard next.
+
+I wouldn't.
+
+## TNBR (The Next Best Route)
+
+# Dashboard (No.)
+
+The Dashboard is merely a visualization.
+
+It doesn't create value.
+
+It displays value.
+
+If you build it now, you'll redesign it ten times.
+
+---
+
+## TNBR
+
+# Media Library? (No.)
+
+Storage.
+
+Important.
+
+Not strategic.
+
+---
+
+## TNBR
+
+# Templates? (No.)
+
+Accelerator.
+
+Not foundational.
+
+---
+
+# The next route should actually be...
+
+# Universal Search
+
+And I don't mean a search bar.
+
+I mean the **Command Center**.
+
+This is where N-Tech C³ starts feeling like **Raycast**, **Spotlight**, **VS Code**, and **Obsidian**.
+
+---
+
+# Route 08 — Command Center
+
+*(Search + Commands + Navigation + Actions)*
+
+---
+
+## One Sentence Definition
+
+> The Command Center is the universal interaction layer of N-Tech C³, allowing users to instantly find, navigate, create, and execute anything from a single interface.
+
+---
+
+# Why does it exist?
+
+Because eventually you'll have
+
+* 2,000 Stories
+* 18,000 Evidence items
+* 700 Knowledge pages
+* 300 Campaigns
+* dozens of repositories
+* years of engineering history
+
+Navigation breaks.
+
+Search scales.
+
+---
+
+# Philosophy
+
+Instead of
+
+```
+Click
+
+Click
+
+Click
+
+Click
+```
+
+You press
+
+```
+⌘K
+```
+
+Everything becomes available.
+
+---
+
+# Mental Model
+
+Not
+
+```
+Search Box
+```
+
+Think
+
+```
+Operating System Launcher
+```
+
+---
+
+# Primary Functions
+
+Search
+
+Navigate
+
+Create
+
+Execute
+
+Analyze
+
+Export
+
+Open
+
+Switch
+
+Everything.
+
+---
+
+# Opening
+
+Keyboard
+
+```
+⌘ K
+```
+
+Windows
+
+```
+Ctrl K
+```
+
+Always available.
+
+---
+
+# Example
+
+User types
+
+```
+audit
+```
+
+Results
+
+```
+New Repository Audit
+
+Repository Audit Template
+
+Evidence-Based Development
+
+Repository Intelligence
+
+Audit History
+
+Smart Educare Audit
+
+Audit Reports
+```
+
+One interface.
+
+---
+
+# Universal Search
+
+Should search
+
+Stories
+
+Knowledge
+
+Evidence
+
+Campaigns
+
+Repositories
+
+Media
+
+Templates
+
+Exports
+
+Settings
+
+Commands
+
+Keyboard shortcuts
+
+Recent history
+
+Pinned items
+
+Everything.
+
+---
+
+# Smart Actions
+
+Type
+
+```
+new
+```
+
+Results
+
+```
+New Story
+
+New Workspace
+
+New Campaign
+
+New Knowledge Page
+
+Capture Evidence
+
+Import Repository
+```
+
+---
+
+# Command Palette
+
+Commands aren't search.
+
+Examples
+
+```
+Analyze Repository
+
+Generate Report
+
+Open Dashboard
+
+Export Story
+
+Duplicate Workspace
+
+Archive Campaign
+
+Create Snapshot
+
+Start Timer
+
+Backup Vault
+
+Restore Backup
+```
+
+Everything executable.
+
+---
+
+# AI Ready
+
+Future
+
+Type
+
+```
+Summarize Smart Educare repository
+```
+
+The Command Center knows which Workspace, Repository, and Story you are referring to because everything is linked.
+
+---
+
+# Quick Navigation
+
+Type
+
+```
+WorkWise
+```
+
+Immediately
+
+Open Workspace
+
+---
+
+Type
+
+```
+Evidence
+```
+
+Immediately
+
+Open Evidence Vault
+
+---
+
+Type
+
+```
+Production
+```
+
+Results
+
+* Production Readiness Story
+* Production Audit
+* Production Knowledge
+* Production Campaign
+
+---
+
+# UI
+
+```
+┌─────────────────────────────────────────────┐
+│ > Search or run a command...                │
+├─────────────────────────────────────────────┤
+│ Recently Used                               │
+│                                             │
+│ Repository Intelligence                     │
+│ Smart Educare                              │
+│ Evidence Vault                             │
+│                                             │
+├─────────────────────────────────────────────┤
+│ Results                                     │
+│                                             │
+│ 📁 Workspace                               │
+│ 📖 Story                                   │
+│ 🧠 Knowledge                               │
+│ 📷 Evidence                                │
+│ ⚙ Command                                 │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+Minimal.
+
+Fast.
+
+Keyboard-first.
+
+---
+
+# Search Intelligence
+
+Don't simply search text.
+
+Rank results.
+
+Priority order
+
+1. Open Workspaces
+2. Recent items
+3. Favorites
+4. Exact matches
+5. Partial matches
+6. Semantic matches (future)
+
+---
+
+# Filters
+
+```
+workspace:
+story:
+knowledge:
+campaign:
+repository:
+media:
+command:
+```
+
+Example
+
+```
+repo:smart
+```
+
+Only repositories.
+
+---
+
+# Preview
+
+Arrow key
+
+Preview panel
+
+No need to open.
+
+Exactly like Raycast.
+
+---
+
+# Recent History
+
+```
+Recently Opened
+
+Recently Edited
+
+Recently Exported
+
+Recently Published
+```
+
+---
+
+# Favorites
+
+Pin anything.
+
+Story
+
+Workspace
+
+Campaign
+
+Repository
+
+Knowledge
+
+Evidence
+
+---
+
+# Keyboard First
+
+Everything should have shortcuts.
+
+```
+⌘N
+
+New Story
+
+⌘⇧N
+
+New Workspace
+
+⌘E
+
+Capture Evidence
+
+⌘R
+
+Analyze Repository
+
+⌘P
+
+Publishing Pipeline
+
+⌘/
+
+Focus Search
+```
+
+The application should be operable without touching a mouse.
+
+---
+
+# Command DNA
+
+This is something I haven't seen implemented well.
+
+Every command should declare its capabilities.
+
+Example
+
+```
+Analyze Repository
+
+Requires
+
+Repository
+
+Produces
+
+Evidence
+
+Knowledge
+
+Reports
+
+Updates
+
+Workspace
+
+Related
+
+Production Audit
+```
+
+This enables future automation and plugin integration because commands become self-describing building blocks rather than hard-coded actions.
+
+---
+
+# Future Automation
+
+Imagine chaining commands:
+
+```
+Analyze Repository
+        ↓
+Generate Audit
+        ↓
+Create Story
+        ↓
+Create Campaign
+        ↓
+Generate Outputs
+        ↓
+Schedule Week 1
+```
+
+One workflow.
+
+No manual steps.
+
+---
+
+# Success Criteria
+
+The Command Center is successful when a power user can perform **80% of daily actions without navigating through the sidebar**.
+
+---
+
+# Why This Is TNBR
+
+We've spent the last eight routes designing an operating system.
+
+Operating systems have one defining trait:
+
+> **Everything is immediately accessible.**
+
+The Command Center becomes the front door to every capability we've built. As N-Tech C³ grows over the next five years, users won't think in terms of menus—they'll think in terms of intent:
+
+* "I want to analyze a repository."
+* "I want to open the Smart Educare workspace."
+* "I want to create a Story."
+* "I want to export a campaign."
+
+The Command Center translates that intent into action, making the entire platform feel cohesive, fast, and deeply engineered rather than menu-driven.
+
+---
+
+## My only architectural addition
+
+At this point, I would introduce one cross-cutting concept that applies to **every route**:
+
+# **Activities**
+
+Instead of treating actions as isolated events, everything emits an activity.
+
+Examples:
+
+* Workspace created
+* Repository analyzed
+* Evidence captured
+* Story updated
+* Knowledge page promoted to Canonical
+* Campaign completed
+* Output published
+
+These activities feed:
+
+* The Dashboard
+* Workspace timelines
+* Repository history
+* Audit logs
+* Future collaboration
+* Analytics
+* Automation triggers
+
+In other words, Activities become the **event stream** of N-Tech C³. They tie every module together without coupling them directly and provide a solid foundation for future features like automation, synchronization, plugins, and collaborative workspaces. This event-driven backbone will scale far better than trying to infer history after the fact.

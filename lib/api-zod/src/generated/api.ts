@@ -495,6 +495,8 @@ export const DeleteProjectResponse = zod.void()
 export const ListStoriesQueryParams = zod.object({
   "status": zod.coerce.string().optional(),
   "campaignId": zod.coerce.number().nullish(),
+  "workspaceId": zod.coerce.number().optional(),
+  "storyType": zod.coerce.string().optional(),
   "search": zod.coerce.string().optional()
 })
 
@@ -504,15 +506,25 @@ export const ListStoriesResponseItem = zod.object({
   "slug": zod.string().nullish(),
   "summary": zod.string().nullish(),
   "content": zod.string().nullish(),
-  "status": zod.enum(['Research', 'Idea', 'Draft', 'Review', 'Approved', 'Published', 'Archived']),
+  "status": zod.enum(['Idea', 'Research', 'EvidenceGathering', 'Outline', 'Draft', 'Review', 'Approved', 'Published', 'Archived']),
   "category": zod.string().nullish(),
   "priority": zod.union([zod.literal('Low'),zod.literal('Medium'),zod.literal('High'),zod.literal('Critical'),zod.literal(null)]).nullish(),
   "audience": zod.string().nullish(),
   "difficulty": zod.union([zod.literal('Beginner'),zod.literal('Intermediate'),zod.literal('Advanced'),zod.literal(null)]).nullish(),
   "tags": zod.array(zod.string()).optional(),
   "projectId": zod.number().nullish(),
+  "workspaceId": zod.number().nullish(),
   "campaignId": zod.number().nullish(),
   "evidenceScore": zod.number().nullish(),
+  "storyType": zod.enum(['EngineeringJournal', 'BlogArticle', 'SocialSeries', 'CaseStudy', 'TechnicalDocumentation', 'ADR', 'ResearchNote', 'LearningNote', 'ProductUpdate', 'ChangelogNarrative', 'InternalMemo', 'Presentation', 'Other']).optional(),
+  "author": zod.string().nullish(),
+  "objective": zod.string().nullish(),
+  "targetPlatforms": zod.array(zod.string()).optional(),
+  "publishAt": zod.coerce.date().nullish(),
+  "wordCount": zod.number().optional(),
+  "estimatedReadMinutes": zod.number().optional(),
+  "version": zod.number().optional(),
+  "archivedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -529,14 +541,20 @@ export const CreateStoryBody = zod.object({
   "title": zod.string().min(1),
   "summary": zod.string().optional(),
   "content": zod.string().optional(),
-  "status": zod.enum(['Research', 'Idea', 'Draft', 'Review', 'Approved', 'Published', 'Archived']).optional(),
+  "status": zod.enum(['Idea', 'Research', 'EvidenceGathering', 'Outline', 'Draft', 'Review', 'Approved', 'Published', 'Archived']).optional(),
   "category": zod.string().optional(),
   "priority": zod.enum(['Low', 'Medium', 'High', 'Critical']).optional(),
   "audience": zod.string().optional(),
   "difficulty": zod.enum(['Beginner', 'Intermediate', 'Advanced']).optional(),
   "tags": zod.array(zod.string()).optional(),
   "projectId": zod.number().nullish(),
-  "campaignId": zod.number().nullish()
+  "workspaceId": zod.number().nullish(),
+  "campaignId": zod.number().nullish(),
+  "storyType": zod.enum(['EngineeringJournal', 'BlogArticle', 'SocialSeries', 'CaseStudy', 'TechnicalDocumentation', 'ADR', 'ResearchNote', 'LearningNote', 'ProductUpdate', 'ChangelogNarrative', 'InternalMemo', 'Presentation', 'Other']).optional(),
+  "author": zod.string().optional(),
+  "objective": zod.string().optional(),
+  "targetPlatforms": zod.array(zod.string()).optional(),
+  "publishAt": zod.coerce.date().optional()
 })
 
 export const CreateStoryResponse = zod.object({
@@ -545,15 +563,25 @@ export const CreateStoryResponse = zod.object({
   "slug": zod.string().nullish(),
   "summary": zod.string().nullish(),
   "content": zod.string().nullish(),
-  "status": zod.enum(['Research', 'Idea', 'Draft', 'Review', 'Approved', 'Published', 'Archived']),
+  "status": zod.enum(['Idea', 'Research', 'EvidenceGathering', 'Outline', 'Draft', 'Review', 'Approved', 'Published', 'Archived']),
   "category": zod.string().nullish(),
   "priority": zod.union([zod.literal('Low'),zod.literal('Medium'),zod.literal('High'),zod.literal('Critical'),zod.literal(null)]).nullish(),
   "audience": zod.string().nullish(),
   "difficulty": zod.union([zod.literal('Beginner'),zod.literal('Intermediate'),zod.literal('Advanced'),zod.literal(null)]).nullish(),
   "tags": zod.array(zod.string()).optional(),
   "projectId": zod.number().nullish(),
+  "workspaceId": zod.number().nullish(),
   "campaignId": zod.number().nullish(),
   "evidenceScore": zod.number().nullish(),
+  "storyType": zod.enum(['EngineeringJournal', 'BlogArticle', 'SocialSeries', 'CaseStudy', 'TechnicalDocumentation', 'ADR', 'ResearchNote', 'LearningNote', 'ProductUpdate', 'ChangelogNarrative', 'InternalMemo', 'Presentation', 'Other']).optional(),
+  "author": zod.string().nullish(),
+  "objective": zod.string().nullish(),
+  "targetPlatforms": zod.array(zod.string()).optional(),
+  "publishAt": zod.coerce.date().nullish(),
+  "wordCount": zod.number().optional(),
+  "estimatedReadMinutes": zod.number().optional(),
+  "version": zod.number().optional(),
+  "archivedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -572,15 +600,25 @@ export const GetStoryResponse = zod.object({
   "slug": zod.string().nullish(),
   "summary": zod.string().nullish(),
   "content": zod.string().nullish(),
-  "status": zod.enum(['Research', 'Idea', 'Draft', 'Review', 'Approved', 'Published', 'Archived']),
+  "status": zod.enum(['Idea', 'Research', 'EvidenceGathering', 'Outline', 'Draft', 'Review', 'Approved', 'Published', 'Archived']),
   "category": zod.string().nullish(),
   "priority": zod.union([zod.literal('Low'),zod.literal('Medium'),zod.literal('High'),zod.literal('Critical'),zod.literal(null)]).nullish(),
   "audience": zod.string().nullish(),
   "difficulty": zod.union([zod.literal('Beginner'),zod.literal('Intermediate'),zod.literal('Advanced'),zod.literal(null)]).nullish(),
   "tags": zod.array(zod.string()).optional(),
   "projectId": zod.number().nullish(),
+  "workspaceId": zod.number().nullish(),
   "campaignId": zod.number().nullish(),
   "evidenceScore": zod.number().nullish(),
+  "storyType": zod.enum(['EngineeringJournal', 'BlogArticle', 'SocialSeries', 'CaseStudy', 'TechnicalDocumentation', 'ADR', 'ResearchNote', 'LearningNote', 'ProductUpdate', 'ChangelogNarrative', 'InternalMemo', 'Presentation', 'Other']).optional(),
+  "author": zod.string().nullish(),
+  "objective": zod.string().nullish(),
+  "targetPlatforms": zod.array(zod.string()).optional(),
+  "publishAt": zod.coerce.date().nullish(),
+  "wordCount": zod.number().optional(),
+  "estimatedReadMinutes": zod.number().optional(),
+  "version": zod.number().optional(),
+  "archivedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -600,14 +638,21 @@ export const UpdateStoryBody = zod.object({
   "title": zod.string().min(1).optional(),
   "summary": zod.string().nullish(),
   "content": zod.string().nullish(),
-  "status": zod.enum(['Research', 'Idea', 'Draft', 'Review', 'Approved', 'Published', 'Archived']).optional(),
+  "status": zod.enum(['Idea', 'Research', 'EvidenceGathering', 'Outline', 'Draft', 'Review', 'Approved', 'Published', 'Archived']).optional(),
   "category": zod.string().nullish(),
   "priority": zod.union([zod.literal('Low'),zod.literal('Medium'),zod.literal('High'),zod.literal('Critical'),zod.literal(null)]).nullish(),
   "audience": zod.string().nullish(),
   "difficulty": zod.union([zod.literal('Beginner'),zod.literal('Intermediate'),zod.literal('Advanced'),zod.literal(null)]).nullish(),
   "tags": zod.array(zod.string()).optional(),
   "projectId": zod.number().nullish(),
-  "campaignId": zod.number().nullish()
+  "workspaceId": zod.number().nullish(),
+  "campaignId": zod.number().nullish(),
+  "storyType": zod.enum(['EngineeringJournal', 'BlogArticle', 'SocialSeries', 'CaseStudy', 'TechnicalDocumentation', 'ADR', 'ResearchNote', 'LearningNote', 'ProductUpdate', 'ChangelogNarrative', 'InternalMemo', 'Presentation', 'Other']).optional(),
+  "author": zod.string().nullish(),
+  "objective": zod.string().nullish(),
+  "targetPlatforms": zod.array(zod.string()).optional(),
+  "publishAt": zod.coerce.date().nullish(),
+  "expectedVersion": zod.number().optional()
 })
 
 export const UpdateStoryResponse = zod.object({
@@ -616,15 +661,25 @@ export const UpdateStoryResponse = zod.object({
   "slug": zod.string().nullish(),
   "summary": zod.string().nullish(),
   "content": zod.string().nullish(),
-  "status": zod.enum(['Research', 'Idea', 'Draft', 'Review', 'Approved', 'Published', 'Archived']),
+  "status": zod.enum(['Idea', 'Research', 'EvidenceGathering', 'Outline', 'Draft', 'Review', 'Approved', 'Published', 'Archived']),
   "category": zod.string().nullish(),
   "priority": zod.union([zod.literal('Low'),zod.literal('Medium'),zod.literal('High'),zod.literal('Critical'),zod.literal(null)]).nullish(),
   "audience": zod.string().nullish(),
   "difficulty": zod.union([zod.literal('Beginner'),zod.literal('Intermediate'),zod.literal('Advanced'),zod.literal(null)]).nullish(),
   "tags": zod.array(zod.string()).optional(),
   "projectId": zod.number().nullish(),
+  "workspaceId": zod.number().nullish(),
   "campaignId": zod.number().nullish(),
   "evidenceScore": zod.number().nullish(),
+  "storyType": zod.enum(['EngineeringJournal', 'BlogArticle', 'SocialSeries', 'CaseStudy', 'TechnicalDocumentation', 'ADR', 'ResearchNote', 'LearningNote', 'ProductUpdate', 'ChangelogNarrative', 'InternalMemo', 'Presentation', 'Other']).optional(),
+  "author": zod.string().nullish(),
+  "objective": zod.string().nullish(),
+  "targetPlatforms": zod.array(zod.string()).optional(),
+  "publishAt": zod.coerce.date().nullish(),
+  "wordCount": zod.number().optional(),
+  "estimatedReadMinutes": zod.number().optional(),
+  "version": zod.number().optional(),
+  "archivedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -648,6 +703,312 @@ export const GetStoriesByStatusResponseItem = zod.object({
   "count": zod.number()
 })
 export const GetStoriesByStatusResponse = zod.array(GetStoriesByStatusResponseItem)
+
+
+/**
+ * @summary Validate and apply a Story lifecycle transition
+ */
+export const TransitionStoryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const TransitionStoryBody = zod.object({
+  "status": zod.enum(['Idea', 'Research', 'EvidenceGathering', 'Outline', 'Draft', 'Review', 'Approved', 'Published', 'Archived'])
+})
+
+export const TransitionStoryResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "slug": zod.string().nullish(),
+  "summary": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "status": zod.enum(['Idea', 'Research', 'EvidenceGathering', 'Outline', 'Draft', 'Review', 'Approved', 'Published', 'Archived']),
+  "category": zod.string().nullish(),
+  "priority": zod.union([zod.literal('Low'),zod.literal('Medium'),zod.literal('High'),zod.literal('Critical'),zod.literal(null)]).nullish(),
+  "audience": zod.string().nullish(),
+  "difficulty": zod.union([zod.literal('Beginner'),zod.literal('Intermediate'),zod.literal('Advanced'),zod.literal(null)]).nullish(),
+  "tags": zod.array(zod.string()).optional(),
+  "projectId": zod.number().nullish(),
+  "workspaceId": zod.number().nullish(),
+  "campaignId": zod.number().nullish(),
+  "evidenceScore": zod.number().nullish(),
+  "storyType": zod.enum(['EngineeringJournal', 'BlogArticle', 'SocialSeries', 'CaseStudy', 'TechnicalDocumentation', 'ADR', 'ResearchNote', 'LearningNote', 'ProductUpdate', 'ChangelogNarrative', 'InternalMemo', 'Presentation', 'Other']).optional(),
+  "author": zod.string().nullish(),
+  "objective": zod.string().nullish(),
+  "targetPlatforms": zod.array(zod.string()).optional(),
+  "publishAt": zod.coerce.date().nullish(),
+  "wordCount": zod.number().optional(),
+  "estimatedReadMinutes": zod.number().optional(),
+  "version": zod.number().optional(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Get ordered Story outline
+ */
+export const GetStoryOutlineParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetStoryOutlineResponseItem = zod.object({
+  "id": zod.number(),
+  "storyId": zod.number(),
+  "parentId": zod.number().nullish(),
+  "position": zod.number(),
+  "title": zod.string(),
+  "notes": zod.string().nullish(),
+  "completionStatus": zod.enum(['Planned', 'InProgress', 'Complete']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const GetStoryOutlineResponse = zod.array(GetStoryOutlineResponseItem)
+
+
+/**
+ * @summary Atomically replace ordered Story outline
+ */
+export const ReplaceStoryOutlineParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const ReplaceStoryOutlineBodyItem = zod.object({
+  "id": zod.number().optional(),
+  "parentId": zod.number().nullish(),
+  "title": zod.string().min(1),
+  "notes": zod.string().nullish(),
+  "completionStatus": zod.enum(['Planned', 'InProgress', 'Complete'])
+})
+export const ReplaceStoryOutlineBody = zod.array(ReplaceStoryOutlineBodyItem)
+
+export const ReplaceStoryOutlineResponseItem = zod.object({
+  "id": zod.number(),
+  "storyId": zod.number(),
+  "parentId": zod.number().nullish(),
+  "position": zod.number(),
+  "title": zod.string(),
+  "notes": zod.string().nullish(),
+  "completionStatus": zod.enum(['Planned', 'InProgress', 'Complete']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ReplaceStoryOutlineResponse = zod.array(ReplaceStoryOutlineResponseItem)
+
+
+/**
+ * @summary Get Story Evidence, Knowledge, Asset, Campaign, and related Story links
+ */
+export const GetStoryLinksParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetStoryLinksResponse = zod.object({
+  "evidence": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "entityType": zod.string(),
+  "relationshipType": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})),
+  "knowledge": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "entityType": zod.string(),
+  "relationshipType": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})),
+  "assets": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "entityType": zod.string(),
+  "relationshipType": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})),
+  "campaigns": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "entityType": zod.string(),
+  "relationshipType": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})),
+  "stories": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "entityType": zod.string(),
+  "relationshipType": zod.string().nullish(),
+  "notes": zod.string().nullish()
+}))
+})
+
+
+/**
+ * @summary Link an entity to a Story
+ */
+export const LinkStoryEntityParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const LinkStoryEntityBody = zod.object({
+  "entityType": zod.enum(['evidence', 'knowledge', 'asset', 'campaign', 'story']),
+  "entityId": zod.number(),
+  "relationshipType": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const LinkStoryEntityResponse = zod.void()
+
+
+/**
+ * @summary Unlink an entity from a Story
+ */
+export const UnlinkStoryEntityParams = zod.object({
+  "id": zod.coerce.number(),
+  "entityType": zod.enum(['evidence', 'knowledge', 'asset', 'campaign', 'story']),
+  "entityId": zod.coerce.number()
+})
+
+export const UnlinkStoryEntityResponse = zod.void()
+
+
+/**
+ * @summary List Story outputs
+ */
+export const GetStoryOutputsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetStoryOutputsResponseItem = zod.object({
+  "id": zod.number(),
+  "storyId": zod.number(),
+  "type": zod.string(),
+  "title": zod.string(),
+  "status": zod.enum(['Draft', 'Review', 'Ready', 'Published', 'Archived']),
+  "content": zod.string().nullish(),
+  "format": zod.string().nullish(),
+  "destination": zod.string().nullish(),
+  "publishedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const GetStoryOutputsResponse = zod.array(GetStoryOutputsResponseItem)
+
+
+/**
+ * @summary Create a Story output
+ */
+export const CreateStoryOutputParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const CreateStoryOutputBody = zod.object({
+  "type": zod.string(),
+  "title": zod.string().min(1),
+  "status": zod.enum(['Draft', 'Review', 'Ready', 'Published', 'Archived']).optional(),
+  "content": zod.string().optional(),
+  "format": zod.string().optional(),
+  "destination": zod.string().optional()
+})
+
+export const CreateStoryOutputResponse = zod.object({
+  "id": zod.number(),
+  "storyId": zod.number(),
+  "type": zod.string(),
+  "title": zod.string(),
+  "status": zod.enum(['Draft', 'Review', 'Ready', 'Published', 'Archived']),
+  "content": zod.string().nullish(),
+  "format": zod.string().nullish(),
+  "destination": zod.string().nullish(),
+  "publishedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Calculate explained Story health
+ */
+export const GetStoryHealthParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetStoryHealthResponse = zod.object({
+  "score": zod.number(),
+  "insufficientData": zod.boolean(),
+  "blockers": zod.array(zod.string()),
+  "components": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "score": zod.number(),
+  "applicable": zod.boolean(),
+  "explanation": zod.string()
+}))
+})
+
+
+/**
+ * @summary Get Story events and version checkpoints
+ */
+export const GetStoryTimelineParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetStoryTimelineResponseItem = zod.object({
+  "id": zod.number(),
+  "eventType": zod.string(),
+  "actor": zod.string(),
+  "payload": zod.record(zod.string(), zod.unknown()),
+  "createdAt": zod.coerce.date()
+})
+export const GetStoryTimelineResponse = zod.array(GetStoryTimelineResponseItem)
+
+
+/**
+ * @summary Archive or restore a Story
+ */
+export const ArchiveStoryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ArchiveStoryBody = zod.object({
+  "archived": zod.boolean()
+})
+
+export const ArchiveStoryResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "slug": zod.string().nullish(),
+  "summary": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "status": zod.enum(['Idea', 'Research', 'EvidenceGathering', 'Outline', 'Draft', 'Review', 'Approved', 'Published', 'Archived']),
+  "category": zod.string().nullish(),
+  "priority": zod.union([zod.literal('Low'),zod.literal('Medium'),zod.literal('High'),zod.literal('Critical'),zod.literal(null)]).nullish(),
+  "audience": zod.string().nullish(),
+  "difficulty": zod.union([zod.literal('Beginner'),zod.literal('Intermediate'),zod.literal('Advanced'),zod.literal(null)]).nullish(),
+  "tags": zod.array(zod.string()).optional(),
+  "projectId": zod.number().nullish(),
+  "workspaceId": zod.number().nullish(),
+  "campaignId": zod.number().nullish(),
+  "evidenceScore": zod.number().nullish(),
+  "storyType": zod.enum(['EngineeringJournal', 'BlogArticle', 'SocialSeries', 'CaseStudy', 'TechnicalDocumentation', 'ADR', 'ResearchNote', 'LearningNote', 'ProductUpdate', 'ChangelogNarrative', 'InternalMemo', 'Presentation', 'Other']).optional(),
+  "author": zod.string().nullish(),
+  "objective": zod.string().nullish(),
+  "targetPlatforms": zod.array(zod.string()).optional(),
+  "publishAt": zod.coerce.date().nullish(),
+  "wordCount": zod.number().optional(),
+  "estimatedReadMinutes": zod.number().optional(),
+  "version": zod.number().optional(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
 
 
 /**

@@ -10,8 +10,10 @@ export type StoryInputStatus = typeof StoryInputStatus[keyof typeof StoryInputSt
 
 
 export const StoryInputStatus = {
-  Research: 'Research',
   Idea: 'Idea',
+  Research: 'Research',
+  EvidenceGathering: 'EvidenceGathering',
+  Outline: 'Outline',
   Draft: 'Draft',
   Review: 'Review',
   Approved: 'Approved',

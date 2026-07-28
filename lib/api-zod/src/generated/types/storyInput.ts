@@ -8,6 +8,7 @@
 import type { StoryInputDifficulty } from './storyInputDifficulty';
 import type { StoryInputPriority } from './storyInputPriority';
 import type { StoryInputStatus } from './storyInputStatus';
+import type { StoryInputStoryType } from './storyInputStoryType';
 
 export interface StoryInput {
   /** @minLength 1 */
@@ -23,5 +24,12 @@ export interface StoryInput {
   /** @nullable */
   projectId?: number | null;
   /** @nullable */
+  workspaceId?: number | null;
+  /** @nullable */
   campaignId?: number | null;
+  storyType?: StoryInputStoryType;
+  author?: string;
+  objective?: string;
+  targetPlatforms?: string[];
+  publishAt?: Date;
 }

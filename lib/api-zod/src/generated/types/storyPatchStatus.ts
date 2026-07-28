@@ -10,8 +10,10 @@ export type StoryPatchStatus = typeof StoryPatchStatus[keyof typeof StoryPatchSt
 
 
 export const StoryPatchStatus = {
-  Research: 'Research',
   Idea: 'Idea',
+  Research: 'Research',
+  EvidenceGathering: 'EvidenceGathering',
+  Outline: 'Outline',
   Draft: 'Draft',
   Review: 'Review',
   Approved: 'Approved',
