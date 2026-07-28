@@ -60,7 +60,7 @@ export const globalSearchQueryLimitMax = 50;
 export const GlobalSearchQueryParams = zod.object({
   "q": zod.coerce.string().min(globalSearchQueryQMin),
   "limit": zod.coerce.number().min(1).max(globalSearchQueryLimitMax).default(globalSearchQueryLimitDefault),
-  "entityType": zod.enum(['story', 'evidence', 'knowledge', 'campaign', 'asset', 'template', 'project']).optional(),
+  "entityType": zod.enum(['story', 'evidence', 'knowledge', 'campaign', 'asset', 'template', 'workspace']).optional(),
   "projectId": zod.coerce.number().optional(),
   "status": zod.coerce.string().optional(),
   "from": zod.date().optional(),
@@ -75,6 +75,329 @@ export const GlobalSearchResponseItem = zod.object({
   "path": zod.string()
 })
 export const GlobalSearchResponse = zod.array(GlobalSearchResponseItem)
+
+
+/**
+ * @summary List and filter workspaces
+ */
+export const ListWorkspacesQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "status": zod.enum(['Active', 'Archived', 'Corrupted']).optional(),
+  "favorite": zod.coerce.boolean().optional(),
+  "pinned": zod.coerce.boolean().optional(),
+  "purpose": zod.coerce.string().optional()
+})
+
+export const ListWorkspacesResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().nullish(),
+  "color": zod.string().nullish(),
+  "status": zod.enum(['Active', 'Archived', 'Corrupted']),
+  "purpose": zod.enum(['Product', 'Marketing', 'Research', 'Internal', 'Personal', 'Other']),
+  "brand": zod.string().nullish(),
+  "writingVoice": zod.string().nullish(),
+  "targetAudience": zod.string().nullish(),
+  "currentGoal": zod.string().nullish(),
+  "icon": zod.string().nullish(),
+  "logoPath": zod.string().nullish(),
+  "owner": zod.string(),
+  "tags": zod.array(zod.string()),
+  "repositoryLinks": zod.array(zod.string()),
+  "preferredExportFormats": zod.array(zod.string()),
+  "knowledgeDomains": zod.array(zod.string()),
+  "isFavorite": zod.boolean(),
+  "isPinned": zod.boolean(),
+  "lastOpenedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "metrics": zod.object({
+  "stories": zod.number(),
+  "evidence": zod.number(),
+  "knowledge": zod.number(),
+  "campaigns": zod.number(),
+  "assets": zod.number(),
+  "exports": zod.number()
+}),
+  "health": zod.object({
+  "score": zod.number(),
+  "insufficientData": zod.boolean(),
+  "components": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "score": zod.number(),
+  "applicable": zod.boolean(),
+  "explanation": zod.string()
+}))
+})
+}))
+export const ListWorkspacesResponse = zod.array(ListWorkspacesResponseItem)
+
+
+/**
+ * @summary Create a workspace
+ */
+
+
+
+export const CreateWorkspaceBody = zod.object({
+  "name": zod.string().min(1),
+  "description": zod.string().optional(),
+  "color": zod.string().optional(),
+  "purpose": zod.enum(['Product', 'Marketing', 'Research', 'Internal', 'Personal', 'Other']).optional(),
+  "brand": zod.string().optional(),
+  "writingVoice": zod.string().optional(),
+  "targetAudience": zod.string().optional(),
+  "currentGoal": zod.string().optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "repositoryLinks": zod.array(zod.string()).optional(),
+  "preferredExportFormats": zod.array(zod.string()).optional(),
+  "knowledgeDomains": zod.array(zod.string()).optional()
+})
+
+export const CreateWorkspaceResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().nullish(),
+  "color": zod.string().nullish(),
+  "status": zod.enum(['Active', 'Archived', 'Corrupted']),
+  "purpose": zod.enum(['Product', 'Marketing', 'Research', 'Internal', 'Personal', 'Other']),
+  "brand": zod.string().nullish(),
+  "writingVoice": zod.string().nullish(),
+  "targetAudience": zod.string().nullish(),
+  "currentGoal": zod.string().nullish(),
+  "icon": zod.string().nullish(),
+  "logoPath": zod.string().nullish(),
+  "owner": zod.string(),
+  "tags": zod.array(zod.string()),
+  "repositoryLinks": zod.array(zod.string()),
+  "preferredExportFormats": zod.array(zod.string()),
+  "knowledgeDomains": zod.array(zod.string()),
+  "isFavorite": zod.boolean(),
+  "isPinned": zod.boolean(),
+  "lastOpenedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Get a workspace overview
+ */
+export const GetWorkspaceParams = zod.object({
+  "workspaceId": zod.coerce.number()
+})
+
+export const GetWorkspaceResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().nullish(),
+  "color": zod.string().nullish(),
+  "status": zod.enum(['Active', 'Archived', 'Corrupted']),
+  "purpose": zod.enum(['Product', 'Marketing', 'Research', 'Internal', 'Personal', 'Other']),
+  "brand": zod.string().nullish(),
+  "writingVoice": zod.string().nullish(),
+  "targetAudience": zod.string().nullish(),
+  "currentGoal": zod.string().nullish(),
+  "icon": zod.string().nullish(),
+  "logoPath": zod.string().nullish(),
+  "owner": zod.string(),
+  "tags": zod.array(zod.string()),
+  "repositoryLinks": zod.array(zod.string()),
+  "preferredExportFormats": zod.array(zod.string()),
+  "knowledgeDomains": zod.array(zod.string()),
+  "isFavorite": zod.boolean(),
+  "isPinned": zod.boolean(),
+  "lastOpenedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "metrics": zod.object({
+  "stories": zod.number(),
+  "evidence": zod.number(),
+  "knowledge": zod.number(),
+  "campaigns": zod.number(),
+  "assets": zod.number(),
+  "exports": zod.number()
+}),
+  "health": zod.object({
+  "score": zod.number(),
+  "insufficientData": zod.boolean(),
+  "components": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "score": zod.number(),
+  "applicable": zod.boolean(),
+  "explanation": zod.string()
+}))
+})
+})).and(zod.object({
+  "recentActivity": zod.array(zod.object({
+  "id": zod.number(),
+  "entityType": zod.string(),
+  "entityId": zod.number(),
+  "entityTitle": zod.string(),
+  "action": zod.string(),
+  "createdAt": zod.coerce.date()
+})),
+  "continueWorking": zod.union([zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "status": zod.string()
+}),zod.null()]).optional()
+}))
+
+
+/**
+ * @summary Update workspace metadata or state
+ */
+export const UpdateWorkspaceParams = zod.object({
+  "workspaceId": zod.coerce.number()
+})
+
+
+
+
+export const UpdateWorkspaceBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "description": zod.string().nullish(),
+  "color": zod.string().nullish(),
+  "status": zod.enum(['Active', 'Archived', 'Corrupted']).optional(),
+  "purpose": zod.enum(['Product', 'Marketing', 'Research', 'Internal', 'Personal', 'Other']).optional(),
+  "brand": zod.string().nullish(),
+  "writingVoice": zod.string().nullish(),
+  "targetAudience": zod.string().nullish(),
+  "currentGoal": zod.string().nullish(),
+  "tags": zod.array(zod.string()).optional(),
+  "repositoryLinks": zod.array(zod.string()).optional(),
+  "preferredExportFormats": zod.array(zod.string()).optional(),
+  "knowledgeDomains": zod.array(zod.string()).optional(),
+  "isFavorite": zod.boolean().optional(),
+  "isPinned": zod.boolean().optional()
+})
+
+export const UpdateWorkspaceResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().nullish(),
+  "color": zod.string().nullish(),
+  "status": zod.enum(['Active', 'Archived', 'Corrupted']),
+  "purpose": zod.enum(['Product', 'Marketing', 'Research', 'Internal', 'Personal', 'Other']),
+  "brand": zod.string().nullish(),
+  "writingVoice": zod.string().nullish(),
+  "targetAudience": zod.string().nullish(),
+  "currentGoal": zod.string().nullish(),
+  "icon": zod.string().nullish(),
+  "logoPath": zod.string().nullish(),
+  "owner": zod.string(),
+  "tags": zod.array(zod.string()),
+  "repositoryLinks": zod.array(zod.string()),
+  "preferredExportFormats": zod.array(zod.string()),
+  "knowledgeDomains": zod.array(zod.string()),
+  "isFavorite": zod.boolean(),
+  "isPinned": zod.boolean(),
+  "lastOpenedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Duplicate workspace metadata and DNA
+ */
+export const DuplicateWorkspaceParams = zod.object({
+  "workspaceId": zod.coerce.number()
+})
+
+export const DuplicateWorkspaceResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().nullish(),
+  "color": zod.string().nullish(),
+  "status": zod.enum(['Active', 'Archived', 'Corrupted']),
+  "purpose": zod.enum(['Product', 'Marketing', 'Research', 'Internal', 'Personal', 'Other']),
+  "brand": zod.string().nullish(),
+  "writingVoice": zod.string().nullish(),
+  "targetAudience": zod.string().nullish(),
+  "currentGoal": zod.string().nullish(),
+  "icon": zod.string().nullish(),
+  "logoPath": zod.string().nullish(),
+  "owner": zod.string(),
+  "tags": zod.array(zod.string()),
+  "repositoryLinks": zod.array(zod.string()),
+  "preferredExportFormats": zod.array(zod.string()),
+  "knowledgeDomains": zod.array(zod.string()),
+  "isFavorite": zod.boolean(),
+  "isPinned": zod.boolean(),
+  "lastOpenedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Check workspace referential integrity
+ */
+export const GetWorkspaceIntegrityParams = zod.object({
+  "workspaceId": zod.coerce.number()
+})
+
+export const GetWorkspaceIntegrityResponse = zod.object({
+  "healthy": zod.boolean(),
+  "issues": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Export a versioned workspace manifest
+ */
+export const ExportWorkspaceParams = zod.object({
+  "workspaceId": zod.coerce.number()
+})
+
+export const ExportWorkspaceResponse = zod.object({
+  "schemaVersion": zod.number(),
+  "exportedAt": zod.coerce.date(),
+  "workspace": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().nullish(),
+  "color": zod.string().nullish(),
+  "status": zod.enum(['Active', 'Archived', 'Corrupted']),
+  "purpose": zod.enum(['Product', 'Marketing', 'Research', 'Internal', 'Personal', 'Other']),
+  "brand": zod.string().nullish(),
+  "writingVoice": zod.string().nullish(),
+  "targetAudience": zod.string().nullish(),
+  "currentGoal": zod.string().nullish(),
+  "icon": zod.string().nullish(),
+  "logoPath": zod.string().nullish(),
+  "owner": zod.string(),
+  "tags": zod.array(zod.string()),
+  "repositoryLinks": zod.array(zod.string()),
+  "preferredExportFormats": zod.array(zod.string()),
+  "knowledgeDomains": zod.array(zod.string()),
+  "isFavorite": zod.boolean(),
+  "isPinned": zod.boolean(),
+  "lastOpenedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "metrics": zod.object({
+  "stories": zod.number(),
+  "evidence": zod.number(),
+  "knowledge": zod.number(),
+  "campaigns": zod.number(),
+  "assets": zod.number(),
+  "exports": zod.number()
+})
+})
 
 
 /**

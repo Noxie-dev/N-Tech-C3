@@ -10,7 +10,7 @@ import ntechMark from '@/assets/ntech-mark.svg';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Home', icon: Home },
-  { href: '/projects', label: 'Workspaces', icon: Box },
+  { href: '/workspaces', label: 'Workspaces', icon: Box },
   { href: '/stories', label: 'Stories', icon: BookOpen },
   { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
   { href: '/knowledge', label: 'Knowledge Base', icon: Library },

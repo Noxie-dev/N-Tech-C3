@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { globalSearch, useListProjects } from '@workspace/api-client-react';
+import { globalSearch, useListWorkspaces } from '@workspace/api-client-react';
 import { Link } from 'wouter';
 import { Search as SearchIcon, FileSearch, ArrowRight } from 'lucide-react';
 import { Badge, Card, CardContent, Input, Select, Spinner } from '@/components/shared';
@@ -9,19 +9,19 @@ import type { GlobalSearchEntityType } from '@workspace/api-client-react';
 export function Search() {
   const [query, setQuery] = useState('');
   const [entityType, setEntityType] = useState<GlobalSearchEntityType | ''>('');
-  const [projectId, setProjectId] = useState('');
+  const [workspaceId, setWorkspaceId] = useState('');
   const [status, setStatus] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
-  const { data: projects = [] } = useListProjects();
+  const { data: workspaces = [] } = useListWorkspaces();
   const normalizedQuery = query.trim();
   const { data = [], isFetching, error } = useQuery({
-    queryKey: ['global-search', normalizedQuery, entityType, projectId, status, from, to],
+    queryKey: ['global-search', normalizedQuery, entityType, workspaceId, status, from, to],
     queryFn: () => globalSearch({
       q: normalizedQuery,
       limit: 30,
       entityType: entityType || undefined,
-      projectId: projectId ? Number(projectId) : undefined,
+      projectId: workspaceId ? Number(workspaceId) : undefined,
       status: status || undefined,
       from: from || undefined,
       to: to || undefined,
@@ -34,19 +34,19 @@ export function Search() {
       <div>
         <h1 className="font-mono text-2xl font-bold">Global Search</h1>
         <p className="text-sm text-muted-foreground">
-          Search stories, evidence, knowledge, campaigns, assets, templates, and projects.
+          Search stories, evidence, knowledge, campaigns, assets, templates, and workspaces.
         </p>
       </div>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         <Select aria-label="Entity type" value={entityType} onChange={(event) => setEntityType(event.target.value as GlobalSearchEntityType | '')}>
           <option value="">ALL ENTITY TYPES</option>
-          {['story', 'evidence', 'knowledge', 'campaign', 'asset', 'template', 'project'].map((type) => (
+          {['story', 'evidence', 'knowledge', 'campaign', 'asset', 'template', 'workspace'].map((type) => (
             <option key={type} value={type}>{type.toUpperCase()}</option>
           ))}
         </Select>
-        <Select aria-label="Project" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
-          <option value="">ALL PROJECTS</option>
-          {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+        <Select aria-label="Workspace" value={workspaceId} onChange={(event) => setWorkspaceId(event.target.value)}>
+          <option value="">ALL WORKSPACES</option>
+          {workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}
         </Select>
         <Input aria-label="Status" value={status} onChange={(event) => setStatus(event.target.value)} placeholder="Status…" />
         <Input aria-label="Created from" type="date" value={from} onChange={(event) => setFrom(event.target.value)} />

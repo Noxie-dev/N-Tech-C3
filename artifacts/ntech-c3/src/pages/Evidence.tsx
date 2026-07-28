@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useListEvidence, useCreateEvidence, useUpdateEvidence, useListProjects, useListStories, getListEvidenceQueryKey } from '@workspace/api-client-react';
+import { useListEvidence, useCreateEvidence, useUpdateEvidence, useListWorkspaces, useListStories, getListEvidenceQueryKey } from '@workspace/api-client-react';
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button, Input, Select, Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/shared';
 import { Archive, FolderOpen, Plus, Search, Terminal, UploadCloud } from 'lucide-react';
 import { formatShortDate } from '@/lib/utils';
@@ -8,6 +8,9 @@ import type { Evidence as EvidenceRecord, EvidenceInput } from '@workspace/api-c
 import { evidenceTypeForMimeType } from '@/lib/capture-utils';
 
 export function Evidence() {
+  const initialWorkspaceId = typeof window === 'undefined'
+    ? undefined
+    : Number(new URLSearchParams(window.location.search).get('workspaceId')) || undefined;
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -18,10 +21,14 @@ export function Evidence() {
   const [previewMessage, setPreviewMessage] = useState('');
   const queryClient = useQueryClient();
 
-  const { data: evidence, isLoading, refetch } = useListEvidence({ search: search || undefined, type: typeFilter || undefined });
+  const { data: evidence, isLoading, refetch } = useListEvidence({
+    search: search || undefined,
+    type: typeFilter || undefined,
+    projectId: initialWorkspaceId,
+  });
   const createEvidence = useCreateEvidence();
   const updateEvidence = useUpdateEvidence();
-  const { data: projects = [] } = useListProjects();
+  const { data: workspaces = [] } = useListWorkspaces();
   const { data: stories = [] } = useListStories();
 
   const saveLinks = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -48,7 +55,7 @@ export function Evidence() {
 
     if (!title) return;
 
-    createEvidence.mutate({ data: { title, type, source } }, {
+    createEvidence.mutate({ data: { title, type, source, projectId: initialWorkspaceId } }, {
       onSuccess: () => {
         setIsCreateOpen(false);
         refetch();
@@ -80,6 +87,7 @@ export function Evidence() {
             type,
             source: result.source,
             notes: result.checksum ? `SHA-256: ${result.checksum}` : undefined,
+            projectId: initialWorkspaceId,
           },
         });
         imported += 1;
@@ -275,7 +283,7 @@ export function Evidence() {
                     Project
                     <Select name="projectId" defaultValue={selectedEvidence.projectId ?? ''}>
                       <option value="">Unlinked</option>
-                      {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+                      {workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}
                     </Select>
                   </label>
                   <label className="space-y-2 text-xs font-mono uppercase text-muted-foreground">

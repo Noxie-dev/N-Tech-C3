@@ -1,25 +1,27 @@
 import { expect, test } from '@playwright/test';
 
-test('creates a project and finds captured evidence globally', async ({ page }) => {
+test('creates a workspace and finds its captured evidence globally', async ({ page }) => {
   const suffix = Date.now();
-  const projectName = `Browser Project ${suffix}`;
+  const workspaceName = `Browser Workspace ${suffix}`;
   const evidenceTitle = `Browser Evidence ${suffix}`;
 
-  await page.goto('/projects');
-  await expect(page.getByRole('heading', { name: 'Projects' })).toBeVisible();
-  await page.getByRole('button', { name: /add project/i }).click();
-  await page.getByPlaceholder('e.g. Core Service API').fill(projectName);
-  await page.getByPlaceholder('Short description...').fill('Created by the browser workflow test');
-  await page.getByPlaceholder('Short description...').press('Enter');
-  await expect(page.getByText(projectName)).toBeVisible();
-  await page.getByText(projectName).click();
-  await expect(page.getByRole('heading', { name: 'Repository snapshot timeline' })).toBeVisible();
+  await page.goto('/workspaces');
+  await expect(page.getByRole('heading', { name: 'Workspaces' })).toBeVisible();
+  await page.getByRole('button', { name: /new workspace/i }).first().click();
+  await page.getByPlaceholder('Workspace name').fill(workspaceName);
+  await page.getByPlaceholder('What is this initiative?').fill('Created by the browser workflow test');
+  await page.getByRole('button', { name: 'Create Workspace' }).click();
+  await expect(page.getByText(workspaceName)).toBeVisible();
+  await page.getByText(workspaceName).click();
+  await expect(page.getByRole('heading', { name: workspaceName })).toBeVisible();
+  const workspaceId = Number(new URL(page.url()).pathname.split('/').pop());
 
   const response = await page.request.post('/api/evidence', {
     data: {
       title: evidenceTitle,
       type: 'TerminalOutput',
       content: 'playwright-verification-token',
+      projectId: workspaceId,
     },
   });
   expect(response.ok()).toBeTruthy();

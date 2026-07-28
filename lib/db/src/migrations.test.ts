@@ -38,4 +38,28 @@ describe('SQLite migrations', () => {
     ).all();
     expect(matches).toEqual([{ title: 'Build trace' }]);
   });
+
+  it('upgrades projects into the workspace domain without losing relationships', () => {
+    const database = new DatabaseSync(':memory:');
+    database.exec('PRAGMA foreign_keys = ON');
+    runMigrations(database);
+    const workspace = database.prepare(
+      "INSERT INTO projects (name, slug, tags) VALUES ('N-Tech C3', 'n-tech-c3', '[\"platform\"]')",
+    ).run();
+    database.prepare(
+      "INSERT INTO campaigns (title, project_id) VALUES ('Launch', ?)",
+    ).run(workspace.lastInsertRowid);
+
+    expect(database.prepare(
+      'SELECT name, slug, status, purpose FROM projects WHERE id = ?',
+    ).get(workspace.lastInsertRowid)).toEqual({
+      name: 'N-Tech C3',
+      slug: 'n-tech-c3',
+      status: 'Active',
+      purpose: 'Other',
+    });
+    expect(database.prepare(
+      'SELECT project_id FROM campaigns WHERE title = ?',
+    ).get('Launch')).toEqual({ project_id: workspace.lastInsertRowid });
+  });
 });

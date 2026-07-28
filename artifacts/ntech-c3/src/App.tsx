@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Route, Switch, Router as WouterRouter } from 'wouter';
+import { Route, Switch, Router as WouterRouter, useLocation, useParams } from 'wouter';
 import { Shell } from '@/components/Shell';
 import { Spinner } from '@/components/shared';
 
@@ -21,8 +21,9 @@ const Knowledge = lazyPage(() => import('@/pages/Knowledge'), 'Knowledge');
 const KnowledgeDetail = lazyPage(() => import('@/pages/KnowledgeDetail'), 'KnowledgeDetail');
 const Assets = lazyPage(() => import('@/pages/Assets'), 'Assets');
 const Templates = lazyPage(() => import('@/pages/Templates'), 'Templates');
-const Projects = lazyPage(() => import('@/pages/Projects'), 'Projects');
-const ProjectDetail = lazyPage(() => import('@/pages/ProjectDetail'), 'ProjectDetail');
+const Workspaces = lazyPage(() => import('@/pages/Workspaces'), 'Workspaces');
+const WorkspaceDetail = lazyPage(() => import('@/pages/WorkspaceDetail'), 'WorkspaceDetail');
+const WorkspaceSettings = lazyPage(() => import('@/pages/WorkspaceSettings'), 'WorkspaceSettings');
 const Settings = lazyPage(() => import('@/pages/Settings'), 'Settings');
 const Search = lazyPage(() => import('@/pages/Search'), 'Search');
 
@@ -39,6 +40,13 @@ function HomeRedirect() {
   if (typeof window !== 'undefined') {
     window.location.replace('/dashboard');
   }
+  return null;
+}
+
+function ProjectsRedirect() {
+  const [, navigate] = useLocation();
+  const { id } = useParams<{ id?: string }>();
+  queueMicrotask(() => navigate(id ? `/workspaces/${id}` : '/workspaces', { replace: true }));
   return null;
 }
 
@@ -69,8 +77,11 @@ function Router() {
           <Route path="/knowledge/:id" component={KnowledgeDetail} />
           <Route path="/assets" component={Assets} />
           <Route path="/templates" component={Templates} />
-          <Route path="/projects" component={Projects} />
-          <Route path="/projects/:id" component={ProjectDetail} />
+          <Route path="/workspaces" component={Workspaces} />
+          <Route path="/workspaces/:id/settings" component={WorkspaceSettings} />
+          <Route path="/workspaces/:id" component={WorkspaceDetail} />
+          <Route path="/projects/:id" component={ProjectsRedirect} />
+          <Route path="/projects" component={ProjectsRedirect} />
           <Route path="/settings" component={Settings} />
           <Route component={NotFound} />
         </Switch>

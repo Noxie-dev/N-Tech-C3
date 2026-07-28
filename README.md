@@ -1,49 +1,195 @@
 # N-Tech C³
 
-Local-first Engineering Intelligence Operating System for NaniTech. N-Tech C³ captures engineering evidence, connects it to stories and knowledge, and keeps the working vault on the user's machine.
+N-Tech C³ is a local-first **Engineering Intelligence Operating System** for
+capturing engineering reality, organizing it into durable knowledge, and producing
+evidence-backed stories and outputs.
 
-## V1 architecture
+The current alpha runs as an Electron desktop application. Data stays in a local
+SQLite database and portable filesystem vault; the UI communicates with a
+loopback-only Express API through generated OpenAPI clients.
 
-- Desktop: Electron
-- UI: React 19, Vite, Wouter, TanStack Query, Tailwind CSS v4
-- Local API: Express 5 on loopback only
-- Database: Node's built-in SQLite driver, WAL mode
-- Files: portable filesystem vault under `Documents/N-TechC3-Vault`
-- Contracts: OpenAPI + Orval-generated React Query and Zod clients
-- Editor: TipTap with HTML persistence
+## What is implemented
 
-The vault contains `database/ntc3.sqlite` plus human-visible folders for stories, campaigns, knowledge, evidence, assets, exports, drafts, templates, backups, logs, and settings.
+- **Workspaces (Route 01):** picker, search and filters, create, overview, settings,
+  initial Workspace DNA, scoped metrics and activity, explainable health score,
+  favorite/pin, metadata duplicate, archive/restore, integrity check, and JSON
+  manifest export.
+- **Stories:** list, filtering, creation, detail editing, status/priority, and TipTap
+  HTML authoring.
+- **Evidence Vault:** structured/manual capture, two-click quick capture, desktop
+  file ingestion, SHA-256 recording, previews, repository audits, and linking.
+- **Knowledge:** searchable pages with TipTap authoring and stored page links.
+- **Campaigns, Assets, and Templates:** core CRUD/catalog workflows.
+- **Global Search:** trigger-maintained SQLite FTS5 index across the core domains.
+- **Desktop operations:** portable vault, backup/restore, safe file reveal,
+  repository analysis, and Electron packaging.
 
-## Run
+The canonical product status and implementation gaps are maintained in
+[`N-TC3_index.md`](N-TC3_index.md). Product documents are strategic unless the index
+and executable code mark them as implemented.
+
+## Route map
+
+| Route | Purpose |
+| --- | --- |
+| `/dashboard` | Cross-workspace home, activity, metrics, and launch actions |
+| `/workspaces` | Canonical Workspace picker and management |
+| `/workspaces/:id` | Workspace-scoped overview and health |
+| `/workspaces/:id/settings` | Workspace identity and DNA settings |
+| `/stories`, `/stories/:id` | Story catalogue and authoring |
+| `/evidence` | Evidence capture and vault |
+| `/knowledge`, `/knowledge/:id` | Knowledge catalogue and authoring |
+| `/campaigns`, `/campaigns/:id` | Campaign catalogue and detail |
+| `/assets` | Asset catalogue |
+| `/templates` | Template catalogue |
+| `/search` | Global full-text search |
+| `/settings` | Desktop vault and application operations |
+
+Old `/projects` browser links redirect to Workspaces. The physical `projects` SQLite
+table and deprecated `/api/projects` endpoints remain temporarily for backward
+compatibility with existing vaults.
+
+## Architecture
+
+```text
+Electron desktop shell
+        │
+React 19 + Vite + Wouter + TanStack Query
+        │
+Orval-generated OpenAPI client
+        │
+Express 5 local API (/api, loopback only)
+        │
+Generated Zod validation
+        │
+node:sqlite (WAL) + filesystem vault
+```
+
+| Area | Technology |
+| --- | --- |
+| Workspace | pnpm workspaces |
+| Language | TypeScript 5.9 |
+| UI | React 19, Tailwind CSS 4, Radix, Lucide, TipTap |
+| Routing/data | Wouter, TanStack Query |
+| API | Express 5 |
+| Contract/codegen | OpenAPI 3.1, Orval, generated Zod |
+| Persistence | Node built-in SQLite driver in WAL mode |
+| Desktop | Electron with isolated preload IPC |
+| Tests | Vitest, Supertest, Playwright |
+
+The default desktop vault is `Documents/N-TechC3-Vault` and contains:
+
+```text
+database/  stories/  campaigns/  knowledge/  evidence/  assets/
+exports/   drafts/   templates/  backups/    logs/      settings/
+```
+
+## Repository structure
+
+```text
+artifacts/
+  ntech-c3/          React UI plus Electron main/preload
+  api-server/        Express API and domain services
+  mockup-sandbox/    Isolated visual sandbox, not the production app
+lib/
+  api-spec/          Canonical OpenAPI contract and Orval configuration
+  api-client-react/  Generated React Query client
+  api-zod/           Generated request/response schemas
+  db/                SQLite access and ordered transactional migrations
+Docs/                Product architecture, UI/UX specification, and plans
+e2e/                 Browser workflows
+N-TC3_index.md       Repository source of truth
+```
+
+## Prerequisites
+
+- Node.js 24 or another runtime that supports the repository's `node:sqlite` usage
+- pnpm
+- macOS for the current Electron packaging targets
+
+Install dependencies:
 
 ```bash
 pnpm install
+```
+
+The workspace enforces a minimum npm package release age as a supply-chain control.
+Do not disable it.
+
+## Run the desktop application
+
+```bash
 pnpm desktop
 ```
 
-The desktop command builds the workspace, starts the local API, and opens Electron.
+This builds the libraries, API, and frontend, starts the local API, then opens
+Electron.
 
-For browser-only development:
+## Browser development
+
+Run the API and frontend in separate terminals:
 
 ```bash
 PORT=8080 NTC3_VAULT_PATH=./vault pnpm --filter @workspace/api-server run dev
 PORT=5173 BASE_PATH=/ pnpm --filter @workspace/ntech-c3 run dev
 ```
 
-The Vite dev server must proxy `/api` or the API base URL must be configured when frontend and API run on different ports.
+The Vite configuration proxies `/api` to the configured API port. Use a disposable
+`NTC3_VAULT_PATH` when testing migrations or destructive workflows.
 
-## Validation and code generation
+### Environment variables
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `PORT` | API or Vite port | Required for standalone development |
+| `BASE_PATH` | Frontend deployment base | `/` |
+| `NTC3_VAULT_PATH` | Override local vault root | Desktop Documents vault |
+
+## Verify the repository
 
 ```bash
-pnpm test
-pnpm run test:e2e
 pnpm run typecheck
+pnpm test
 pnpm run build
-pnpm --filter @workspace/api-spec run codegen
-pnpm --filter @workspace/db run push
+pnpm run test:e2e
 ```
 
-SQLite upgrades are numbered, transactional migrations recorded in `schema_migrations`. `db push` applies pending migrations idempotently. `NTC3_VAULT_PATH` overrides the default vault location for development and testing.
+Playwright requires Chromium once:
+
+```bash
+pnpm exec playwright install chromium
+```
+
+## OpenAPI workflow
+
+The project is contract-first:
+
+1. Edit `lib/api-spec/openapi.yaml`.
+2. Regenerate clients and validators.
+3. Implement the API route.
+4. Update migrations/domain services.
+5. Run typecheck, tests, and builds.
+
+```bash
+pnpm --filter @workspace/api-spec run codegen
+```
+
+Do not hand-edit files under:
+
+- `lib/api-client-react/src/generated/`
+- `lib/api-zod/src/generated/`
+
+## Database migrations
+
+Migrations are ordered, transactional, and recorded in `schema_migrations`.
+
+- Never edit an applied migration.
+- Append a new numbered migration.
+- Verify both a fresh vault and an upgrade containing existing records.
+- Keep foreign keys enabled and preserve vault-relative file references.
+
+Route 01 uses a compatibility strategy: Workspace is the canonical domain term, but
+the physical `projects` table remains during the migration window.
 
 ## Desktop packaging
 
@@ -52,49 +198,36 @@ pnpm package:dir
 pnpm package:mac
 ```
 
-Install the pinned browser once with `pnpm exec playwright install chromium`. `test:e2e` then builds and exercises the core project creation and global-search workflow.
+- `package:dir` creates an unsigned local `.app` for validation.
+- `package:mac` creates hardened-runtime DMG and ZIP artifacts.
+- Signing/notarization require the standard Apple certificate credentials in the
+  release environment.
 
-`package:dir` creates an unsigned local `.app` with the N-Tech C3 application icon for validation. `package:mac` creates hardened-runtime DMG and ZIP artifacts. Electron Builder automatically signs when standard `CSC_*` Apple certificate credentials are available; notarization credentials must be supplied by the release environment.
+## Engineering rules
 
-## Repository map
-
-- `artifacts/ntech-c3/` — React UI and Electron main/preload processes
-- `artifacts/api-server/` — loopback Express API
-- `lib/db/src/index.ts` — SQLite schema initialization and vault database access
-- `lib/db/src/migrations.ts` — ordered transactional schema migrations
-- `lib/api-spec/openapi.yaml` — API contract source of truth
-- `lib/api-client-react/src/generated/` — generated React Query client
-- `lib/api-zod/src/generated/` — generated server validators
-- `Docs/` — product specifications and active feature briefs
-- `Docs/NTC3_UI-UX_Spec.md` — governing information architecture, interaction, visual design, accessibility, and screen specification
-- `wireframe.png` — binding Home/landing-screen composition
-- `branding-brief.png` — binding brand identity and design-system guide
-- `N-TC3_index.md` — audited repository source of truth
-
-## Current capture flows
-
-- `Cmd/Ctrl+K` opens Quick Capture from any module.
-- Pasting text outside an editable control opens a prefilled Terminal Output capture.
-- Dropping files on the Evidence Vault copies them into the vault through secure Electron IPC and stores a SHA-256 checksum.
-- Stories and Knowledge pages share the TipTap editor and store HTML.
-- Global Search uses a trigger-maintained SQLite FTS5 index across stories, evidence, knowledge, campaigns, assets, templates, and projects.
-- Global Search can narrow results by entity type, project, status, and creation date.
-- “Analyze Repository” on Projects creates searchable Repository Audit evidence without AI or shell interpolation.
-- Project-linked scans retain snapshot history, deterministic fingerprints, and metric deltas from the prior scan.
-- Project detail pages show repository snapshot timelines and comparisons.
-- Evidence cards open an inline preview with story and project graph-linking controls.
-- Supported vault files preview as images, PDFs, audio, or video; desktop users can safely reveal the underlying vault-relative file.
-- Settings can export Markdown/JSON, create a compressed vault backup, and restore a trusted backup while retaining a pre-restore recovery copy.
-
-## Current UI
-
-The desktop shell and Home route now use the approved N-Tech C³ palette, Inter/JetBrains Mono typography, checkered background, wireframe navigation, Quick Capture sidebar, brand hero, Get Started actions, operational panels, and live local metrics. `wireframe.png` and `branding-brief.png` remain the visual acceptance references.
-
-## Rules
-
-- Edit OpenAPI first, then regenerate clients and validators.
-- Do not hand-edit generated API files.
-- Do not disable `minimumReleaseAge` in `pnpm-workspace.yaml`.
+- Treat `N-TC3_index.md` as the repository source of truth.
+- Edit OpenAPI before generated API artifacts.
 - Keep Electron `contextIsolation` enabled and `nodeIntegration` disabled.
-- Never store absolute machine-specific paths in portable entity content; store vault-relative paths.
-- Never edit an applied migration; append a new numbered migration.
+- Store portable vault-relative paths, never absolute machine-specific content
+  paths.
+- Never edit an applied SQLite migration.
+- Preserve the pnpm minimum-release-age policy.
+- Update the index and this README whenever routes, architecture, commands, or
+  implementation status change.
+
+## Current limitations
+
+- Child APIs still expose legacy `projectId` fields while the canonical Workspace
+  migration is completed.
+- Cross-domain many-to-many graph relationships are not yet implemented.
+- Calendar and full export pipeline routes are planned.
+- Entity version history, collaboration, cloud sync, and AI providers are not
+  implemented.
+- Native Electron restore/reveal/dialog workflows need deeper desktop automation.
+
+## Product and implementation references
+
+- [`N-TC3_index.md`](N-TC3_index.md) — canonical current state
+- [`Docs/N-Tech-C³-product architecture-design.md`](Docs/N-Tech-C³-product%20architecture-design.md) — route architecture
+- [`Docs/Route-01-Workspaces-execution-plan.md`](Docs/Route-01-Workspaces-execution-plan.md) — Route 01 audit and implementation plan
+- [`Docs/NTC3_UI-UX_Spec.md`](Docs/NTC3_UI-UX_Spec.md) — governing UI/UX specification

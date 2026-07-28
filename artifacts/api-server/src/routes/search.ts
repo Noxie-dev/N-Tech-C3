@@ -11,7 +11,7 @@ const pathForEntity: Record<string, (id: number) => string> = {
   campaign: (id) => `/campaigns/${id}`,
   asset: () => '/assets',
   template: () => '/templates',
-  project: (id) => `/projects/${id}`,
+  workspace: (id) => `/workspaces/${id}`,
 };
 
 function createFtsQuery(input: string) {
@@ -38,7 +38,7 @@ router.get('/search', (req, res) => {
   }
   if (query.data.projectId != null) {
     conditions.push(`(
-      (entity_type = 'project' AND entity_id = ?) OR
+      (entity_type = 'workspace' AND entity_id = ?) OR
       (entity_type = 'story' AND EXISTS (SELECT 1 FROM stories WHERE stories.id = entity_id AND stories.project_id = ?)) OR
       (entity_type = 'evidence' AND EXISTS (SELECT 1 FROM evidence WHERE evidence.id = entity_id AND evidence.project_id = ?)) OR
       (entity_type = 'asset' AND EXISTS (SELECT 1 FROM assets WHERE assets.id = entity_id AND assets.project_id = ?))
@@ -49,7 +49,7 @@ router.get('/search', (req, res) => {
     conditions.push(`(
       (entity_type = 'story' AND EXISTS (SELECT 1 FROM stories WHERE stories.id = entity_id AND stories.status = ?)) OR
       (entity_type = 'campaign' AND EXISTS (SELECT 1 FROM campaigns WHERE campaigns.id = entity_id AND campaigns.status = ?)) OR
-      (entity_type = 'project' AND EXISTS (SELECT 1 FROM projects WHERE projects.id = entity_id AND projects.status = ?))
+      (entity_type = 'workspace' AND EXISTS (SELECT 1 FROM projects WHERE projects.id = entity_id AND projects.status = ?))
     )`);
     params.push(query.data.status, query.data.status, query.data.status);
   }
@@ -60,7 +60,7 @@ router.get('/search', (req, res) => {
     WHEN 'campaign' THEN (SELECT created_at FROM campaigns WHERE id = entity_id)
     WHEN 'asset' THEN (SELECT created_at FROM assets WHERE id = entity_id)
     WHEN 'template' THEN (SELECT created_at FROM templates WHERE id = entity_id)
-    WHEN 'project' THEN (SELECT created_at FROM projects WHERE id = entity_id)
+    WHEN 'workspace' THEN (SELECT created_at FROM projects WHERE id = entity_id)
   END`;
   if (query.data.from) {
     conditions.push(`datetime(coalesce(${createdAtExpression}, '1970-01-01')) >= datetime(?)`);

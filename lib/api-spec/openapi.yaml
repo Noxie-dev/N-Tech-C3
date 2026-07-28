@@ -23,7 +23,9 @@ tags:
   - name: templates
     description: Template operations
   - name: projects
-    description: Project operations
+    description: Deprecated Project compatibility operations
+  - name: workspaces
+    description: Workspace operating-context operations
   - name: dashboard
     description: Dashboard and analytics operations
   - name: search
@@ -95,7 +97,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [story, evidence, knowledge, campaign, asset, template, project]
+            enum: [story, evidence, knowledge, campaign, asset, template, workspace]
         - name: projectId
           in: query
           schema:
@@ -124,7 +126,169 @@ paths:
                 items:
                   $ref: "#/components/schemas/SearchResult"
 
-  # Projects
+  # Workspaces
+  /workspaces:
+    get:
+      operationId: listWorkspaces
+      tags: [workspaces]
+      summary: List and filter workspaces
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [Active, Archived, Corrupted]
+        - name: favorite
+          in: query
+          schema:
+            type: boolean
+        - name: pinned
+          in: query
+          schema:
+            type: boolean
+        - name: purpose
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Workspace summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkspaceSummary"
+    post:
+      operationId: createWorkspace
+      tags: [workspaces]
+      summary: Create a workspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkspaceInput"
+      responses:
+        "201":
+          description: Created workspace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workspace"
+        "409":
+          description: Workspace slug already exists
+
+  /workspaces/{workspaceId}:
+    parameters:
+      - name: workspaceId
+        in: path
+        required: true
+        schema:
+          type: number
+    get:
+      operationId: getWorkspace
+      tags: [workspaces]
+      summary: Get a workspace overview
+      responses:
+        "200":
+          description: Workspace overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceOverview"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateWorkspace
+      tags: [workspaces]
+      summary: Update workspace metadata or state
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkspacePatch"
+      responses:
+        "200":
+          description: Updated workspace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workspace"
+        "404":
+          description: Not found
+        "409":
+          description: Archived workspace is read-only
+
+  /workspaces/{workspaceId}/duplicate:
+    post:
+      operationId: duplicateWorkspace
+      tags: [workspaces]
+      summary: Duplicate workspace metadata and DNA
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "201":
+          description: Duplicated workspace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workspace"
+        "404":
+          description: Not found
+
+  /workspaces/{workspaceId}/integrity:
+    get:
+      operationId: getWorkspaceIntegrity
+      tags: [workspaces]
+      summary: Check workspace referential integrity
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Integrity report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceIntegrity"
+        "404":
+          description: Not found
+
+  /workspaces/{workspaceId}/export:
+    get:
+      operationId: exportWorkspace
+      tags: [workspaces]
+      summary: Export a versioned workspace manifest
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Workspace manifest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceManifest"
+        "404":
+          description: Not found
+
+  # Deprecated Projects compatibility API
   /projects:
     get:
       operationId: listProjects
@@ -909,7 +1073,260 @@ components:
           type: string
           format: date-time
 
-    # Projects
+    # Workspaces
+    Workspace:
+      type: object
+      required: [id, name, slug, status, purpose, owner, tags, repositoryLinks, preferredExportFormats, knowledgeDomains, isFavorite, isPinned, createdAt, updatedAt]
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: ["string", "null"]
+        color:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [Active, Archived, Corrupted]
+        purpose:
+          type: string
+          enum: [Product, Marketing, Research, Internal, Personal, Other]
+        brand:
+          type: ["string", "null"]
+        writingVoice:
+          type: ["string", "null"]
+        targetAudience:
+          type: ["string", "null"]
+        currentGoal:
+          type: ["string", "null"]
+        icon:
+          type: ["string", "null"]
+        logoPath:
+          type: ["string", "null"]
+        owner:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        repositoryLinks:
+          type: array
+          items:
+            type: string
+        preferredExportFormats:
+          type: array
+          items:
+            type: string
+        knowledgeDomains:
+          type: array
+          items:
+            type: string
+        isFavorite:
+          type: boolean
+        isPinned:
+          type: boolean
+        lastOpenedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    WorkspaceInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        color:
+          type: string
+        purpose:
+          type: string
+          enum: [Product, Marketing, Research, Internal, Personal, Other]
+        brand:
+          type: string
+        writingVoice:
+          type: string
+        targetAudience:
+          type: string
+        currentGoal:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        repositoryLinks:
+          type: array
+          items:
+            type: string
+        preferredExportFormats:
+          type: array
+          items:
+            type: string
+        knowledgeDomains:
+          type: array
+          items:
+            type: string
+
+    WorkspacePatch:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        color:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [Active, Archived, Corrupted]
+        purpose:
+          type: string
+          enum: [Product, Marketing, Research, Internal, Personal, Other]
+        brand:
+          type: ["string", "null"]
+        writingVoice:
+          type: ["string", "null"]
+        targetAudience:
+          type: ["string", "null"]
+        currentGoal:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        repositoryLinks:
+          type: array
+          items:
+            type: string
+        preferredExportFormats:
+          type: array
+          items:
+            type: string
+        knowledgeDomains:
+          type: array
+          items:
+            type: string
+        isFavorite:
+          type: boolean
+        isPinned:
+          type: boolean
+
+    WorkspaceMetrics:
+      type: object
+      required: [stories, evidence, knowledge, campaigns, assets, exports]
+      properties:
+        stories:
+          type: number
+        evidence:
+          type: number
+        knowledge:
+          type: number
+        campaigns:
+          type: number
+        assets:
+          type: number
+        exports:
+          type: number
+
+    WorkspaceHealthComponent:
+      type: object
+      required: [key, label, score, applicable, explanation]
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        score:
+          type: number
+        applicable:
+          type: boolean
+        explanation:
+          type: string
+
+    WorkspaceHealth:
+      type: object
+      required: [score, insufficientData, components]
+      properties:
+        score:
+          type: number
+        insufficientData:
+          type: boolean
+        components:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceHealthComponent"
+
+    WorkspaceSummary:
+      allOf:
+        - $ref: "#/components/schemas/Workspace"
+        - type: object
+          required: [metrics, health]
+          properties:
+            metrics:
+              $ref: "#/components/schemas/WorkspaceMetrics"
+            health:
+              $ref: "#/components/schemas/WorkspaceHealth"
+
+    WorkspaceOverview:
+      allOf:
+        - $ref: "#/components/schemas/WorkspaceSummary"
+        - type: object
+          required: [recentActivity]
+          properties:
+            recentActivity:
+              type: array
+              items:
+                $ref: "#/components/schemas/ActivityItem"
+            continueWorking:
+              anyOf:
+                - type: object
+                  required: [id, title, status]
+                  properties:
+                    id:
+                      type: number
+                    title:
+                      type: string
+                    status:
+                      type: string
+                - type: "null"
+
+    WorkspaceIntegrity:
+      type: object
+      required: [healthy, issues]
+      properties:
+        healthy:
+          type: boolean
+        issues:
+          type: array
+          items:
+            type: string
+
+    WorkspaceManifest:
+      type: object
+      required: [schemaVersion, exportedAt, workspace, metrics]
+      properties:
+        schemaVersion:
+          type: number
+        exportedAt:
+          type: string
+          format: date-time
+        workspace:
+          $ref: "#/components/schemas/Workspace"
+        metrics:
+          $ref: "#/components/schemas/WorkspaceMetrics"
+
+    # Deprecated Projects
     Project:
       type: object
       required: [id, name, createdAt, updatedAt]

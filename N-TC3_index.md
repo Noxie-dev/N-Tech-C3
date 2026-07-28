@@ -11,15 +11,17 @@ This file is the canonical index for the product intent, implemented system, cur
 When sources disagree, use this precedence:
 
 1. `N-TC3_index.md` — canonical interpretation and current-state map.
-2. `wireframe.png` and `branding-brief.png` — binding visual sources for the Home composition and complete brand/design system.
-3. `Docs/NTC3_UI-UX_Spec.md` — reconciled governing UI/UX specification for information architecture, interaction, visual language, accessibility, and screen behavior.
-4. Executable code and configuration — truth for current behavior, but not authority to override approved target visuals.
-5. `lib/api-spec/openapi.yaml` — truth for HTTP contracts.
-6. `lib/db/src/index.ts` — truth for the SQLite persistence model and vault initialization.
-7. `Docs/NTC3_Feature` — active, explicitly requested feature outcomes.
-8. `Docs/NTC3_spec-doc.txt` — refined long-term EIOS product direction.
-9. `Docs/NTC3.txt` — original v0.1 ECOS scope and architecture proposal.
-10. `README.md` — concise operator guide; update it when commands or prerequisites change.
+2. `Docs/N-Tech-C³-product architecture-design.md` — canonical route intent and Route Discovery Framework.
+3. `Docs/Route-01-Workspaces-execution-plan.md` — accepted implementation decisions for Route 01.
+4. `wireframe.png` and `branding-brief.png` — binding visual sources for the Home composition and complete brand/design system.
+5. `Docs/NTC3_UI-UX_Spec.md` — reconciled governing UI/UX specification for information architecture, interaction, visual language, accessibility, and screen behavior.
+6. Executable code and configuration — truth for current behavior, but not authority to override approved target visuals.
+7. `lib/api-spec/openapi.yaml` — truth for HTTP contracts.
+8. `lib/db/src/migrations.ts` and `lib/db/src/index.ts` — truth for SQLite migrations, initialization, and vault access.
+9. `Docs/NTC3_Feature` — active, explicitly requested feature outcomes.
+10. `Docs/NTC3_spec-doc.txt` — refined long-term EIOS product direction.
+11. `Docs/NTC3.txt` — original v0.1 ECOS scope and architecture proposal.
+12. `README.md` — operator guide; update it when commands, prerequisites, routes, or architecture change.
 
 The documentation is strategic, not a claim that every described feature exists. A feature is implemented only when it is present in executable code and its required data/API path exists.
 
@@ -130,7 +132,10 @@ V1 is committed to Electron + SQLite + filesystem vault. The local Express servi
 | Route | Module | Current capability |
 | --- | --- | --- |
 | `/dashboard` | Home | Approved branded landing composition with hero, Get Started actions, workspaces, activity, real metrics/focus, tips, and shortcuts |
-| `/search` | Global Search | Ranked FTS5 search across seven entity types |
+| `/search` | Global Search | Ranked FTS5 search across canonical entity types, including Workspaces |
+| `/workspaces` | Workspace picker | Search/filter, create, open, favorite, pin, duplicate, archive/restore, and manifest export |
+| `/workspaces/:id` | Workspace overview | Scoped metrics, health breakdown, recent activity, current work, quick actions, and archive/corruption states |
+| `/workspaces/:id/settings` | Workspace settings | Edit identity, current goal, repositories, tags, and initial Workspace DNA fields |
 | `/stories` | Stories | List, filter/search, create |
 | `/stories/:id` | Story detail | Read, manually save text content/summary, status/priority update, delete |
 | `/campaigns` | Campaigns | List and create |
@@ -140,7 +145,7 @@ V1 is committed to Electron + SQLite + filesystem vault. The local Express servi
 | `/knowledge/:id` | Knowledge detail | Read, manually save plain text content, delete |
 | `/assets` | Assets | List/filter and create URL/path metadata |
 | `/templates` | Templates | List/filter and create |
-| `/projects` | Projects | List and create |
+| `/projects`, `/projects/:id` | Compatibility | Redirect old browser links to canonical Workspace routes |
 | `/settings` | Settings | Presentational settings screen; no durable settings model |
 
 ### API surface
@@ -150,7 +155,8 @@ The API is mounted at `/api`. It provides:
 - `GET /healthz`
 - dashboard statistics and recent activity
 - ranked cross-module full-text search
-- list/create/get/update/delete endpoints for projects
+- Workspace list/filter/create/overview/update, metadata duplication, integrity, and manifest export endpoints
+- deprecated list/create/get/update/delete endpoints for Project API compatibility
 - list/create/get/update/delete endpoints for stories
 - story counts grouped by status
 - list/create/get/update/delete endpoints for campaigns
@@ -174,14 +180,19 @@ Current SQLite tables:
 - `templates`
 - `activity`
 
-Relationships are currently lightweight ID columns/arrays rather than a complete graph:
+The physical `projects` table is retained as a backward-compatible storage detail;
+the canonical product and API domain term is **Workspace**. Migration v3 extends it
+with Workspace identity, status, DNA, repository, preference, and recency fields.
 
-- stories may carry `projectId` and `campaignId`
-- evidence may carry `storyId`, `projectId`, and a repository name
-- assets may carry `storyId`, `campaignId`, and `projectId`
+Relationships remain lighter than the complete future graph:
+
+- stories carry a physical `project_id` exposed as Workspace context in new flows
+- evidence and assets carry Workspace/project foreign keys
+- campaigns, knowledge pages, and templates now have Workspace/project foreign keys
 - knowledge pages may carry `linkedPageIds`
 
-These ID fields are not declared as database foreign keys in the current schema. Many-to-many story/evidence/asset/campaign relationships and automatic backlinks are not implemented.
+Workspace relationships are enforced by SQLite foreign keys and indexed. Many-to-many
+story/evidence/asset/campaign relationships and automatic backlinks are not implemented.
 
 ## 6. Feature status against the product documents
 
@@ -197,7 +208,8 @@ Legend: **Implemented**, **Partial**, **Not implemented**.
 | Knowledge Base CRUD | Partial | TipTap authoring and a stored linked-ID array exist; no rendered wiki graph/backlinks |
 | Assets | Partial | URL/path metadata catalog; no upload, processing, thumbnailing, or local asset storage |
 | Templates | Partial | Core records exist; no template application/export workflow |
-| Projects | Partial | Core records, project detail route, and repository snapshot timeline/comparison exist; broader project intelligence remains |
+| Workspaces (Route 01) | Implemented | Canonical picker, overview and settings routes; filtered list, initial DNA, scoped metrics/activity, health components, duplicate, archive/restore, integrity, manifest export, and old `/projects` redirects |
+| Legacy Projects | Deprecated compatibility | Physical table and API remain temporarily to preserve existing vaults and integrations |
 | Activity feed | Implemented | Append-only table; activity write failures are intentionally swallowed |
 | Rich text editor | Implemented | Shared Story/Knowledge TipTap component stores HTML |
 | Quick capture | Implemented | Global button, Cmd/Ctrl+K, and paste-to-TerminalOutput flow |
@@ -210,7 +222,8 @@ Legend: **Implemented**, **Partial**, **Not implemented**.
 | Backup/restore | Implemented | Desktop creates compressed portable vault archives; restore validates paths, preserves a recovery copy, and rolls back on copy failure |
 | Repository integration | Partial | Secure desktop folder selection captures branch, commit, package manager, frameworks, dependencies, TODOs, README, readiness, and optional project association |
 | Repository Intelligence Engine | Partial | Deterministic, fingerprinted snapshots become searchable `RepositoryAudit` evidence with per-project history counts and metric diffs; deeper dependency/security analysis remains |
-| Evidence/knowledge/story health scores | Not implemented | `stories.evidenceScore` exists, but no calculation engine is present |
+| Workspace health score | Implemented | Server calculates and explains recency, evidence, campaign, knowledge, and asset components with insufficient-data handling |
+| Evidence/knowledge/story health scores | Not implemented | Workspace health exists; entity-specific health engines remain |
 | Local vault/filesystem | Implemented | SQLite database and documented vault directories initialize locally |
 | Electron desktop shell | Implemented | Main/preload lifecycle, local API launch, static UI serving, secure file IPC |
 | Branded application shell | Partial | Approved palette/typography, preserved checkered background, top bar, wireframe navigation, Quick Capture panel, and local SVG mark exist; compact/mobile drawer and final exported brand artwork remain |
@@ -246,9 +259,10 @@ Current state: implemented. Terminal paste uses `content`; dropped files are cop
 
 ### Next implementation order
 
-1. Add append-only entity version history with restore/compare controls.
-2. Add evidence/story/project completeness and health scoring.
-3. Add the actionable dashboard queue and recent export/backup history.
+1. Propagate canonical `workspaceId` through every child create/list contract and remove remaining user-facing Project terminology.
+2. Implement Route 02 — Stories against the Route Discovery Framework.
+3. Add append-only entity version history with restore/compare controls.
+4. Add the actionable dashboard queue and recent export/backup history.
 
 ## 8. Contract and data workflow
 
@@ -312,8 +326,9 @@ pnpm run typecheck:libs
 
 ### High priority
 
-- **Relationships are incomplete:** V1 foreign keys exist, but they do not yet model the many-to-many graph promised by EIOS.
-- **Browser-level coverage is partial:** Playwright verifies project/detail/search, TipTap persistence, and browser file ingestion; native Electron dialogs, restore, reveal, and file-drop IPC still need desktop automation.
+- **Relationships are incomplete:** Workspace foreign keys exist across core tables, but old child APIs still expose `projectId` and the many-to-many graph promised by EIOS is not modeled.
+- **Compatibility debt is intentional:** the physical `projects` table and deprecated `/api/projects` contract remain for one release while consumers migrate to Workspaces.
+- **Browser-level coverage is partial:** Playwright verifies Workspace create/detail/search, TipTap persistence, and browser file ingestion; native Electron dialogs, restore, reveal, and file-drop IPC still need desktop automation.
 - **Signing is environment-dependent:** unsigned `.app` packaging passes; signed/notarized DMG/ZIP release validation requires Apple credentials.
 - **Release identity is partially complete:** the bundle has a stable app ID, hardened runtime configuration, and custom SVG/PNG application icon; Apple signing and notarization remain credential-dependent.
 
@@ -326,10 +341,6 @@ pnpm run typecheck:libs
 - Settings are not persisted.
 - Static shell status values (“Core Load”, “Memory”, “Online”) are decorative, not live telemetry.
 - The mockup sandbox duplicates a large UI component set and should not be mistaken for production code.
-
-### Repository state at audit
-
-The working tree was already dirty before this index was created. Existing modifications/deletions include the frontend package manifest, lockfile, removed attached assets, and removed `replit.md`; `Docs/` and `README.md` were untracked. Preserve and review those user-owned changes independently.
 
 ## 11. Definition of done for new work
 
@@ -367,6 +378,19 @@ Two active briefs: the shared TipTap editor and rapid evidence capture. These ar
 Desktop-first UI/UX contract created from the product documents and executable UI audit. It defines information architecture, core journeys, layout and visual tokens, component behavior, keyboard/accessibility requirements, responsive rules, content language, route-level specifications, current divergences, acceptance criteria, implementation sequence, and open product decisions.
 
 This is the governing interface specification. Its aspirational screen behavior is not proof of implementation; implementation status remains in this index.
+
+### `Docs/N-Tech-C³-product architecture-design.md`
+
+Route-oriented product architecture using the Route Discovery Framework. It currently
+defines Route 01 Workspaces, Route 02 Stories, and Route 03 Evidence Vault. Route 01
+has been implemented; later route sections remain product intent until their own
+execution plans are approved and delivered.
+
+### `Docs/Route-01-Workspaces-execution-plan.md`
+
+Audit and implementation contract for the first router. It resolves Project versus
+Workspace terminology, defines the canonical frontend/API surface, prescribes
+backward-compatible storage, and records Route 01 acceptance criteria and deferrals.
 
 ### `wireframe.png` and `branding-brief.png`
 
@@ -407,9 +431,9 @@ Validation completed:
 - `pnpm run build` — passed for the API and both Vite applications.
 - Electron and esbuild install scripts — explicitly approved through the workspace supply-chain guard.
 - Electron runtime — installed at version 38.8.6.
-- SQLite/API smoke test — passed health, project creation, and project listing against a disposable vault.
-- `pnpm test` — 9 tests passed across migrations/FTS, API CRUD/capture/filtered search, and frontend capture utilities.
-- `pnpm run test:e2e` — 2 Playwright workflows passed for project/detail/search, TipTap persistence, and evidence file ingestion.
+- SQLite/API smoke test — passed health, Workspace lifecycle/overview, legacy Project compatibility, and scoped evidence search against a disposable vault.
+- `pnpm test` — 11 tests passed across migrations/FTS, Workspace lifecycle, API capture/filtered search, and frontend capture utilities.
+- `pnpm run test:e2e` — 2 Playwright workflows passed for Workspace creation/detail/search, TipTap persistence, and evidence file ingestion.
 - Electron Builder directory packaging — passed and produced an unsigned arm64 `.app` with bundled API/frontend resources.
 - `git diff --check` — passed.
 

@@ -212,6 +212,65 @@ export const migrations: Migration[] = [
       END;
     `,
   },
+  {
+    version: 3,
+    name: 'workspace_domain_model',
+    sql: `
+      ALTER TABLE projects ADD COLUMN slug TEXT;
+      ALTER TABLE projects ADD COLUMN status TEXT NOT NULL DEFAULT 'Active';
+      ALTER TABLE projects ADD COLUMN purpose TEXT NOT NULL DEFAULT 'Other';
+      ALTER TABLE projects ADD COLUMN brand TEXT;
+      ALTER TABLE projects ADD COLUMN writing_voice TEXT;
+      ALTER TABLE projects ADD COLUMN target_audience TEXT;
+      ALTER TABLE projects ADD COLUMN current_goal TEXT;
+      ALTER TABLE projects ADD COLUMN icon TEXT;
+      ALTER TABLE projects ADD COLUMN logo_path TEXT;
+      ALTER TABLE projects ADD COLUMN owner TEXT NOT NULL DEFAULT 'Local Owner';
+      ALTER TABLE projects ADD COLUMN tags TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE projects ADD COLUMN repository_links TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE projects ADD COLUMN preferred_export_formats TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE projects ADD COLUMN knowledge_domains TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE projects ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE projects ADD COLUMN is_pinned INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE projects ADD COLUMN last_opened_at TEXT;
+
+      ALTER TABLE campaigns ADD COLUMN project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL;
+      ALTER TABLE knowledge ADD COLUMN project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL;
+      ALTER TABLE templates ADD COLUMN project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL;
+
+      UPDATE projects
+      SET slug = lower(trim(replace(replace(replace(name, ' ', '-'), '_', '-'), '--', '-'))) || '-' || id,
+          last_opened_at = updated_at
+      WHERE slug IS NULL;
+
+      CREATE UNIQUE INDEX IF NOT EXISTS projects_slug_idx ON projects(slug);
+      CREATE INDEX IF NOT EXISTS projects_status_updated_idx ON projects(status, updated_at DESC);
+      CREATE INDEX IF NOT EXISTS campaigns_project_idx ON campaigns(project_id);
+      CREATE INDEX IF NOT EXISTS knowledge_project_idx ON knowledge(project_id);
+      CREATE INDEX IF NOT EXISTS templates_project_idx ON templates(project_id);
+      CREATE INDEX IF NOT EXISTS stories_project_idx ON stories(project_id);
+      CREATE INDEX IF NOT EXISTS evidence_project_idx ON evidence(project_id);
+      CREATE INDEX IF NOT EXISTS assets_project_idx ON assets(project_id);
+
+      DELETE FROM global_search WHERE entity_type = 'project';
+      INSERT INTO global_search(entity_type, entity_id, title, body, tags)
+        SELECT 'workspace', id, name, coalesce(description, ''), tags FROM projects;
+
+      DROP TRIGGER IF EXISTS projects_search_insert;
+      DROP TRIGGER IF EXISTS projects_search_update;
+      DROP TRIGGER IF EXISTS projects_search_delete;
+      CREATE TRIGGER projects_search_insert AFTER INSERT ON projects BEGIN
+        INSERT INTO global_search VALUES ('workspace', new.id, new.name, coalesce(new.description, ''), new.tags);
+      END;
+      CREATE TRIGGER projects_search_update AFTER UPDATE ON projects BEGIN
+        DELETE FROM global_search WHERE entity_type = 'workspace' AND entity_id = old.id;
+        INSERT INTO global_search VALUES ('workspace', new.id, new.name, coalesce(new.description, ''), new.tags);
+      END;
+      CREATE TRIGGER projects_search_delete AFTER DELETE ON projects BEGIN
+        DELETE FROM global_search WHERE entity_type = 'workspace' AND entity_id = old.id;
+      END;
+    `,
+  },
 ];
 
 export function runMigrations(database: DatabaseSync): number[] {

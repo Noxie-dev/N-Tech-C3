@@ -7,3 +7,5 @@ vault/
 release/
 .DS_Store
 .local/
+test-results/
+playwright-report/

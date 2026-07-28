@@ -33,6 +33,187 @@ export interface ActivityItem {
   createdAt: string;
 }
 
+export type WorkspaceStatus = typeof WorkspaceStatus[keyof typeof WorkspaceStatus];
+
+
+export const WorkspaceStatus = {
+  Active: 'Active',
+  Archived: 'Archived',
+  Corrupted: 'Corrupted',
+} as const;
+
+export type WorkspacePurpose = typeof WorkspacePurpose[keyof typeof WorkspacePurpose];
+
+
+export const WorkspacePurpose = {
+  Product: 'Product',
+  Marketing: 'Marketing',
+  Research: 'Research',
+  Internal: 'Internal',
+  Personal: 'Personal',
+  Other: 'Other',
+} as const;
+
+export interface Workspace {
+  id: number;
+  name: string;
+  slug: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  color?: string | null;
+  status: WorkspaceStatus;
+  purpose: WorkspacePurpose;
+  /** @nullable */
+  brand?: string | null;
+  /** @nullable */
+  writingVoice?: string | null;
+  /** @nullable */
+  targetAudience?: string | null;
+  /** @nullable */
+  currentGoal?: string | null;
+  /** @nullable */
+  icon?: string | null;
+  /** @nullable */
+  logoPath?: string | null;
+  owner: string;
+  tags: string[];
+  repositoryLinks: string[];
+  preferredExportFormats: string[];
+  knowledgeDomains: string[];
+  isFavorite: boolean;
+  isPinned: boolean;
+  /** @nullable */
+  lastOpenedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type WorkspaceInputPurpose = typeof WorkspaceInputPurpose[keyof typeof WorkspaceInputPurpose];
+
+
+export const WorkspaceInputPurpose = {
+  Product: 'Product',
+  Marketing: 'Marketing',
+  Research: 'Research',
+  Internal: 'Internal',
+  Personal: 'Personal',
+  Other: 'Other',
+} as const;
+
+export interface WorkspaceInput {
+  /** @minLength 1 */
+  name: string;
+  description?: string;
+  color?: string;
+  purpose?: WorkspaceInputPurpose;
+  brand?: string;
+  writingVoice?: string;
+  targetAudience?: string;
+  currentGoal?: string;
+  tags?: string[];
+  repositoryLinks?: string[];
+  preferredExportFormats?: string[];
+  knowledgeDomains?: string[];
+}
+
+export type WorkspacePatchStatus = typeof WorkspacePatchStatus[keyof typeof WorkspacePatchStatus];
+
+
+export const WorkspacePatchStatus = {
+  Active: 'Active',
+  Archived: 'Archived',
+  Corrupted: 'Corrupted',
+} as const;
+
+export type WorkspacePatchPurpose = typeof WorkspacePatchPurpose[keyof typeof WorkspacePatchPurpose];
+
+
+export const WorkspacePatchPurpose = {
+  Product: 'Product',
+  Marketing: 'Marketing',
+  Research: 'Research',
+  Internal: 'Internal',
+  Personal: 'Personal',
+  Other: 'Other',
+} as const;
+
+export interface WorkspacePatch {
+  /** @minLength 1 */
+  name?: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  color?: string | null;
+  status?: WorkspacePatchStatus;
+  purpose?: WorkspacePatchPurpose;
+  /** @nullable */
+  brand?: string | null;
+  /** @nullable */
+  writingVoice?: string | null;
+  /** @nullable */
+  targetAudience?: string | null;
+  /** @nullable */
+  currentGoal?: string | null;
+  tags?: string[];
+  repositoryLinks?: string[];
+  preferredExportFormats?: string[];
+  knowledgeDomains?: string[];
+  isFavorite?: boolean;
+  isPinned?: boolean;
+}
+
+export interface WorkspaceMetrics {
+  stories: number;
+  evidence: number;
+  knowledge: number;
+  campaigns: number;
+  assets: number;
+  exports: number;
+}
+
+export interface WorkspaceHealthComponent {
+  key: string;
+  label: string;
+  score: number;
+  applicable: boolean;
+  explanation: string;
+}
+
+export interface WorkspaceHealth {
+  score: number;
+  insufficientData: boolean;
+  components: WorkspaceHealthComponent[];
+}
+
+export type WorkspaceSummary = Workspace & {
+  metrics: WorkspaceMetrics;
+  health: WorkspaceHealth;
+};
+
+export type WorkspaceOverviewContinueWorking = {
+  id: number;
+  title: string;
+  status: string;
+} | null;
+
+export type WorkspaceOverview = WorkspaceSummary & {
+  recentActivity: ActivityItem[];
+  continueWorking?: WorkspaceOverviewContinueWorking;
+};
+
+export interface WorkspaceIntegrity {
+  healthy: boolean;
+  issues: string[];
+}
+
+export interface WorkspaceManifest {
+  schemaVersion: number;
+  exportedAt: string;
+  workspace: Workspace;
+  metrics: WorkspaceMetrics;
+}
+
 export interface Project {
   id: number;
   name: string;
@@ -686,7 +867,24 @@ export const GlobalSearchEntityType = {
   campaign: 'campaign',
   asset: 'asset',
   template: 'template',
-  project: 'project',
+  workspace: 'workspace',
+} as const;
+
+export type ListWorkspacesParams = {
+search?: string;
+status?: ListWorkspacesStatus;
+favorite?: boolean;
+pinned?: boolean;
+purpose?: string;
+};
+
+export type ListWorkspacesStatus = typeof ListWorkspacesStatus[keyof typeof ListWorkspacesStatus];
+
+
+export const ListWorkspacesStatus = {
+  Active: 'Active',
+  Archived: 'Archived',
+  Corrupted: 'Corrupted',
 } as const;
 
 export type ListStoriesParams = {

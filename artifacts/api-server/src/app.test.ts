@@ -34,6 +34,49 @@ describe('local API', () => {
     expect(listed.body).toContainEqual(created.body);
   });
 
+  it('supports the canonical workspace lifecycle and overview', async () => {
+    const created = await request(app)
+      .post('/api/workspaces')
+      .send({
+        name: 'Route 01',
+        description: 'Workspace architecture',
+        purpose: 'Product',
+        tags: ['route-01'],
+      })
+      .expect(201);
+
+    expect(created.body).toMatchObject({
+      name: 'Route 01',
+      slug: 'route-01',
+      status: 'Active',
+      purpose: 'Product',
+      tags: ['route-01'],
+    });
+
+    const overview = await request(app)
+      .get(`/api/workspaces/${created.body.id}`)
+      .expect(200);
+    expect(overview.body).toMatchObject({
+      id: created.body.id,
+      metrics: { stories: 0, evidence: 0, campaigns: 0 },
+      health: { score: expect.any(Number), insufficientData: true },
+      recentActivity: expect.any(Array),
+    });
+
+    await request(app)
+      .patch(`/api/workspaces/${created.body.id}`)
+      .send({ status: 'Archived' })
+      .expect(200);
+    await request(app)
+      .patch(`/api/workspaces/${created.body.id}`)
+      .send({ description: 'Blocked while archived' })
+      .expect(409);
+    await request(app)
+      .patch(`/api/workspaces/${created.body.id}`)
+      .send({ status: 'Active' })
+      .expect(200);
+  });
+
   it('captures terminal evidence content', async () => {
     const response = await request(app)
       .post('/api/evidence')

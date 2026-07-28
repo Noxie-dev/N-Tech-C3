@@ -1,5 +1,5 @@
 import {
-  useGetDashboardStats, useGetRecentActivity, useListProjects, useListStories,
+  useGetDashboardStats, useGetRecentActivity, useListStories, useListWorkspaces,
 } from '@workspace/api-client-react';
 import {
   ArrowUpRight, BookOpen, Box, CalendarDays, CheckCircle2, Circle, CloudUpload,
@@ -20,7 +20,7 @@ const PRINCIPLES = [
 
 const START_CARDS = [
   { title: 'Create Content', description: 'Start a new story, note or piece of engineering content.', action: 'Create New', href: '/stories', icon: FilePlus2, color: '#2f80ff' },
-  { title: 'New Workspace', description: 'Create a new workspace to organize your projects.', action: 'New Workspace', href: '/projects', icon: Layers3, color: '#16c784' },
+  { title: 'New Workspace', description: 'Create a new operating context for an initiative.', action: 'New Workspace', href: '/workspaces', icon: Layers3, color: '#16c784' },
   { title: 'See Scheduled Content', description: 'View your content calendar and publishing schedule.', action: 'Open Calendar', href: '/campaigns', icon: CalendarDays, color: '#885cf6' },
   { title: 'Start Campaign', description: 'Define a new campaign and align stories and assets.', action: 'Start Campaign', href: '/campaigns', icon: Crosshair, color: '#f5a524' },
   { title: 'Upload Knowledge', description: 'Import files, documents or research into your vault.', action: 'Upload Now', href: '/evidence', icon: CloudUpload, color: '#27c2ff' },
@@ -39,7 +39,7 @@ function PanelTitle({ children, href }: { children: React.ReactNode; href?: stri
 export function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
   const { data: activity = [], isLoading: activityLoading } = useGetRecentActivity();
-  const { data: workspaces = [], isLoading: workspacesLoading } = useListProjects();
+  const { data: workspaces = [], isLoading: workspacesLoading } = useListWorkspaces();
   const { data: stories = [] } = useListStories();
   const focusStories = stories.filter((story) => !['Published', 'Archived'].includes(story.status)).slice(0, 3);
   const progress = stories.length
@@ -98,10 +98,10 @@ export function Dashboard() {
 
       <div className="grid gap-3 xl:grid-cols-[1fr_1.08fr_1.28fr]">
         <section className="rounded-2xl border border-[#30343d] bg-[#0b1017]/80 p-4">
-          <PanelTitle href="/projects">LAST OPENED WORKSPACES</PanelTitle>
+          <PanelTitle href="/workspaces">LAST OPENED WORKSPACES</PanelTitle>
           <div className="space-y-1">
             {workspacesLoading ? <p className="py-8 text-center text-xs text-[#7c8593]">Loading workspaces…</p> : workspaces.length ? workspaces.slice(0, 4).map((workspace, index) => (
-              <Link key={workspace.id} href={`/projects/${workspace.id}`} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-[#161c24]">
+              <Link key={workspace.id} href={`/workspaces/${workspace.id}`} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-[#161c24]">
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#2f80ff]/30 bg-[#2f80ff]/10 text-[#5fa4ff]"><Box className="h-4 w-4" /></span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[11px] font-semibold text-[#f5f7fa]">{workspace.name}</p>
@@ -110,10 +110,10 @@ export function Dashboard() {
                 <span className="text-right text-[9px] text-[#8b95a3]">{index === 0 ? 'Most recent' : formatDate(workspace.updatedAt)}</span>
               </Link>
             )) : (
-              <div className="py-7 text-center"><p className="text-xs text-[#8b95a3]">No workspaces yet.</p><Link href="/projects" className="mt-2 inline-block text-[10px] text-[#5fa4ff]">Create a workspace</Link></div>
+              <div className="py-7 text-center"><p className="text-xs text-[#8b95a3]">No workspaces yet.</p><Link href="/workspaces" className="mt-2 inline-block text-[10px] text-[#5fa4ff]">Create a workspace</Link></div>
             )}
           </div>
-          <Link href="/projects" className="mt-3 flex items-center justify-center gap-2 rounded-md border border-[#303b4b] py-2 text-[10px] text-[#c1c9d4] hover:bg-[#161c24]"><FolderOpen className="h-3.5 w-3.5" /> Open Other Workspace</Link>
+          <Link href="/workspaces" className="mt-3 flex items-center justify-center gap-2 rounded-md border border-[#303b4b] py-2 text-[10px] text-[#c1c9d4] hover:bg-[#161c24]"><FolderOpen className="h-3.5 w-3.5" /> Open Other Workspace</Link>
         </section>
 
         <section className="rounded-2xl border border-[#30343d] bg-[#0b1017]/80 p-4">

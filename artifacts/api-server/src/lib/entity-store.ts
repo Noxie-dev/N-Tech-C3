@@ -11,14 +11,22 @@ export const entityConfigs = {
   projects: {
     table: 'projects',
     fields: {
-      name: 'name', description: 'description', color: 'color',
+      name: 'name', slug: 'slug', description: 'description', color: 'color',
+      status: 'status', purpose: 'purpose', brand: 'brand',
+      writingVoice: 'writing_voice', targetAudience: 'target_audience',
+      currentGoal: 'current_goal', icon: 'icon', logoPath: 'logo_path',
+      owner: 'owner', tags: 'tags', repositoryLinks: 'repository_links',
+      preferredExportFormats: 'preferred_export_formats',
+      knowledgeDomains: 'knowledge_domains', isFavorite: 'is_favorite',
+      isPinned: 'is_pinned', lastOpenedAt: 'last_opened_at',
     },
+    jsonFields: ['tags', 'repositoryLinks', 'preferredExportFormats', 'knowledgeDomains'],
   },
   campaigns: {
     table: 'campaigns',
     fields: {
       title: 'title', objective: 'objective', status: 'status',
-      platforms: 'platforms', durationWeeks: 'duration_weeks',
+      platforms: 'platforms', durationWeeks: 'duration_weeks', projectId: 'project_id',
     },
     jsonFields: ['platforms'],
   },
@@ -53,7 +61,7 @@ export const entityConfigs = {
     table: 'knowledge',
     fields: {
       title: 'title', content: 'content', category: 'category',
-      tags: 'tags', linkedPageIds: 'linked_page_ids',
+      tags: 'tags', linkedPageIds: 'linked_page_ids', projectId: 'project_id',
     },
     jsonFields: ['tags', 'linkedPageIds'],
   },
@@ -61,6 +69,7 @@ export const entityConfigs = {
     table: 'templates',
     fields: {
       title: 'title', type: 'type', content: 'content', description: 'description',
+      projectId: 'project_id',
     },
   },
 } satisfies Record<string, EntityConfig>;

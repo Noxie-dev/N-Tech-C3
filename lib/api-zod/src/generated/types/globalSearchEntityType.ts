@@ -16,5 +16,5 @@ export const GlobalSearchEntityType = {
   campaign: 'campaign',
   asset: 'asset',
   template: 'template',
-  project: 'project',
+  workspace: 'workspace',
 } as const;
