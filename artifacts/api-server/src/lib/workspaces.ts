@@ -1,4 +1,5 @@
 import { all, get, run, type Row } from '@workspace/db';
+import { executeCapability } from './intelligence';
 
 const JSON_FIELDS = [
   'tags', 'repository_links', 'preferred_export_formats', 'knowledge_domains',
@@ -149,7 +150,22 @@ export function healthForWorkspace(id: number) {
 
 export function summarizeWorkspace(row: Row) {
   const workspace = workspaceFromRow(row);
-  return { ...workspace, metrics: metricsForWorkspace(workspace.id), health: healthForWorkspace(workspace.id) };
+  const health = executeCapability({
+    subjectType: 'workspace',
+    subjectId: workspace.id,
+    inputWatermark: workspace.updatedAt,
+    capability: {
+      id: 'workspace-health',
+      version: '1.0.0',
+      resultKind: 'health-score',
+      classification: 'deterministic',
+      analyze: () => ({
+        value: healthForWorkspace(workspace.id),
+        explanation: 'Calculated from recent activity and relationship coverage.',
+      }),
+    },
+  });
+  return { ...workspace, metrics: metricsForWorkspace(workspace.id), health };
 }
 
 export function workspaceOverview(row: Row) {

@@ -1,6 +1,6 @@
 # N-Tech C³ — Repository Source of Truth
 
-> Last audited: 2026-07-28  
+> Last audited: 2026-07-29
 > Repository: `N-TechC3`  
 > Product stage: v0.1 alpha / active development
 
@@ -501,6 +501,67 @@ repository authority; the System Design Book holds detailed constitutional
 specifications. Performance figures remain proposed until measured on named
 hardware and representative vaults.
 
+### Three-pass execution report — 2026-07-29
+
+Status: **Completed**
+
+#### Pass 1 — Constitutional scaffold and acceptance
+
+Created `Docs/System-Design-Book/` with change-controlled, Accepted specifications
+for the Domain Model, Data Architecture, Event Architecture, Engineering Standards,
+Engineering Principles, and Engineering Intelligence Engine. Decision, diagram,
+and evidence registers were also established.
+
+#### Pass 2 — Route 01 and Route 02 invariant audit
+
+The audit in
+`Docs/System-Design-Book/evidence/route-01-02-invariant-audit.md` records 13
+conformant items, 7 corrective-work items, 5 migration-work items, and 4 accepted
+compatibility-debt items.
+
+Highest-priority corrective work is enforcing archived Workspace read-only behavior
+across child mutations, requiring canonical Workspace ownership for Stories,
+restricting lifecycle transitions and initial Output status, making outline
+replacement atomic, and eliminating lossy Activity writes and unsafe hard-delete
+paths.
+
+#### Pass 3 — Executable platform foundation
+
+SQLite migration 5 now supplies a durable typed event log, per-consumer replay
+checkpoints, projection quarantine, Activity projection idempotency, and versioned
+Intelligence results with provenance and invalidation metadata.
+
+Workspace creation is the first transactional vertical slice: the authoritative
+Workspace row and `WorkspaceCreated` event commit atomically, then a replay-safe
+consumer projects the event into Activity. Workspace Health is the first
+deterministic EIE capability executed through the common provenance and cache
+contract. This is deliberately an incremental outbox/event-log architecture, not
+full event sourcing.
+
+The reproducible benchmark at
+`Docs/System-Design-Book/evidence/performance-baseline-2026-07-29.md` measured an
+Apple M1 with 8 GB RAM, Node.js v24.18.0, 10 Workspaces, 1,000 Stories, and 100
+iterations:
+
+| Operation | Median | p95 |
+| --- | ---: | ---: |
+| Cold database initialization and migrations | 21.875 ms | Not sampled |
+| Transactional Evidence save | 0.142 ms | 0.241 ms |
+| FTS5 search | 0.045 ms | 0.059 ms |
+| Workspace core load | 0.098 ms | 0.114 ms |
+| Deterministic analysis and provenance save | 0.107 ms | 0.150 ms |
+
+These are accepted baseline measurements but remain insufficient to establish
+release budgets. UI rendering, Electron launch, file-copy workloads,
+production-scale vaults, and slower supported hardware remain unmeasured.
+
+Verification: repository typecheck passed; 14 Vitest tests passed across three
+files, including the new migration, durable-event projection, replay idempotency,
+and Intelligence provenance assertions.
+
+Route 03 remains paused until the highest-risk corrective work is completed and the
+remaining foundation specifications needed by Evidence Vault are accepted.
+
 ## 3. Current implementation snapshot
 
 The current repository implements a **local-first Electron application backed by SQLite and a filesystem vault**. Express remains as a loopback-only local service so the OpenAPI-first UI boundary stays reusable.
@@ -700,10 +761,15 @@ Current state: implemented. Terminal paste uses `content`; dropped files are cop
 
 ### Next implementation order
 
-1. Implement Route 03 — Evidence Vault against the Route Discovery Framework.
-2. Add Story version compare/restore controls on top of stored checkpoints.
-3. Propagate canonical `workspaceId` through remaining legacy child contracts.
-4. Add the actionable dashboard queue and recent export/backup history.
+1. Close the highest-risk invariant gaps: transitive archived-Workspace guards,
+   mandatory Story ownership, legal lifecycle transitions, safe Output creation,
+   and atomic outline replacement.
+2. Extend the durable-event and Intelligence contracts across Story and Evidence
+   mutations, including Story Health, while retiring lossy Activity writes.
+3. Accept the Filesystem, Platform Services, and Performance specifications and
+   run larger UI, Electron-startup, attachment, and vault-scale benchmarks.
+4. Reassess the Route 03 gate against recorded evidence, then begin Evidence Vault
+   implementation when its governing specifications are accepted.
 
 ## 8. Contract and data workflow
 
@@ -879,7 +945,7 @@ Validation completed:
 - Electron and esbuild install scripts — explicitly approved through the workspace supply-chain guard.
 - Electron runtime — installed at version 38.8.6.
 - SQLite/API smoke test — passed health, Workspace lifecycle/overview, legacy Project compatibility, and scoped evidence search against a disposable vault.
-- `pnpm test` — 13 tests passed across migrations/FTS, Workspace and Story Engine lifecycles, API capture/filtered search, and frontend capture utilities.
+- `pnpm test` — 14 tests passed across migrations/FTS, Workspace and Story Engine lifecycles, durable-event projection, Intelligence provenance, API capture/filtered search, and frontend capture utilities.
 - `pnpm run test:e2e` — 2 Playwright workflows passed for Workspace creation/detail/search, TipTap persistence, and evidence file ingestion.
 - Electron Builder directory packaging — passed and produced an unsigned arm64 `.app` with bundled API/frontend resources.
 - `git diff --check` — passed.

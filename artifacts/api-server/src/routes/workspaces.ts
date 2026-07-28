@@ -6,8 +6,9 @@ import {
   GetWorkspaceResponse, ListWorkspacesQueryParams, ListWorkspacesResponse,
   UpdateWorkspaceBody, UpdateWorkspaceParams, UpdateWorkspaceResponse,
 } from '@workspace/api-zod';
-import { all, get, run } from '@workspace/db';
+import { all, get, run, transaction } from '@workspace/db';
 import { recordActivity } from '../lib/activity';
+import { appendDomainEvent, projectDomainEventsToActivity } from '../lib/events';
 import {
   getWorkspaceRow, makeSlug, metricsForWorkspace, serializeWorkspaceField,
   summarizeWorkspace, workspaceFromRow, workspaceOverview,
@@ -65,13 +66,24 @@ router.post('/workspaces', async (req, res) => {
   const entries = Object.entries(data).filter(([, value]) => value !== undefined);
   const columns = entries.map(([field]) => fieldMap[field]);
   const params = entries.map(([field, value]) => serializeWorkspaceField(fieldMap[field], value));
-  const result = run(
-    `INSERT INTO projects (slug, ${columns.join(', ')}) VALUES (?, ${columns.map(() => '?').join(', ')})`,
-    [slug, ...params] as Array<string | number>,
-  );
-  const row = getWorkspaceRow(Number(result.lastInsertRowid));
+  const row = transaction(() => {
+    const result = run(
+      `INSERT INTO projects (slug, ${columns.join(', ')}) VALUES (?, ${columns.map(() => '?').join(', ')})`,
+      [slug, ...params] as Array<string | number>,
+    );
+    const created = getWorkspaceRow(Number(result.lastInsertRowid));
+    if (!created) throw new Error('Workspace creation failed');
+    appendDomainEvent({
+      eventType: 'WorkspaceCreated',
+      eventVersion: 1,
+      aggregateType: 'workspace',
+      aggregateId: Number(created.id),
+      payload: { entityTitle: String(created.name), action: 'created' },
+    });
+    return created;
+  });
   if (!row) return void res.status(500).json({ error: 'Workspace creation failed' });
-  await recordActivity('workspace', Number(row.id), String(row.name), 'created');
+  projectDomainEventsToActivity();
   res.status(201).json(CreateWorkspaceResponse.parse(workspaceFromRow(row)));
 });
 

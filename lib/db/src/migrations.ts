@@ -395,6 +395,66 @@ export const migrations: Migration[] = [
       CREATE INDEX stories_type_status_idx ON stories(story_type, status);
     `,
   },
+  {
+    version: 5,
+    name: 'durable_events_and_intelligence_results',
+    sql: `
+      ALTER TABLE activity ADD COLUMN source_event_id INTEGER;
+
+      CREATE TABLE domain_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_id TEXT NOT NULL UNIQUE,
+        event_type TEXT NOT NULL,
+        event_version INTEGER NOT NULL,
+        aggregate_type TEXT NOT NULL,
+        aggregate_id INTEGER NOT NULL,
+        payload TEXT NOT NULL DEFAULT '{}',
+        occurred_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+      CREATE INDEX domain_events_aggregate_idx
+        ON domain_events(aggregate_type, aggregate_id, id);
+
+      CREATE TABLE event_consumers (
+        consumer_name TEXT PRIMARY KEY,
+        last_event_id INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+
+      CREATE TABLE event_failures (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        consumer_name TEXT NOT NULL,
+        event_id INTEGER NOT NULL REFERENCES domain_events(id) ON DELETE CASCADE,
+        reason TEXT NOT NULL,
+        failed_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        UNIQUE (consumer_name, event_id)
+      );
+
+      CREATE UNIQUE INDEX activity_source_event_idx
+        ON activity(source_event_id) WHERE source_event_id IS NOT NULL;
+
+      CREATE TABLE intelligence_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        result_key TEXT NOT NULL UNIQUE,
+        capability_id TEXT NOT NULL,
+        capability_version TEXT NOT NULL,
+        result_kind TEXT NOT NULL,
+        subject_type TEXT NOT NULL,
+        subject_id INTEGER NOT NULL,
+        input_watermark TEXT NOT NULL,
+        classification TEXT NOT NULL,
+        value TEXT NOT NULL,
+        explanation TEXT NOT NULL,
+        evidence_refs TEXT NOT NULL DEFAULT '[]',
+        confidence REAL,
+        calculated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        invalidated_at TEXT
+      );
+      CREATE INDEX intelligence_results_subject_idx
+        ON intelligence_results(subject_type, subject_id, calculated_at DESC);
+      CREATE INDEX intelligence_results_capability_idx
+        ON intelligence_results(capability_id, capability_version);
+    `,
+  },
 ];
 
 export function runMigrations(database: DatabaseSync): number[] {

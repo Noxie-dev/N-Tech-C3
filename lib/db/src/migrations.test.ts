@@ -88,4 +88,23 @@ describe('SQLite migrations', () => {
       title: 'Story',
     });
   });
+
+  it('creates durable event, projection checkpoint, and intelligence result stores', () => {
+    const database = new DatabaseSync(':memory:');
+    runMigrations(database);
+
+    expect(database.prepare(`
+      SELECT name FROM sqlite_master
+      WHERE type = 'table' AND name IN (
+        'domain_events', 'event_consumers', 'event_failures', 'intelligence_results'
+      ) ORDER BY name
+    `).all()).toEqual([
+      { name: 'domain_events' },
+      { name: 'event_consumers' },
+      { name: 'event_failures' },
+      { name: 'intelligence_results' },
+    ]);
+    expect(database.prepare('PRAGMA table_info(activity)').all())
+      .toEqual(expect.arrayContaining([expect.objectContaining({ name: 'source_event_id' })]));
+  });
 });

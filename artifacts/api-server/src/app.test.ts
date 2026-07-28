@@ -7,9 +7,13 @@ import request from 'supertest';
 process.env.NTC3_VAULT_PATH = mkdtempSync(path.join(tmpdir(), 'ntc3-api-test-'));
 
 let app: Awaited<typeof import('./app')>['default'];
+let database: typeof import('@workspace/db');
+let events: typeof import('./lib/events');
 
 beforeAll(async () => {
   app = (await import('./app')).default;
+  database = await import('@workspace/db');
+  events = await import('./lib/events');
 });
 
 describe('local API', () => {
@@ -52,6 +56,23 @@ describe('local API', () => {
       purpose: 'Product',
       tags: ['route-01'],
     });
+    expect(database.get(
+      'SELECT event_type, event_version FROM domain_events WHERE aggregate_type = ? AND aggregate_id = ?',
+      ['workspace', created.body.id],
+    )).toEqual({ event_type: 'WorkspaceCreated', event_version: 1 });
+    expect(database.get(
+      'SELECT source_event_id FROM activity WHERE entity_type = ? AND entity_id = ?',
+      ['workspace', created.body.id],
+    )?.source_event_id).toEqual(expect.any(Number));
+    const activityCount = database.get(
+      'SELECT count(*) count FROM activity WHERE entity_type = ? AND entity_id = ?',
+      ['workspace', created.body.id],
+    )?.count;
+    events.projectDomainEventsToActivity();
+    expect(database.get(
+      'SELECT count(*) count FROM activity WHERE entity_type = ? AND entity_id = ?',
+      ['workspace', created.body.id],
+    )?.count).toBe(activityCount);
 
     const overview = await request(app)
       .get(`/api/workspaces/${created.body.id}`)
@@ -62,6 +83,10 @@ describe('local API', () => {
       health: { score: expect.any(Number), insufficientData: true },
       recentActivity: expect.any(Array),
     });
+    expect(database.get(
+      'SELECT classification FROM intelligence_results WHERE capability_id = ? AND subject_id = ?',
+      ['workspace-health', created.body.id],
+    )).toEqual({ classification: 'deterministic' });
 
     await request(app)
       .patch(`/api/workspaces/${created.body.id}`)

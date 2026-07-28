@@ -181,26 +181,25 @@ invariants of its health score.
 The Plugin SDK contract is designed before plugin implementation. Its runtime is
 deferred until two genuine integrations demonstrate the required extension points.
 
-## Platform-definition gate
+## Platform-definition execution
 
-Route 03 is temporarily paused while the foundational platform definition is
-completed:
+Three foundational passes are complete:
 
-1. Scaffold `Docs/System-Design-Book/`.
-2. Accept the Domain Model, Data Architecture, Event Architecture, Engineering
-   Standards, Engineering Principles, and Engineering Intelligence Engine
-   specifications.
-3. Audit Workspaces and Stories against accepted invariants.
-4. Classify discrepancies as corrective work, migration work, or compatibility
-   debt.
-5. Prove a transactional-outbox vertical slice with idempotent replay.
-6. Convert current Workspace and Story Health calculations into the first versioned
-   deterministic Intelligence capabilities without moving domain ownership.
-7. Benchmark startup, search, save, Workspace load, and capability execution on
-   named hardware and representative vaults.
-8. Resume Route 03 only after the specifications and evidence are accepted.
+1. `Docs/System-Design-Book/` now holds accepted Domain Model, Data Architecture,
+   Event Architecture, Engineering Standards, Engineering Principles, and
+   Engineering Intelligence Engine specifications.
+2. Route 01 and Route 02 were audited against their invariants. The evidence report
+   records 13 conformant items, 7 corrective items, 5 migration items, and 4
+   accepted compatibility debts.
+3. Migration 5 introduces durable typed events, consumer checkpoints, projection
+   quarantine, and versioned Intelligence results. Workspace creation atomically
+   appends `WorkspaceCreated`; the Activity projection is replay-safe; Workspace
+   Health runs as the first deterministic, provenance-bearing EIE capability.
 
-Performance targets remain proposed until measured and recorded.
+The first reproducible benchmark covers cold database initialization, save, FTS5
+search, Workspace load, and deterministic capability execution. See
+[`performance-baseline-2026-07-29.md`](Docs/System-Design-Book/evidence/performance-baseline-2026-07-29.md).
+Figures are baseline evidence, not yet accepted release budgets.
 
 The default desktop vault is `Documents/N-TechC3-Vault` and contains:
 
@@ -278,6 +277,7 @@ pnpm run typecheck
 pnpm test
 pnpm run build
 pnpm run test:e2e
+pnpm run benchmark:platform
 ```
 
 Playwright requires Chromium once:
@@ -322,6 +322,11 @@ Evidence/Knowledge/Asset/Campaign/Story links, Outputs, version checkpoints, and
 domain events. TipTap HTML remains canonical stored authoring content; Markdown is
 an output format.
 
+Migration 5 adds the durable domain-event/outbox foundation, idempotent Activity
+projection checkpoints and quarantine, and versioned Intelligence result
+provenance. Workspace creation is the first atomic domain-write/event vertical
+slice; remaining mutations still require migration to this path.
+
 ## Desktop packaging
 
 ```bash
@@ -361,8 +366,9 @@ pnpm package:mac
 - Entity version history, collaboration, cloud sync, and AI providers are not
   implemented.
 - Native Electron restore/reveal/dialog workflows need deeper desktop automation.
-- Durable domain events, consumer checkpoints, and the EIE capability registry are
-  part of the active platform-definition work and are not yet implemented.
+- Durable events and EIE provenance are implemented as a Workspace vertical slice,
+  not yet across every domain mutation. Story Health still needs migration to the
+  common execution contract.
 
 ## Product and implementation references
 
@@ -371,5 +377,5 @@ pnpm package:mac
 - [`Docs/Route-01-Workspaces-execution-plan.md`](Docs/Route-01-Workspaces-execution-plan.md) — Route 01 audit and implementation plan
 - [`Docs/Route-02-Stories-execution-plan.md`](Docs/Route-02-Stories-execution-plan.md) — Route 02 audit and implementation plan
 - [`Docs/NTC3_UI-UX_Spec.md`](Docs/NTC3_UI-UX_Spec.md) — governing UI/UX specification
-- `Docs/System-Design-Book/` — constitutional specifications created during the
-  platform-definition passes
+- [`Docs/System-Design-Book/`](Docs/System-Design-Book/) — accepted constitutional
+  specifications, invariant audit, and performance evidence
