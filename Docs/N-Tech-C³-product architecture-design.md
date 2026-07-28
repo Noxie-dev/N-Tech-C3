@@ -3225,3 +3225,1424 @@ Evidence    Knowledge
 ```
 
 At this point, we've fully designed the **Engineering Intelligence Layer**. The remaining routes (Media Library, Calendar, Publishing Queue, Templates, Exports, Dashboard, Settings, and eventually Repository Intelligence) are largely execution and orchestration features built on top of this foundation. I would tackle **Calendar & Publishing Queue next**, because together they become the operational control center for getting completed work into the world.
+
+Perfect. We've now completed the **Knowledge Creation Layer**.
+
+The next best route is actually **not** Calendar.
+
+I'd merge what most products split into two modules.
+
+Instead of:
+
+* Calendar
+* Queue
+
+I'd build a single operational center called:
+
+# **Publishing Pipeline**
+
+This is where C³ begins to feel less like a note-taking application and more like an operating system.
+
+---
+
+# Why merge them?
+
+Because scheduling is only **one step** of publishing.
+
+The real lifecycle is:
+
+```text
+Idea
+↓
+Research
+↓
+Story
+↓
+Review
+↓
+Approved
+↓
+Platform Variants
+↓
+Scheduled
+↓
+Published
+↓
+Measured
+↓
+Archived
+```
+
+A calendar only visualizes one stage.
+
+The Pipeline owns the entire lifecycle.
+
+---
+
+# Route 06 — Publishing Pipeline
+
+## One Sentence Definition
+
+> The Publishing Pipeline is the operational command center that moves engineering knowledge from completed Story to published content through a structured, measurable workflow.
+
+---
+
+# What is it?
+
+The Publishing Pipeline manages every deliverable that leaves C³.
+
+A Story can generate many outputs.
+
+The Pipeline tracks them independently.
+
+Example
+
+```text
+Evidence-Based Development
+
+├── Blog
+│      Published
+│
+├── LinkedIn
+│      Scheduled
+│
+├── Facebook
+│      Needs Review
+│
+├── X Thread
+│      Draft
+│
+└── Presentation
+       Not Started
+```
+
+One Story.
+
+Five deliverables.
+
+Five different states.
+
+---
+
+# Why does it exist?
+
+Without it
+
+You know what you've written.
+
+You don't know what you've shipped.
+
+The Pipeline measures execution.
+
+---
+
+# Problem it solves
+
+Most content systems stop at writing.
+
+Professional publishing begins after writing.
+
+Questions it answers
+
+* What's ready?
+* What's blocked?
+* What's overdue?
+* What's missing?
+* What's publishing today?
+* What's waiting for approval?
+* Which campaign is behind schedule?
+
+---
+
+# Why is it part of C³?
+
+Because engineering work only creates value when it reaches people.
+
+The Pipeline is the bridge between creation and impact.
+
+---
+
+# Philosophy
+
+```text
+Knowledge
+
+↓
+
+Story
+
+↓
+
+Outputs
+
+↓
+
+Pipeline
+
+↓
+
+Publication
+
+↓
+
+Influence
+```
+
+---
+
+# Mental Model
+
+Don't think
+
+```text
+Scheduler
+```
+
+Think
+
+```text
+Factory Assembly Line
+```
+
+Every deliverable moves station by station.
+
+---
+
+# Pipeline Stages
+
+Every Output moves through identical stages.
+
+```text
+Idea
+
+↓
+
+Draft
+
+↓
+
+Writing
+
+↓
+
+Evidence Review
+
+↓
+
+Brand Review
+
+↓
+
+Platform Adaptation
+
+↓
+
+Approved
+
+↓
+
+Scheduled
+
+↓
+
+Publishing
+
+↓
+
+Published
+
+↓
+
+Archived
+```
+
+Notice
+
+Evidence Review happens before Brand Review.
+
+Very intentional.
+
+---
+
+# Output Object
+
+Each Output stores
+
+Title
+
+Platform
+
+Campaign
+
+Story
+
+Workspace
+
+Template
+
+Status
+
+Scheduled Date
+
+Published Date
+
+Word Count
+
+Character Count
+
+Media Attached
+
+Reviewer
+
+Export Format
+
+Version
+
+---
+
+# Platform Variants
+
+Every Story may produce
+
+LinkedIn Article
+
+LinkedIn Carousel
+
+LinkedIn Short Post
+
+Website Blog
+
+Facebook
+
+Facebook Long
+
+Facebook Short
+
+X Thread
+
+X Single Post
+
+Newsletter
+
+Presentation
+
+Case Study
+
+Release Notes
+
+PDF
+
+Markdown
+
+Word
+
+---
+
+# Pipeline Dashboard
+
+```text
+------------------------------------------------
+
+Publishing Pipeline
+
+------------------------------------------------
+
+Today
+
+3 Scheduled
+
+2 Reviews
+
+1 Blocked
+
+------------------------------------------------
+
+Drafts
+
+18
+
+Ready
+
+9
+
+Scheduled
+
+12
+
+Published
+
+84
+
+------------------------------------------------
+
+Campaign Health
+
+92%
+
+------------------------------------------------
+
+```
+
+---
+
+# Main Layout
+
+```text
+┌──────────────────────────────────────────────┐
+│ Header                                       │
+├──────────────────────────────────────────────┤
+│ Search │ Filters │ New Output                │
+├──────────────────────────────────────────────┤
+│ Kanban Board                                │
+│                                              │
+│ Draft │ Review │ Approved │ Scheduled │ Live │
+│                                              │
+│ Cards                                       │
+│                                              │
+├──────────────────────────────────────────────┤
+│ Timeline                                    │
+└──────────────────────────────────────────────┘
+```
+
+---
+
+# Default View
+
+Kanban.
+
+Not Calendar.
+
+You spend far more time managing work than looking at dates.
+
+---
+
+# Calendar View
+
+Optional.
+
+Month
+
+Week
+
+Day
+
+Publishing cadence
+
+Campaign milestones
+
+Holidays
+
+Launches
+
+Engineering events
+
+---
+
+# Timeline View
+
+Shows
+
+```text
+Week 1
+
+██████ Story
+
+Week 2
+
+████████ LinkedIn
+
+Week 3
+
+████ Blog
+
+Week 4
+
+████ Presentation
+```
+
+Perfect for campaigns.
+
+---
+
+# Board View
+
+Columns
+
+Draft
+
+Needs Evidence
+
+Needs Assets
+
+Needs Review
+
+Approved
+
+Scheduled
+
+Published
+
+Archive
+
+Instant bottleneck detection.
+
+---
+
+# Smart Filters
+
+Workspace
+
+Campaign
+
+Platform
+
+Status
+
+Due Today
+
+Overdue
+
+Needs Images
+
+Needs Evidence
+
+Blocked
+
+---
+
+# Inspector
+
+Selecting an Output shows
+
+Story
+
+Campaign
+
+Evidence Coverage
+
+Assets
+
+Scheduled Time
+
+Character Count
+
+Word Count
+
+SEO Score (future)
+
+Platform Rules
+
+---
+
+# Platform Validation
+
+Every platform has rules.
+
+Example
+
+LinkedIn
+
+✓ Title
+
+✓ Cover
+
+✓ Image
+
+✓ Tags
+
+✓ Author
+
+Facebook
+
+✓ Image
+
+✓ Copy
+
+X
+
+✓ Character Limit
+
+✓ Thread Order
+
+The Pipeline validates before export.
+
+---
+
+# Publishing Readiness
+
+Every Output gets
+
+```text
+Publishing Readiness
+
+████████░░
+
+87%
+```
+
+Based on
+
+Evidence
+
+Grammar
+
+Assets
+
+Brand
+
+Platform Rules
+
+Metadata
+
+Links
+
+---
+
+# Publishing Calendar
+
+Unlike Google Calendar
+
+It shows
+
+Campaign
+
+Story
+
+Platform
+
+Status
+
+Instead of
+
+Meeting
+
+Meeting
+
+Meeting
+
+---
+
+# Future Automation
+
+Eventually
+
+```text
+Approved
+
+↓
+
+Publish Automatically
+
+↓
+
+LinkedIn
+
+↓
+
+Facebook
+
+↓
+
+X
+
+↓
+
+Website
+```
+
+No redesign needed.
+
+---
+
+# Empty State
+
+```text
+Nothing in the Pipeline
+
+Create your first Story or Campaign to begin building your publishing workflow.
+
+[ Create Story ]
+```
+
+---
+
+# Success Criteria
+
+The Pipeline is healthy when
+
+No blocked Outputs
+
+No overdue Reviews
+
+Publishing cadence maintained
+
+Platform variants complete
+
+Campaign milestones on track
+
+Every published Output traces back to a Story and supporting Evidence
+
+---
+
+# The Feature I'd Add: Publishing DNA
+
+Just as we've established Workspace DNA, Knowledge DNA, and Campaign DNA, every Output should inherit a **Publishing DNA** profile.
+
+It defines:
+
+* Target platform
+* Intended audience
+* Brand voice
+* Tone (Educational, Technical, Behind the Scenes, Announcement)
+* Reading time target
+* Character limits
+* Required media
+* Hashtag strategy
+* CTA style
+* Approval requirements
+
+For example, an output destined for LinkedIn can automatically inherit a professional, insight-driven tone with a long-form structure, while an X thread inherits brevity, sequential formatting, and concise calls to action. The Story remains the source of truth, but each platform output has its own execution blueprint without duplicating content.
+
+---
+
+# Why This Is Better Than a Calendar
+
+Most tools ask:
+
+> **"When are you posting?"**
+
+N-Tech C³ asks:
+
+> **"Is this knowledge actually ready to represent your engineering standards?"**
+
+That distinction is subtle but powerful.
+
+The Publishing Pipeline isn't about dates—it's about **quality-controlled delivery**. It ensures every piece of content that leaves C³ is traceable back to verified Evidence, shaped by the Story, aligned with the Campaign, and adapted appropriately for its destination. That is exactly how an **Engineering Intelligence Operating System** should think.
+
+
+Excellent. We have now completed what I would call the **Engineering Intelligence Core**.
+
+```text
+Workspace
+    │
+    ▼
+Story
+   ├──────────────┐
+   ▼              ▼
+Evidence      Knowledge
+   └──────┬───────┘
+          ▼
+     Campaign
+          ▼
+ Publishing Pipeline
+```
+
+The temptation is to build the **Media Library** next.
+
+I wouldn't.
+
+## TNBR (The Next Best Route)
+
+# Repository Intelligence
+
+This is **the product-defining feature**.
+
+If we build this correctly, N-Tech C³ stops being a content application and becomes an **Engineering Operating System**.
+
+Everything you've described over the last year—from auditing repositories, determining production readiness, finding blockers, generating a Source of Truth—points to this route as the heart of your engineering methodology.
+
+---
+
+# Route 07 — Repository Intelligence
+
+## One Sentence Definition
+
+> Repository Intelligence transforms a source code repository into structured engineering knowledge by continuously analyzing its health, architecture, risks, readiness, and evolution.
+
+---
+
+# What is it?
+
+Repository Intelligence is an engineering analysis engine.
+
+It reads a repository.
+
+It understands the repository.
+
+It creates knowledge from the repository.
+
+Not AI.
+
+Engineering analysis.
+
+---
+
+# Why does it exist?
+
+Because repositories contain enormous amounts of information that developers rarely consolidate.
+
+Examples
+
+* Build status
+* Dependencies
+* Framework
+* Folder structure
+* Architecture
+* TODOs
+* Technical debt
+* Security posture
+* Production readiness
+* Documentation quality
+
+Developers manually discover these every time.
+
+Repository Intelligence captures them once.
+
+---
+
+# What problem does it solve?
+
+Before starting work, engineers spend hours understanding:
+
+* Current state
+* Existing architecture
+* Risks
+* Missing documentation
+* Project maturity
+
+Repository Intelligence creates that understanding automatically.
+
+---
+
+# Why is it part of C³?
+
+This module embodies **Evidence-Based Development**.
+
+Instead of asking
+
+> "What do we think the project looks like?"
+
+It asks
+
+> "What does the repository objectively tell us?"
+
+---
+
+# Philosophy
+
+```text
+Repository
+
+↓
+
+Observation
+
+↓
+
+Evidence
+
+↓
+
+Knowledge
+
+↓
+
+Story
+
+↓
+
+Execution
+```
+
+Notice
+
+Everything starts here.
+
+---
+
+# Mental Model
+
+Not
+
+```text
+Git Client
+```
+
+Think
+
+```text
+Engineering MRI
+```
+
+You place a repository inside.
+
+It reveals everything.
+
+---
+
+# Primary Inputs
+
+Local Folder
+
+Git Repository
+
+ZIP Archive
+
+Workspace
+
+Existing Snapshot
+
+Future
+
+GitHub
+
+GitLab
+
+Azure DevOps
+
+Bitbucket
+
+---
+
+# Scan Types
+
+Quick Scan
+
+Full Audit
+
+Dependency Audit
+
+Architecture Scan
+
+Documentation Audit
+
+Security Audit
+
+Performance Audit
+
+Production Readiness
+
+Release Readiness
+
+Custom Audit
+
+---
+
+# Repository Object
+
+Every repository stores
+
+Name
+
+Workspace
+
+Path
+
+Framework
+
+Language
+
+Package Manager
+
+Node Version
+
+Git Branch
+
+Latest Commit
+
+Commit History
+
+Dependencies
+
+Scripts
+
+Repository Size
+
+File Count
+
+Folder Count
+
+Build Status
+
+Architecture
+
+Health Score
+
+Production Score
+
+Audit History
+
+Snapshots
+
+---
+
+# Scan Pipeline
+
+```text
+Select Repository
+
+↓
+
+Discovery
+
+↓
+
+Technology Detection
+
+↓
+
+Structure Analysis
+
+↓
+
+Dependency Analysis
+
+↓
+
+Documentation Analysis
+
+↓
+
+Configuration Analysis
+
+↓
+
+Build Analysis
+
+↓
+
+Architecture Detection
+
+↓
+
+Risk Detection
+
+↓
+
+Recommendations
+
+↓
+
+Evidence Creation
+
+↓
+
+Knowledge Updates
+
+↓
+
+Workspace Dashboard
+```
+
+One click.
+
+Complete visibility.
+
+---
+
+# Repository Dashboard
+
+```text
+------------------------------------------------------
+
+Smart Educare Hub
+
+React 19
+
+Node 22
+
+TypeScript
+
+------------------------------------------------------
+
+Repository Health
+
+92%
+
+Production Readiness
+
+88%
+
+Documentation
+
+73%
+
+Architecture
+
+95%
+
+Security
+
+91%
+
+Technical Debt
+
+14%
+
+------------------------------------------------------
+
+Recent Changes
+
+Latest Commit
+
+Dependency Updates
+
+New Risks
+
+------------------------------------------------------
+```
+
+---
+
+# UI Layout
+
+```text
+┌───────────────────────────────────────────────┐
+│ Repository Header                             │
+├───────────────────────────────────────────────┤
+│ Scan │ History │ Compare │ Reports            │
+├──────────────┬────────────────────────────────┤
+│ Navigation   │ Repository Dashboard           │
+│              │                                │
+│ Overview     │ Health Cards                   │
+│ Structure    │                                │
+│ Dependencies │ Architecture                   │
+│ Scripts      │                                │
+│ Config       │ Production Readiness           │
+│ Security     │                                │
+│ Documentation│ Timeline                       │
+│ Reports      │                                │
+├──────────────┴────────────────────────────────┤
+│ Inspector                                     │
+└───────────────────────────────────────────────┘
+```
+
+---
+
+# Sidebar
+
+Overview
+
+Architecture
+
+Dependencies
+
+Scripts
+
+Configuration
+
+Documentation
+
+Security
+
+Performance
+
+Production Readiness
+
+Audit History
+
+Reports
+
+Snapshots
+
+Recommendations
+
+---
+
+# Automatic Detection
+
+Without user input
+
+Framework
+
+Language
+
+Package Manager
+
+Build Tool
+
+Database
+
+ORM
+
+Testing Framework
+
+UI Library
+
+Hosting
+
+CI/CD
+
+Linting
+
+Formatting
+
+Monorepo
+
+Workspace Manager
+
+---
+
+# Architecture View
+
+Visual graph.
+
+```text
+Application
+
+├── Frontend
+
+├── Backend
+
+├── Shared
+
+├── Database
+
+├── Infrastructure
+
+└── Documentation
+```
+
+Generated automatically.
+
+---
+
+# Dependency Intelligence
+
+Shows
+
+Major Dependencies
+
+Outdated Packages
+
+Unused Packages
+
+Duplicate Libraries
+
+Risk Packages
+
+License Summary
+
+Upgrade Suggestions
+
+Dependency Tree
+
+---
+
+# Production Readiness
+
+This is a signature capability.
+
+Categories
+
+Documentation
+
+Testing
+
+Build
+
+Security
+
+Monitoring
+
+CI/CD
+
+Environment
+
+Configuration
+
+Error Handling
+
+Performance
+
+Accessibility
+
+Deployment
+
+Every category receives a score.
+
+Overall
+
+```text
+Production Readiness
+
+████████░░
+
+87%
+```
+
+---
+
+# Blockers
+
+Repository Intelligence should identify blockers.
+
+Examples
+
+Critical
+
+High
+
+Medium
+
+Low
+
+Each blocker stores
+
+Description
+
+Evidence
+
+Affected Files
+
+Recommendation
+
+Estimated Effort
+
+Priority
+
+---
+
+# Audit Timeline
+
+Every scan creates
+
+Timestamp
+
+Health
+
+Production Score
+
+Architecture Changes
+
+Dependency Changes
+
+Recommendations
+
+This creates a historical evolution.
+
+---
+
+# Repository Snapshots
+
+Every audit becomes immutable.
+
+Compare
+
+Yesterday
+
+Last Week
+
+Last Month
+
+Version 1
+
+Version 2
+
+You can literally watch the project mature.
+
+---
+
+# Reports
+
+Generate
+
+Repository Audit
+
+Executive Summary
+
+Technical Summary
+
+Architecture Report
+
+Dependency Report
+
+Production Readiness
+
+Security Summary
+
+Sprint Health
+
+Engineering Brief
+
+These reports become **Evidence** and can seed **Stories**.
+
+---
+
+# Repository DNA
+
+Every repository develops its own engineering profile.
+
+Fields include:
+
+* Primary Purpose
+* Technology Stack
+* Architectural Style (Monolith, Modular, Microservices, etc.)
+* Engineering Maturity
+* Deployment Target
+* Coding Standards
+* Branching Strategy
+* Testing Philosophy
+* Risk Profile
+* Maintenance Status
+* Source of Truth Status
+
+This becomes the repository's identity card and evolves with each audit.
+
+---
+
+# Success Criteria
+
+Repository Intelligence is successful when it can:
+
+* Detect the project's technology stack without configuration.
+* Produce an accurate architecture overview.
+* Assess production readiness with transparent scoring.
+* Identify actionable blockers and technical debt.
+* Generate a complete repository audit.
+* Store every audit as immutable evidence.
+* Update Knowledge with new engineering insights.
+* Suggest Story opportunities (e.g., "Interesting architectural migration detected").
+* Feed Workspace health metrics.
+
+---
+
+# Why This Is the Defining Feature
+
+If Obsidian disappeared tomorrow, you'd lose notes.
+
+If Notion disappeared, you'd lose documents.
+
+If N-Tech C³ disappeared, you'd lose your **engineering memory**.
+
+Repository Intelligence is the engine that continuously converts codebases into institutional knowledge. It operationalizes NaniTech's philosophy of **Evidence-Based Development** by making the repository—not opinions—the primary source of truth. Every downstream feature we've designed (Evidence, Knowledge, Stories, Campaigns, Publishing) becomes stronger because this module continuously supplies fresh, objective engineering intelligence.
+
+---
+
+## The Big Picture
+
+At this stage, the platform architecture becomes remarkably clear:
+
+```text
+                    REPOSITORY
+                         │
+                  Repository Intelligence
+                         │
+                ┌────────┴────────┐
+                ▼                 ▼
+            Evidence         Knowledge
+                │                 │
+                └────────┬────────┘
+                         ▼
+                      Stories
+                         ▼
+                     Campaigns
+                         ▼
+                 Publishing Pipeline
+                         ▼
+                    Public Content
+```
+
+This is no longer a content management application.
+
+It is an **Engineering Intelligence Platform** that happens to produce exceptional technical content as one of its outputs. In my view, this is the feature that gives N-Tech C³ a genuinely distinctive identity.
