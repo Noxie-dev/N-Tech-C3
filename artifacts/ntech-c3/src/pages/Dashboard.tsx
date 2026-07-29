@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { Link } from 'wouter';
 import { formatDate } from '@/lib/utils';
-import ntechMark from '@/assets/ntech-mark.svg';
 
 const PRINCIPLES = [
   { text: 'Evidence before assumptions.', icon: Sparkles, color: '#2f80ff' },
@@ -60,7 +59,11 @@ export function Dashboard() {
         <div className="absolute -bottom-24 -right-20 h-72 w-72 rounded-full bg-[#0869ff]/20 blur-3xl" />
         <div className="relative grid items-center gap-8 xl:grid-cols-[1.45fr_0.9fr]">
           <div className="flex items-center gap-7">
-            <img src={ntechMark} alt="N-Tech C³" className="hidden h-36 w-36 drop-shadow-[0_0_30px_rgba(47,128,255,0.3)] sm:block" />
+            <img
+              src="/NTC3-app-icon.png"
+              alt="N-Tech C³ application icon"
+              className="hidden h-36 w-36 rounded-[28px] object-cover drop-shadow-[0_0_34px_rgba(47,128,255,0.38)] sm:block lg:h-40 lg:w-40"
+            />
             <div>
               <h1 className="text-4xl font-bold tracking-[0.08em] text-white lg:text-5xl">N-TECH <span className="text-[#2f80ff]">C³</span></h1>
               <p className="mt-3 max-w-md text-sm font-medium tracking-[0.22em] text-[#d5dbe3]">ENGINEERING INTELLIGENCE<br />OPERATING SYSTEM</p>

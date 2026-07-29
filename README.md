@@ -8,8 +8,8 @@ The current alpha runs as an Electron desktop application. Data stays in a local
 SQLite database and portable filesystem vault; the UI communicates with a
 loopback-only Express API through generated OpenAPI clients.
 
-The application uses the production N-Tech C³ header logo, square desktop
-application icon, and matching browser, Apple touch, Android/PWA, and `.ico`
+The application uses the production N-Tech C³ header logo, square desktop and
+Dashboard hero icon, and matching browser, Apple touch, Android/PWA, and `.ico`
 favicon set from `artifacts/ntech-c3/public`.
 
 ## What is implemented
