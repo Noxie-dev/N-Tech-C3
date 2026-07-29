@@ -266,6 +266,14 @@ packaging pass. Signed distribution and additional hardware certification remain
 release operations. The final decision is recorded in
 [`route-03-l3-governance-decision-2026-07-29.md`](Docs/System-Design-Book/evidence/route-03-l3-governance-decision-2026-07-29.md).
 
+Route 04 prerequisite discovery is complete. The accepted
+[`Route-04-Knowledge-execution-plan.md`](Docs/Route-04-Knowledge-execution-plan.md)
+defines the Knowledge aggregate, lifecycle, typed relationships, claim/citation
+direction, events, migration policy, experience contract, and conformance gates.
+Route 04 is **L1 Defined** and only Pass 1 — aggregate contracts and schema — is
+authorized. The existing Knowledge CRUD/editor remains the current implementation
+until that pass is executed.
+
 The default desktop vault is `Documents/N-TechC3-Vault` and contains:
 
 ```text
@@ -446,8 +454,10 @@ The following are documented product direction, **not current functionality**:
   contracts.
 - **Intelligence Cards:** explainable presentation for Health, risks, findings, and
   recommendations with provenance and actions.
-- **Route 04 Knowledge Base:** source-backed claims, reviews, lifecycle, citations,
-  backlinks, versions, archive/restore, and Workspace-scoped institutional memory.
+- **Route 04 Knowledge Base:** **L1 Defined; Pass 1 authorized.** The current
+  CRUD/editor surface is an implementation seed. Governed aggregate contracts,
+  claims, citations, typed backlinks, versions, archive/restore, and
+  Workspace-scoped institutional memory follow through staged passes.
 - **Knowledge Query:** an information-first EIE capability that answers from
   authorized sources with citations or abstains when evidence is insufficient.
 - **Knowledge Evolution Explorer:** distinct relationship, version, lineage, and

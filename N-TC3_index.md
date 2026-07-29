@@ -18,15 +18,17 @@ When sources disagree, use this precedence:
    `Docs/Route-02-Stories-execution-plan.md` — accepted route-specific decisions.
 5. `Docs/Route-03-Evidence-execution-plan.md` — accepted Route 03 RDF v1 dossier
    and staged execution authority.
-6. `wireframe.png` and `branding-brief.png` — binding visual sources for the Home composition and complete brand/design system.
-7. `Docs/NTC3_UI-UX_Spec.md` — reconciled governing UI/UX specification for information architecture, interaction, visual language, accessibility, and screen behavior.
-8. Executable code and configuration — truth for current behavior, but not authority to override approved target visuals.
-9. `lib/api-spec/openapi.yaml` — truth for HTTP contracts.
-10. `lib/db/src/migrations.ts` and `lib/db/src/index.ts` — truth for SQLite migrations, initialization, and vault access.
-11. `Docs/NTC3_Feature` — active, explicitly requested feature outcomes.
-12. `Docs/NTC3_spec-doc.txt` — refined long-term EIOS product direction.
-13. `Docs/NTC3.txt` — original v0.1 ECOS scope and architecture proposal.
-14. `README.md` — operator guide; update it when commands, prerequisites, routes, or architecture change.
+6. `Docs/Route-04-Knowledge-execution-plan.md` — accepted Route 04 RDF v1 dossier
+   and first authorized implementation boundary.
+7. `wireframe.png` and `branding-brief.png` — binding visual sources for the Home composition and complete brand/design system.
+8. `Docs/NTC3_UI-UX_Spec.md` — reconciled governing UI/UX specification for information architecture, interaction, visual language, accessibility, and screen behavior.
+9. Executable code and configuration — truth for current behavior, but not authority to override approved target visuals.
+10. `lib/api-spec/openapi.yaml` — truth for HTTP contracts.
+11. `lib/db/src/migrations.ts` and `lib/db/src/index.ts` — truth for SQLite migrations, initialization, and vault access.
+12. `Docs/NTC3_Feature` — active, explicitly requested feature outcomes.
+13. `Docs/NTC3_spec-doc.txt` — refined long-term EIOS product direction.
+14. `Docs/NTC3.txt` — original v0.1 ECOS scope and architecture proposal.
+15. `README.md` — operator guide; update it when commands, prerequisites, routes, or architecture change.
 
 The documentation is strategic, not a claim that every described feature exists. A feature is implemented only when it is present in executable code and its required data/API path exists.
 
@@ -1385,9 +1387,9 @@ competing architecture document. It will cover:
 Contracts should be machine-verifiable through TypeScript, OpenAPI, JSON Schema,
 migrations, and automated conformance tests wherever practical.
 
-### Future feature — Route 04 Knowledge Base
+### Route 04 Knowledge Base
 
-Status: **Future feature; current CRUD seed exists**
+Status: **L1 Defined; Pass 1 authorized; current CRUD seed exists**
 
 One-sentence target:
 
@@ -1500,8 +1502,50 @@ source behavior. It also depends on the corrective platform passes covering
 archived-Workspace guards, canonical Workspace identifiers, durable events, and
 remaining Filesystem and Platform Services specifications.
 
-Therefore this future vision does not authorize Route 04 implementation or bypass
-the Route 03 gate.
+Route 03 has now passed its L3 gate. The prerequisite audit and accepted RDF
+dossier authorize only Route 04 Pass 1 — Aggregate contracts and schema. Later
+claims, citations, Intelligence, graph, and semantic-search passes remain
+unauthorized until their preceding evidence is accepted.
+
+### Route 04 prerequisite and RDF execution report
+
+Status: **Completed and accepted — L1 Defined**
+
+The repository audit confirms that the existing `/knowledge` Library and editor,
+SQLite content, FTS5 indexing, rich-text authoring, and Story join table are useful
+implementation seeds. They are not yet a governed Knowledge domain:
+
+- canonical creation does not require `workspaceId`;
+- the public API/UI hard-delete;
+- lifecycle, review, optimistic version, archive, versions, claims, and citations
+  do not exist;
+- create writes Activity directly while Knowledge mutations lack atomic durable
+  events;
+- Knowledge search does not exclude archived state; and
+- `linked_page_ids` is an untyped JSON array rather than authoritative typed
+  relationship edges.
+
+Route 03 now satisfies every Knowledge dependency for stable Evidence identity,
+Workspace ownership, immutable source versions, provenance, locators, Integrity,
+and visible degraded states. Accepted platform specifications provide append-only
+migrations, the transactional event runtime, Workspace guards, rebuildable
+projections, and benchmark methods.
+
+`Docs/Route-04-Knowledge-execution-plan.md` defines the canonical aggregate,
+lifecycle, claims, Evidence citations, typed Knowledge relationships, commands,
+queries, events, experience contract, migration policy, and conformance gates.
+Route 04 is accepted at **L1 Defined**.
+
+The only authorized next implementation boundary is **Route 04 Pass 1 — Aggregate
+contracts and schema**: require Workspace ownership, add aggregate lifecycle/review
+and optimistic version fields, append the conservative migration/audit, introduce
+typed Knowledge relationships, replace normal deletion with archive/restore,
+append events atomically, rebuild active-only FTS5, regenerate clients, and update
+the existing Library/Studio flows. Claims, citations, Intelligence, graphs,
+semantic search, and automatic promotion are explicitly excluded.
+
+The controlled prerequisite record is
+`Docs/System-Design-Book/evidence/route-04-prerequisite-audit-2026-07-29.md`.
 
 ## 2C. Accepted Route Discovery Framework v1
 
@@ -1774,10 +1818,10 @@ atomic promotion, and restart reconciliation.
 
 ### Next implementation order
 
-1. Audit Route 04 prerequisites against the now-governed Evidence contracts.
-2. Produce and accept the first Route 04 execution boundary from its RDF dossier.
-3. Execute that Route 04 boundary while treating Route 03 residuals as separately
-   change-controlled release or maintenance work.
+1. Execute Route 04 Pass 1 — Aggregate contracts and schema.
+2. Review the Pass 1 migration, compatibility, event, search, and UI evidence.
+3. Authorize Pass 2 claims/citations only if Pass 1 reaches L2 without unresolved
+   blocking conformance failures.
 
 ## 8. Contract and data workflow
 
