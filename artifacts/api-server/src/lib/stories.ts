@@ -1,5 +1,18 @@
 import { all, get, run, type Row } from '@workspace/db';
 
+export const STORY_STATUSES = [
+  'Idea', 'Research', 'EvidenceGathering', 'Outline', 'Draft',
+  'Review', 'Approved', 'Published', 'Archived',
+] as const;
+
+export function canTransitionStory(from: string, to: string) {
+  if (from === to || from === 'Archived') return false;
+  if (to === 'Archived') return true;
+  const fromIndex = STORY_STATUSES.indexOf(from as typeof STORY_STATUSES[number]);
+  const toIndex = STORY_STATUSES.indexOf(to as typeof STORY_STATUSES[number]);
+  return fromIndex >= 0 && toIndex >= 0 && Math.abs(toIndex - fromIndex) === 1;
+}
+
 export function normalizeStory(row: Row) {
   return { ...row, workspaceId: row.projectId ?? null };
 }
@@ -131,4 +144,3 @@ export const storyLinkConfig = {
   asset: { table: 'story_assets', id: 'asset_id', target: 'assets', workspace: 'project_id' },
   campaign: { table: 'story_campaigns', id: 'campaign_id', target: 'campaigns', workspace: 'project_id' },
 } as const;
-

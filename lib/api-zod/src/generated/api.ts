@@ -548,7 +548,7 @@ export const CreateStoryBody = zod.object({
   "difficulty": zod.enum(['Beginner', 'Intermediate', 'Advanced']).optional(),
   "tags": zod.array(zod.string()).optional(),
   "projectId": zod.number().nullish(),
-  "workspaceId": zod.number().nullish(),
+  "workspaceId": zod.number(),
   "campaignId": zod.number().nullish(),
   "storyType": zod.enum(['EngineeringJournal', 'BlogArticle', 'SocialSeries', 'CaseStudy', 'TechnicalDocumentation', 'ADR', 'ResearchNote', 'LearningNote', 'ProductUpdate', 'ChangelogNarrative', 'InternalMemo', 'Presentation', 'Other']).optional(),
   "author": zod.string().optional(),
@@ -911,7 +911,6 @@ export const CreateStoryOutputParams = zod.object({
 export const CreateStoryOutputBody = zod.object({
   "type": zod.string(),
   "title": zod.string().min(1),
-  "status": zod.enum(['Draft', 'Review', 'Ready', 'Published', 'Archived']).optional(),
   "content": zod.string().optional(),
   "format": zod.string().optional(),
   "destination": zod.string().optional()

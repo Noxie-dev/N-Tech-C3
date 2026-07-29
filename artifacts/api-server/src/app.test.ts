@@ -145,9 +145,9 @@ describe('local API', () => {
 
     const output = await request(app)
       .post(`/api/stories/${story.body.id}/outputs`)
-      .send({ title: 'Architecture article', type: 'Blog', status: 'Ready' })
+      .send({ title: 'Architecture article', type: 'Blog' })
       .expect(201);
-    expect(output.body).toMatchObject({ status: 'Ready', type: 'Blog' });
+    expect(output.body).toMatchObject({ status: 'Draft', type: 'Blog' });
 
     const health = await request(app).get(`/api/stories/${story.body.id}/health`).expect(200);
     expect(health.body).toMatchObject({
@@ -184,6 +184,48 @@ describe('local API', () => {
       expect.objectContaining({ eventType: 'created' }),
       expect.objectContaining({ eventType: 'version' }),
     ]));
+  });
+
+  it('enforces Workspace ownership, parent archive guards, and lifecycle ordering', async () => {
+    await request(app)
+      .post('/api/stories')
+      .send({ title: 'Unassigned Story' })
+      .expect(400);
+
+    const workspace = await request(app)
+      .post('/api/workspaces')
+      .send({ name: 'Invariant Workspace', purpose: 'Product' })
+      .expect(201);
+    const story = await request(app)
+      .post('/api/stories')
+      .send({ title: 'Ordered lifecycle', workspaceId: workspace.body.id })
+      .expect(201);
+
+    await request(app)
+      .post(`/api/stories/${story.body.id}/transition`)
+      .send({ status: 'Draft' })
+      .expect(409);
+    await request(app)
+      .post(`/api/stories/${story.body.id}/outputs`)
+      .send({ title: 'Premature output', type: 'Blog', status: 'Ready' })
+      .expect(409);
+
+    await request(app)
+      .patch(`/api/workspaces/${workspace.body.id}`)
+      .send({ status: 'Archived' })
+      .expect(200);
+    await request(app)
+      .post('/api/evidence')
+      .send({
+        title: 'Blocked child',
+        type: 'TerminalOutput',
+        projectId: workspace.body.id,
+      })
+      .expect(409);
+    await request(app)
+      .patch(`/api/stories/${story.body.id}`)
+      .send({ summary: 'Blocked by archived parent' })
+      .expect(409);
   });
 
   it('captures terminal evidence content', async () => {

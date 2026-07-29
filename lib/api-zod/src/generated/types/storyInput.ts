@@ -23,8 +23,7 @@ export interface StoryInput {
   tags?: string[];
   /** @nullable */
   projectId?: number | null;
-  /** @nullable */
-  workspaceId?: number | null;
+  workspaceId: number;
   /** @nullable */
   campaignId?: number | null;
   storyType?: StoryInputStoryType;

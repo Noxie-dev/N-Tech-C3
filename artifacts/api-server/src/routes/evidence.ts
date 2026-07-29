@@ -6,9 +6,11 @@ import {
 } from '@workspace/api-zod';
 import { createEntity, deleteEntity, entityConfigs, getEntity, listEntities, updateEntity } from '../lib/entity-store';
 import { recordActivity } from '../lib/activity';
+import { guardWorkspaceMutations } from '../lib/workspace-guard';
 
 const router: IRouter = Router();
 const config = entityConfigs.evidence;
+router.use(guardWorkspaceMutations(config.table));
 
 router.get('/evidence', (req, res) => {
   const query = ListEvidenceQueryParams.safeParse(req.query);

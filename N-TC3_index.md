@@ -562,6 +562,260 @@ and Intelligence provenance assertions.
 Route 03 remains paused until the highest-risk corrective work is completed and the
 remaining foundation specifications needed by Evidence Vault are accepted.
 
+### NB3RP Pass 1 execution report — invariant enforcement
+
+Status: **Implemented and verified**
+
+The first Next Best Recommended Pass closes the highest-risk Route 01/02 invariant
+gaps:
+
+- all Story, Evidence, Asset, Knowledge, Campaign, and Template mutations now share
+  an archived-Workspace guard and return `409` with restore guidance;
+- the canonical Story creation contract requires a valid `workspaceId`;
+- Story lifecycle changes are limited to the adjacent forward/backward transition
+  or explicit archive path, with existing approval/publication blockers retained;
+- Outputs can only be created as `Draft`; readiness must be established through a
+  future validated transition contract;
+- Story outline replacement, its event, and all replacement rows commit in one
+  SQLite transaction; and
+- OpenAPI and generated client/Zod contracts reflect mandatory Story Workspace
+  ownership and Draft-only Output creation.
+
+Regression coverage verifies unassigned Story rejection, illegal lifecycle jumps,
+premature Output readiness rejection, archived-parent child-write rejection, and
+archived-parent Story-write rejection.
+
+Verification completed with repository typecheck and production builds passing,
+15 Vitest tests passing across three files, two Playwright workflows passing, and
+Markdown whitespace validation passing.
+
+Remaining related work: define Output transition endpoints, deprecate maintenance
+hard deletes, migrate remaining child contracts from `projectId` to `workspaceId`,
+and extend durable event projection beyond Workspace creation.
+
+## 2B. Proposed Phase III — C³ Canon and Knowledge Intelligence
+
+Status: **Proposed future architecture — not implemented and not yet binding**
+
+The C³ Canon will define the official product vocabulary, relationship semantics,
+interaction grammar, and cross-module protocol. It complements the Engineering
+Constitution: the Constitution governs architecture; the Canon governs the language
+through which users, contracts, domains, and interfaces express that architecture.
+
+### Proposed ubiquitous language
+
+| Term | Canonical meaning | Important boundary |
+| --- | --- | --- |
+| Vault | Highest local container for an isolated engineering ecosystem | Not a synonym for a Workspace, database, or collection |
+| Workspace | Operating context for one focused initiative | New business content is Workspace-scoped by default |
+| Repository | User-approved source-code repository associated with a Workspace | Analysis is read-only and never executes repository code |
+| Evidence | Provenance-bearing artifact supporting or challenging a claim | May be factual, observational, subjective, or derived; classification is explicit |
+| Knowledge | Reviewed, reusable understanding expressed through source-backed claims | Not a synonym for documents, files, or unreviewed AI output |
+| Story | Structured narrative using Evidence and Knowledge | Produces Outputs without replacing Knowledge truth |
+| Campaign | Communication objective coordinating Stories and Outputs | Does not own or duplicate Story content |
+| Output | Platform-specific deliverable derived from a Story | Owns its own readiness and publication state |
+| Pipeline | Operational workflow through which Outputs progress | Not a generic lifecycle for every entity |
+| Domain Event | Durable, typed fact that something occurred | Authoritative input to projections and automation |
+| Activity | User-facing projection derived from domain events | Not an event source of truth |
+| Snapshot | Immutable observation of an entity at a point in time | Includes source and calculation provenance |
+| Health | Explainable derived assessment defined by an eligible domain | Not automatically applicable to every object |
+| DNA | Structured identity profile defined only for domains that require it | Not universal metadata inherited by every row |
+| Intelligence | Versioned, derived insight produced by an EIE capability | Never silently mutates authoritative domain facts |
+
+Legacy physical names such as `projects` and `project_id` remain documented
+compatibility debt. They do not create product-language synonyms for Workspace.
+
+### Proposed Canon rules and adaptations
+
+- Business content belongs to a Workspace by default. Vault-scoped concepts such
+  as global settings, plugins, backups, and integrity require explicit definitions.
+- Entity classes use appropriate identity envelopes. Aggregates, child records,
+  relationships, events, projections, Intelligence results, and blobs do not all
+  receive meaningless universal fields.
+- Every stateful aggregate defines and tests its own lifecycle. Shared state names
+  retain consistent meanings, but a universal lifecycle is prohibited.
+- Metadata and UI capabilities are compositional. Health, DNA, attachments,
+  Inspector sections, and collection views appear only where meaningful.
+- Canonical typed relationship verbs include `SUPPORTS`, `REFERENCES`, `INCLUDES`,
+  `OWNS`, `PRODUCED`, and `PRODUCES`. Cardinality, direction, deletion behavior,
+  Workspace scope, and inverse projection must be defined before use.
+- Commands and queries use explicit English names such as
+  `linkEvidenceToStory` and `getEvidenceSupportingStory`; ambiguous generic methods
+  are avoided.
+- Every computed value must explain why it exists and identify its evidence,
+  capability version, input watermark, and classification.
+- Time is first-class: creation, modification, review, publication, calculation,
+  invalidation, and supersession are modeled where applicable.
+
+### Proposed interaction grammar
+
+- **Intelligence Cards** become the primary presentation contract for Health
+  changes, risks, opportunities, integrity findings, relationship suggestions, and
+  recommendations. Cards expose subject, explanation, sources, classification,
+  confidence when calibrated, calculation time, and available actions.
+- **Inspector** and **Toolbar** become shared component patterns, not mandatory
+  identical contents. Screens expose only applicable sections and actions.
+- Collections use a shared view contract but implement only useful, tested views:
+  for example Evidence may use list/table/gallery, Activity uses timeline, and
+  relationship exploration uses graph.
+- Explainability, accessibility, performance, and color-as-state remain mandatory
+  design constraints.
+
+### Platform runtime boundary
+
+No second all-purpose “C³ Engine” is introduced. Coordination belongs to the
+proposed C³ Platform Runtime:
+
+```text
+Domain command
+    ↓
+Authoritative write + durable event
+    ↓
+C³ Platform Runtime
+    ├── updates projections and search
+    ├── schedules bounded jobs
+    ├── invokes Engineering Intelligence Engine capabilities
+    └── dispatches authorized plugin subscriptions
+```
+
+The Platform Runtime coordinates work; domains own truth and lifecycle rules; the
+single Engineering Intelligence Engine derives insight.
+
+### Proposed C³ Protocol
+
+The future C³ Protocol is a registry of executable cross-module contracts, not a
+competing architecture document. It will cover:
+
+- entity and identity envelopes;
+- typed relationship registry;
+- domain-event envelopes and compatibility;
+- Intelligence-result envelopes;
+- file, blob, import, and export formats;
+- API errors and version negotiation;
+- plugin permissions and extension points; and
+- schema evolution and conformance tests.
+
+Contracts should be machine-verifiable through TypeScript, OpenAPI, JSON Schema,
+migrations, and automated conformance tests wherever practical.
+
+### Future feature — Route 04 Knowledge Base
+
+Status: **Future feature; current CRUD seed exists**
+
+One-sentence target:
+
+> The Knowledge Base is the Workspace's institutional memory, transforming
+> provenance-bearing Evidence into reviewed, reusable understanding.
+
+Canonical transformation:
+
+```text
+Source artifact → Evidence → Claim → Knowledge → Story → Output
+```
+
+“Knowledge Asset” is not introduced as a competing domain object. Source files,
+audits, terminal captures, screenshots, PDFs, diagrams, videos, and AI
+conversations enter through Evidence or Media with explicit provenance and
+classification.
+
+#### Current-version integration
+
+The current `/knowledge` and `/knowledge/:id` routes provide:
+
+- Workspace-compatible SQLite storage through the physical `project_id`;
+- list, title search, category filtering, create, read, update, and hard delete;
+- shared TipTap HTML authoring with explicit save feedback;
+- tags, category, and a lightweight `linkedPageIds` array;
+- global FTS5 indexing of title, content, and tags; and
+- Story-to-Knowledge linking through the Story Engine graph.
+
+This is an implementation seed, not Route 04 completion. Current gaps include
+mandatory canonical Workspace ownership, archived-Workspace mutation guards,
+archive/restore, a Knowledge lifecycle, version history, reviews, claim-level
+citations, typed Knowledge relationships, backlinks, Evidence provenance,
+authority/freshness state, durable Knowledge events, and EIE capabilities.
+
+#### Future Route 04 domain model
+
+A Knowledge page will contain reviewed claims rather than merely a block of text.
+Each claim may cite one or more Evidence records with a precise locator such as a
+PDF page, text range, repository snapshot, image region, or media timestamp.
+Unsupported, conflicting, stale, and superseded claims remain visible rather than
+being silently resolved.
+
+Proposed Knowledge lifecycle:
+
+```text
+Idea → Research → Draft → Verified → Referenced → Canonical → Archived
+```
+
+- `Verified` means reviewed against cited Evidence.
+- `Referenced` is derived from actual downstream usage.
+- `Canonical` represents an accepted organizational position and requires an
+  owner, review date, and sufficient supporting Evidence.
+- Archived or superseded Knowledge remains historically accessible.
+
+Initial Route 04 scope should include Workspace ownership, collections, rich
+authoring, claims and citations, Evidence/Story/Knowledge relationships, backlinks,
+full-text search, version checkpoints, review state, archive/restore, provenance,
+and a capability-driven Inspector. Animated graphs and AI querying are not initial
+route requirements.
+
+#### Future Knowledge Intelligence capabilities
+
+These remain capabilities of the single EIE:
+
+| Capability | Future purpose |
+| --- | --- |
+| Knowledge Query | Answer scoped questions with claim-level citations or abstain |
+| Freshness | Detect when supporting Evidence or repositories have changed |
+| Coverage and gaps | Identify missing or weakly documented areas using explicit rules |
+| Contradiction detection | Surface conflicting claims for human review |
+| Duplicate detection | Suggest overlapping pages without automatically merging them |
+| Relationship discovery | Suggest typed connections for approval |
+| Recommendations | Suggest related Knowledge, Evidence, Stories, and review actions |
+
+The Knowledge Query experience is information-first, not a general chatbot. Every
+answer identifies whether it is directly stated, deterministically derived,
+summarized, inferred, conflicting, or unsupported. It must cite authorized sources
+or abstain. “No hallucination” is a goal, not a guarantee.
+
+Initially, trust uses categorical states such as `Unsupported`,
+`PartiallySupported`, `Supported`, `Corroborated`, `Conflicting`, `Stale`, and
+`HumanVerified`. Numeric confidence is deferred until it can be calibrated and
+validated.
+
+#### Future Knowledge Evolution Explorer
+
+The Explorer is an experience layer over four explicitly different models:
+
+1. semantic relationships between concepts and entities;
+2. version history showing record changes;
+3. lineage showing origin, split, merge, and supersession; and
+4. a time-based projection of what was known at a selected point.
+
+Expandable graphs, timeline playback, animated traversal, and presentation mode are
+future enhancements after the underlying version, lineage, and relationship
+semantics are implemented and benchmarked.
+
+#### Automation and human authority
+
+Classification, relationship discovery, canonical promotion, contradiction
+resolution, and cross-Workspace reuse begin as transparent suggestions. A human
+reviews, edits, approves, rejects, or defers them. Cross-Workspace discovery is
+opt-in and must preserve Vault and Workspace authorization boundaries.
+
+#### Dependencies and sequencing
+
+Route 04 depends on Route 03 defining Evidence identity, integrity, versioning,
+source locators, capture provenance, Workspace ownership, and immutable/versioned
+source behavior. It also depends on the corrective platform passes covering
+archived-Workspace guards, canonical Workspace identifiers, durable events, and
+remaining Filesystem and Platform Services specifications.
+
+Therefore this future vision does not authorize Route 04 implementation or bypass
+the Route 03 gate.
+
 ## 3. Current implementation snapshot
 
 The current repository implements a **local-first Electron application backed by SQLite and a filesystem vault**. Express remains as a loopback-only local service so the OpenAPI-first UI boundary stays reusable.
@@ -640,7 +894,7 @@ V1 is committed to Electron + SQLite + filesystem vault. The local Express servi
 | `/campaigns/:id` | Campaign detail | Read, edit core fields, delete |
 | `/evidence` | Evidence Vault | List, type/search filter, manual metadata capture |
 | `/knowledge` | Knowledge Base | List/search and create |
-| `/knowledge/:id` | Knowledge detail | Read, manually save plain text content, delete |
+| `/knowledge/:id` | Knowledge detail | Read and explicitly save TipTap HTML content; permanent delete remains compatibility debt |
 | `/assets` | Assets | List/filter and create URL/path metadata |
 | `/templates` | Templates | List/filter and create |
 | `/projects`, `/projects/:id` | Compatibility | Redirect old browser links to canonical Workspace routes |
@@ -702,7 +956,7 @@ Legend: **Implemented**, **Partial**, **Not implemented**.
 | Capability | Status | Evidence/current limitation |
 | --- | --- | --- |
 | Home landing | Partial | Approved wireframe composition, brand hero, six Get Started cards, workspaces, activity, live metrics/focus, and bottom strip exist; Calendar/Exports routes and production logo exports remain |
-| Stories (Route 02) | Implemented | Global/Workspace catalogues, Story studio sections, lifecycle, outline, relationship graph, Outputs, deterministic health, timeline, versions, optimistic concurrency, and archive/restore |
+| Stories (Route 02) | Implemented | Global/Workspace catalogues, mandatory Workspace ownership, guarded lifecycle, transactional outline, Draft-only Output creation, relationship graph, deterministic health, timeline, versions, optimistic concurrency, and archive/restore |
 | Story authoring | Implemented | Shared TipTap editor with canonical HTML persistence, word/read-time derivation, version-safe explicit saves, and conflict rejection |
 | Campaigns CRUD | Implemented | Core records only; no timeline/tasks/metrics/outputs |
 | Evidence Vault CRUD | Partial | Metadata, paste/file capture, SHA-256 recording, text/image/PDF/audio/video preview, safe vault reveal, filtering, and story/project linking exist; large/unsupported files remain reveal-only |
@@ -711,7 +965,7 @@ Legend: **Implemented**, **Partial**, **Not implemented**.
 | Templates | Partial | Core records exist; no template application/export workflow |
 | Workspaces (Route 01) | Implemented | Canonical picker, overview and settings routes; filtered list, initial DNA, scoped metrics/activity, health components, duplicate, archive/restore, integrity, manifest export, and old `/projects` redirects |
 | Legacy Projects | Deprecated compatibility | Physical table and API remain temporarily to preserve existing vaults and integrations |
-| Activity feed | Implemented | Append-only table; activity write failures are intentionally swallowed |
+| Activity feed | Partial | Workspace creation projects a durable event through an idempotent consumer; remaining legacy writes are still direct and lossy |
 | Rich text editor | Implemented | Shared Story/Knowledge TipTap component stores HTML |
 | Quick capture | Implemented | Global button, Cmd/Ctrl+K, and paste-to-TerminalOutput flow |
 | Evidence file drop | Implemented | Electron IPC copies files into the vault and records checksum/source metadata |
@@ -719,7 +973,7 @@ Legend: **Implemented**, **Partial**, **Not implemented**.
 | Calendar/timeline | Not implemented | No route, API, or schema |
 | Actionable queue | Not implemented | No route, API, or schema |
 | Export pipeline | Partial | Desktop exports portable JSON plus human-readable Markdown; HTML/PDF/DOCX exporters remain |
-| Version history | Not implemented | Only current rows and timestamps are stored |
+| Version history | Partial | Story checkpoints and timeline exist; Knowledge and most other entities store only current rows and timestamps |
 | Backup/restore | Implemented | Desktop creates compressed portable vault archives; restore validates paths, preserves a recovery copy, and rolls back on copy failure |
 | Repository integration | Partial | Secure desktop folder selection captures branch, commit, package manager, frameworks, dependencies, TODOs, README, readiness, and optional project association |
 | Repository Intelligence Engine | Partial | Deterministic, fingerprinted snapshots become searchable `RepositoryAudit` evidence with per-project history counts and metric diffs; deeper dependency/security analysis remains |
@@ -945,7 +1199,7 @@ Validation completed:
 - Electron and esbuild install scripts — explicitly approved through the workspace supply-chain guard.
 - Electron runtime — installed at version 38.8.6.
 - SQLite/API smoke test — passed health, Workspace lifecycle/overview, legacy Project compatibility, and scoped evidence search against a disposable vault.
-- `pnpm test` — 14 tests passed across migrations/FTS, Workspace and Story Engine lifecycles, durable-event projection, Intelligence provenance, API capture/filtered search, and frontend capture utilities.
+- `pnpm test` — 15 tests passed across migrations/FTS, Workspace and Story Engine lifecycles, invariant enforcement, durable-event projection, Intelligence provenance, API capture/filtered search, and frontend capture utilities.
 - `pnpm run test:e2e` — 2 Playwright workflows passed for Workspace creation/detail/search, TipTap persistence, and evidence file ingestion.
 - Electron Builder directory packaging — passed and produced an unsigned arm64 `.app` with bundled API/frontend resources.
 - `git diff --check` — passed.

@@ -33,12 +33,13 @@ export function Stories() {
     const priority = formData.get('priority') as StoryInput['priority'];
     const selectedWorkspaceId = Number(formData.get('workspaceId'));
     const storyType = formData.get('storyType') as StoryInput['storyType'];
+    const targetWorkspaceId = selectedWorkspaceId || workspaceId;
 
-    if (!title) return;
+    if (!title || !targetWorkspaceId) return;
 
     createStory.mutate({ data: {
       title, status, priority, storyType,
-      workspaceId: selectedWorkspaceId || workspaceId,
+      workspaceId: targetWorkspaceId,
     } }, {
       onSuccess: (newStory) => {
         setIsCreateOpen(false);

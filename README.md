@@ -357,7 +357,7 @@ pnpm package:mac
 ## Current limitations
 
 - Child APIs still expose legacy `projectId` fields while the canonical Workspace
-  migration is completed.
+  migration is completed; archived-Workspace mutation guards are enforced.
 - Story graph relationships are implemented; other cross-domain graph surfaces
   still require their route-specific work.
 - Story versions are stored and visible on the timeline, but compare/restore UI is
@@ -369,6 +369,30 @@ pnpm package:mac
 - Durable events and EIE provenance are implemented as a Workspace vertical slice,
   not yet across every domain mutation. Story Health still needs migration to the
   common execution contract.
+- Outputs are safely created as Draft, but their validated Review/Ready/Published
+  transition API remains future corrective work.
+
+## Future features
+
+The following are documented product direction, **not current functionality**:
+
+- **C³ Canon and Protocol:** shared vocabulary, typed relationship semantics,
+  consistent interaction grammar, and machine-verifiable module/event/file/plugin
+  contracts.
+- **Intelligence Cards:** explainable presentation for Health, risks, findings, and
+  recommendations with provenance and actions.
+- **Route 04 Knowledge Base:** source-backed claims, reviews, lifecycle, citations,
+  backlinks, versions, archive/restore, and Workspace-scoped institutional memory.
+- **Knowledge Query:** an information-first EIE capability that answers from
+  authorized sources with citations or abstains when evidence is insufficient.
+- **Knowledge Evolution Explorer:** distinct relationship, version, lineage, and
+  historical views showing how understanding changes over time.
+- **Knowledge Intelligence:** future freshness, coverage, gap, contradiction,
+  duplicate, relationship, and recommendation capabilities under the single EIE.
+
+These features depend on the Evidence Vault foundation and remaining constitutional
+corrective work. Their detailed proposed definitions and sequencing are maintained
+in [`N-TC3_index.md`](N-TC3_index.md).
 
 ## Product and implementation references
 

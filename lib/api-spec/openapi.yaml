@@ -1696,7 +1696,7 @@ components:
 
     StoryInput:
       type: object
-      required: [title]
+      required: [title, workspaceId]
       properties:
         title:
           type: string
@@ -1725,7 +1725,7 @@ components:
         projectId:
           type: ["number", "null"]
         workspaceId:
-          type: ["number", "null"]
+          type: number
         campaignId:
           type: ["number", "null"]
         storyType:
@@ -1891,9 +1891,6 @@ components:
       properties:
         type: { type: string }
         title: { type: string, minLength: 1 }
-        status:
-          type: string
-          enum: [Draft, Review, Ready, Published, Archived]
         content: { type: string }
         format: { type: string }
         destination: { type: string }

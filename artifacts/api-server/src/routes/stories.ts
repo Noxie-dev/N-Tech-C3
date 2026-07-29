@@ -12,16 +12,18 @@ import {
   GetStoryHealthParams, GetStoryHealthResponse, GetStoryTimelineParams,
   GetStoryTimelineResponse, ArchiveStoryParams, ArchiveStoryBody, ArchiveStoryResponse,
 } from '@workspace/api-zod';
-import { all, get, run } from '@workspace/db';
+import { all, get, run, transaction } from '@workspace/db';
 import { createEntity, deleteEntity, entityConfigs, getEntity, listEntities, updateEntity } from '../lib/entity-store';
 import { recordActivity } from '../lib/activity';
 import {
-  checkpointStory, contentMetrics, normalizeStory, storyEvent, storyHealth, storyLinks,
+  canTransitionStory, checkpointStory, contentMetrics, normalizeStory, storyEvent, storyHealth, storyLinks,
   storyLinkConfig,
 } from '../lib/stories';
+import { guardWorkspaceMutations, workspaceMutationError } from '../lib/workspace-guard';
 
 const router: IRouter = Router();
 const config = entityConfigs.stories;
+router.use(guardWorkspaceMutations(config.table));
 
 router.get('/stories/by-status', (_req, res) => {
   const rows = all('SELECT status, COUNT(*) AS count FROM stories GROUP BY status')
@@ -47,6 +49,8 @@ router.get('/stories', (req, res) => {
 router.post('/stories', async (req, res) => {
   const parsed = CreateStoryBody.safeParse(req.body);
   if (!parsed.success) return void res.status(400).json({ error: parsed.error.message });
+  const workspaceError = workspaceMutationError(parsed.data.workspaceId);
+  if (workspaceError) return void res.status(workspaceError === 'Workspace not found' ? 404 : 409).json({ error: workspaceError });
   const input = { ...parsed.data } as Record<string, unknown>;
   if (input.workspaceId != null) input.projectId = input.workspaceId;
   delete input.workspaceId;
@@ -71,6 +75,8 @@ router.patch('/stories/:id', async (req, res) => {
   if (!params.success || !body.success) return void res.status(400).json({ error: 'Invalid story update' });
   const existing = getEntity(config, params.data.id);
   if (!existing) return void res.status(404).json({ error: 'Story not found' });
+  const workspaceError = workspaceMutationError(existing.projectId);
+  if (workspaceError) return void res.status(409).json({ error: workspaceError });
   if (existing.status === 'Archived') return void res.status(409).json({ error: 'Archived Stories are read-only' });
   if (body.data.expectedVersion != null && body.data.expectedVersion !== existing.version) {
     return void res.status(409).json({ error: 'Story has changed; reload before saving', currentVersion: existing.version });
@@ -101,6 +107,13 @@ router.post('/stories/:id/transition', async (req, res) => {
   if (!params.success || !body.success) return void res.status(400).json({ error: 'Invalid lifecycle transition' });
   const existing = getEntity(config, params.data.id);
   if (!existing) return void res.status(404).json({ error: 'Story not found' });
+  const workspaceError = workspaceMutationError(existing.projectId);
+  if (workspaceError) return void res.status(409).json({ error: workspaceError });
+  if (!canTransitionStory(String(existing.status), body.data.status)) {
+    return void res.status(409).json({
+      error: `Illegal Story transition from ${existing.status} to ${body.data.status}`,
+    });
+  }
   const health = storyHealth(params.data.id);
   if (body.data.status === 'Approved' && health?.blockers.length) {
     return void res.status(409).json({ error: 'Story is not ready for approval', blockers: health.blockers });
@@ -142,15 +155,19 @@ router.put('/stories/:id/outline', (req, res) => {
   if (!params.success || !body.success) return void res.status(400).json({ error: 'Invalid Story outline' });
   const story = getEntity(config, params.data.id);
   if (!story) return void res.status(404).json({ error: 'Story not found' });
+  const workspaceError = workspaceMutationError(story.projectId);
+  if (workspaceError) return void res.status(409).json({ error: workspaceError });
   if (story.status === 'Archived') return void res.status(409).json({ error: 'Archived Stories are read-only' });
-  run('DELETE FROM story_outline_items WHERE story_id = ?', [params.data.id]);
-  body.data.forEach((item, position) => {
-    run(`INSERT INTO story_outline_items (story_id, position, title, notes, completion_status)
-      VALUES (?, ?, ?, ?, ?)`, [
-      params.data.id, position, item.title, item.notes ?? null, item.completionStatus,
-    ]);
+  transaction(() => {
+    run('DELETE FROM story_outline_items WHERE story_id = ?', [params.data.id]);
+    body.data.forEach((item, position) => {
+      run(`INSERT INTO story_outline_items (story_id, position, title, notes, completion_status)
+        VALUES (?, ?, ?, ?, ?)`, [
+        params.data.id, position, item.title, item.notes ?? null, item.completionStatus,
+      ]);
+    });
+    storyEvent(params.data.id, 'outline_replaced', { count: body.data.length });
   });
-  storyEvent(params.data.id, 'outline_replaced', { count: body.data.length });
   const rows = all('SELECT * FROM story_outline_items WHERE story_id = ? ORDER BY position', [params.data.id])
     .map((row) => ({
       id: Number(row.id), storyId: Number(row.story_id), parentId: null,
@@ -241,11 +258,17 @@ router.post('/stories/:id/outputs', (req, res) => {
   const params = CreateStoryOutputParams.safeParse(req.params);
   const body = CreateStoryOutputBody.safeParse(req.body);
   if (!params.success || !body.success) return void res.status(400).json({ error: 'Invalid Story Output' });
-  if (!getEntity(config, params.data.id)) return void res.status(404).json({ error: 'Story not found' });
+  const story = getEntity(config, params.data.id);
+  if (!story) return void res.status(404).json({ error: 'Story not found' });
+  const workspaceError = workspaceMutationError(story.projectId);
+  if (workspaceError) return void res.status(409).json({ error: workspaceError });
+  if (req.body?.status && req.body.status !== 'Draft') {
+    return void res.status(409).json({ error: 'Outputs must be created as Draft and transitioned after validation' });
+  }
   const result = run(`INSERT INTO story_outputs
     (story_id, type, title, status, content, format, destination)
     VALUES (?, ?, ?, ?, ?, ?, ?)`, [
-    params.data.id, body.data.type, body.data.title, body.data.status ?? 'Draft',
+    params.data.id, body.data.type, body.data.title, 'Draft',
     body.data.content ?? null, body.data.format ?? null, body.data.destination ?? null,
   ]);
   const row = get('SELECT * FROM story_outputs WHERE id = ?', [Number(result.lastInsertRowid)])!;

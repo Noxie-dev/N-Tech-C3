@@ -410,8 +410,7 @@ export interface StoryInput {
   tags?: string[];
   /** @nullable */
   projectId?: number | null;
-  /** @nullable */
-  workspaceId?: number | null;
+  workspaceId: number;
   /** @nullable */
   campaignId?: number | null;
   storyType?: StoryInputStoryType;
@@ -645,22 +644,10 @@ export interface StoryOutput {
   updatedAt: string;
 }
 
-export type StoryOutputInputStatus = typeof StoryOutputInputStatus[keyof typeof StoryOutputInputStatus];
-
-
-export const StoryOutputInputStatus = {
-  Draft: 'Draft',
-  Review: 'Review',
-  Ready: 'Ready',
-  Published: 'Published',
-  Archived: 'Archived',
-} as const;
-
 export interface StoryOutputInput {
   type: string;
   /** @minLength 1 */
   title: string;
-  status?: StoryOutputInputStatus;
   content?: string;
   format?: string;
   destination?: string;

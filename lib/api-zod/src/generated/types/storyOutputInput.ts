@@ -5,13 +5,11 @@
  * N-Tech C³ Engineering Intelligence Operating System API
  * OpenAPI spec version: 0.1.0
  */
-import type { StoryOutputInputStatus } from './storyOutputInputStatus';
 
 export interface StoryOutputInput {
   type: string;
   /** @minLength 1 */
   title: string;
-  status?: StoryOutputInputStatus;
   content?: string;
   format?: string;
   destination?: string;

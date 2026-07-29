@@ -67,7 +67,6 @@ export * from './storyOutlineItemInput';
 export * from './storyOutlineItemInputCompletionStatus';
 export * from './storyOutput';
 export * from './storyOutputInput';
-export * from './storyOutputInputStatus';
 export * from './storyOutputStatus';
 export * from './storyPatch';
 export * from './storyPatchDifficulty';

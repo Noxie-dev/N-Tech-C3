@@ -6,9 +6,11 @@ import {
 } from '@workspace/api-zod';
 import { createEntity, deleteEntity, entityConfigs, getEntity, listEntities, updateEntity } from '../lib/entity-store';
 import { recordActivity } from '../lib/activity';
+import { guardWorkspaceMutations } from '../lib/workspace-guard';
 
 const router: IRouter = Router();
 const config = entityConfigs.campaigns;
+router.use(guardWorkspaceMutations(config.table));
 
 router.get('/campaigns', (_req, res) => {
   res.json(ListCampaignsResponse.parse(listEntities(config, { orderBy: 'created_at DESC' })));

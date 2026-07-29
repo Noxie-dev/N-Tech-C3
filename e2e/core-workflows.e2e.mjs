@@ -34,11 +34,17 @@ test('creates a workspace and finds its captured evidence globally', async ({ pa
 
 test('authors rich text and imports a file through the evidence UI', async ({ page }) => {
   const suffix = Date.now();
+  const workspace = await page.request.post('/api/workspaces', {
+    data: { name: `Editor Workspace ${suffix}`, purpose: 'Product' },
+  });
+  expect(workspace.ok()).toBeTruthy();
+  const workspaceRecord = await workspace.json();
   const story = await page.request.post('/api/stories', {
     data: {
       title: `Editor Story ${suffix}`,
       status: 'Draft',
       content: '',
+      workspaceId: workspaceRecord.id,
     },
   });
   expect(story.ok()).toBeTruthy();
