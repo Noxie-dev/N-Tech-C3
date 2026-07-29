@@ -696,6 +696,19 @@ export const migrations: Migration[] = [
         ON evidence_migration_audit(issue_code, severity);
     `,
   },
+  {
+    version: 7,
+    name: 'recoverable_evidence_ingest_payload',
+    sql: `
+      ALTER TABLE evidence_ingests ADD COLUMN capture_payload TEXT NOT NULL DEFAULT '{}'
+        CHECK (json_valid(capture_payload));
+
+      UPDATE feature_flags
+      SET enabled = 1,
+          updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+      WHERE flag_key = 'evidence.recoverable-ingest';
+    `,
+  },
 ];
 
 export function runMigrations(database: DatabaseSync): number[] {

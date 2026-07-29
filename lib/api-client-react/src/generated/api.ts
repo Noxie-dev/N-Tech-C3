@@ -29,6 +29,11 @@ import type {
   CampaignPatch,
   DashboardStats,
   Evidence,
+  EvidenceIngest,
+  EvidenceIngestFailureInput,
+  EvidenceIngestResult,
+  EvidenceIngestStagedInput,
+  EvidenceIngestStartInput,
   EvidenceInput,
   EvidencePatch,
   GlobalSearchParams,
@@ -3104,6 +3109,440 @@ export const useCreateEvidence = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateEvidenceMutationOptions(options));
+    }
+
+export const getListRecoverableEvidenceIngestsUrl = () => {
+
+
+
+
+  return `/api/evidence/ingests`
+}
+
+/**
+ * @summary List incomplete Evidence ingests for trusted restart reconciliation
+ */
+export const listRecoverableEvidenceIngests = async ( options?: Parameters<typeof customFetch>[1]): Promise<EvidenceIngest[]> => {
+
+  return customFetch<EvidenceIngest[]>(getListRecoverableEvidenceIngestsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListRecoverableEvidenceIngestsQueryKey = () => {
+    return [
+    `/api/evidence/ingests`
+    ] as const;
+    }
+
+
+export const getListRecoverableEvidenceIngestsQueryOptions = <TData = Awaited<ReturnType<typeof listRecoverableEvidenceIngests>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRecoverableEvidenceIngests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListRecoverableEvidenceIngestsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRecoverableEvidenceIngests>>> = ({ signal }) => listRecoverableEvidenceIngests({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listRecoverableEvidenceIngests>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListRecoverableEvidenceIngestsQueryResult = NonNullable<Awaited<ReturnType<typeof listRecoverableEvidenceIngests>>>
+export type ListRecoverableEvidenceIngestsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List incomplete Evidence ingests for trusted restart reconciliation
+ */
+
+export function useListRecoverableEvidenceIngests<TData = Awaited<ReturnType<typeof listRecoverableEvidenceIngests>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRecoverableEvidenceIngests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListRecoverableEvidenceIngestsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateEvidenceIngestUrl = () => {
+
+
+
+
+  return `/api/evidence/ingests`
+}
+
+/**
+ * @summary Reserve an idempotent managed-file Evidence ingest
+ */
+export const createEvidenceIngest = async (evidenceIngestStartInput: EvidenceIngestStartInput, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceIngest> => {
+
+  return customFetch<EvidenceIngest>(getCreateEvidenceIngestUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(evidenceIngestStartInput)
+  }
+);}
+
+
+
+
+
+export const getCreateEvidenceIngestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEvidenceIngest>>, TError,{data: BodyType<EvidenceIngestStartInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createEvidenceIngest>>, TError,{data: BodyType<EvidenceIngestStartInput>}, TContext> => {
+
+const mutationKey = ['createEvidenceIngest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEvidenceIngest>>, {data: BodyType<EvidenceIngestStartInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createEvidenceIngest(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateEvidenceIngestMutationResult = NonNullable<Awaited<ReturnType<typeof createEvidenceIngest>>>
+    export type CreateEvidenceIngestMutationBody = BodyType<EvidenceIngestStartInput>
+    export type CreateEvidenceIngestMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Reserve an idempotent managed-file Evidence ingest
+ */
+export const useCreateEvidenceIngest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEvidenceIngest>>, TError,{data: BodyType<EvidenceIngestStartInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createEvidenceIngest>>,
+        TError,
+        {data: BodyType<EvidenceIngestStartInput>},
+        TContext
+      > => {
+      return useMutation(getCreateEvidenceIngestMutationOptions(options));
+    }
+
+export const getRecordEvidenceIngestStagedUrl = (ingestId: string,) => {
+
+
+
+
+  return `/api/evidence/ingests/${ingestId}/staged`
+}
+
+/**
+ * @summary Record streamed staging metadata
+ */
+export const recordEvidenceIngestStaged = async (ingestId: string,
+    evidenceIngestStagedInput: EvidenceIngestStagedInput, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceIngest> => {
+
+  return customFetch<EvidenceIngest>(getRecordEvidenceIngestStagedUrl(ingestId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(evidenceIngestStagedInput)
+  }
+);}
+
+
+
+
+
+export const getRecordEvidenceIngestStagedMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordEvidenceIngestStaged>>, TError,{ingestId: string;data: BodyType<EvidenceIngestStagedInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordEvidenceIngestStaged>>, TError,{ingestId: string;data: BodyType<EvidenceIngestStagedInput>}, TContext> => {
+
+const mutationKey = ['recordEvidenceIngestStaged'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordEvidenceIngestStaged>>, {ingestId: string;data: BodyType<EvidenceIngestStagedInput>}> = (props) => {
+          const {ingestId,data} = props ?? {};
+
+          return  recordEvidenceIngestStaged(ingestId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordEvidenceIngestStagedMutationResult = NonNullable<Awaited<ReturnType<typeof recordEvidenceIngestStaged>>>
+    export type RecordEvidenceIngestStagedMutationBody = BodyType<EvidenceIngestStagedInput>
+    export type RecordEvidenceIngestStagedMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Record streamed staging metadata
+ */
+export const useRecordEvidenceIngestStaged = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordEvidenceIngestStaged>>, TError,{ingestId: string;data: BodyType<EvidenceIngestStagedInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordEvidenceIngestStaged>>,
+        TError,
+        {ingestId: string;data: BodyType<EvidenceIngestStagedInput>},
+        TContext
+      > => {
+      return useMutation(getRecordEvidenceIngestStagedMutationOptions(options));
+    }
+
+export const getCompleteEvidenceIngestMetadataUrl = (ingestId: string,) => {
+
+
+
+
+  return `/api/evidence/ingests/${ingestId}/complete`
+}
+
+/**
+ * @summary Atomically create pending Evidence and source metadata
+ */
+export const completeEvidenceIngestMetadata = async (ingestId: string, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceIngestResult> => {
+
+  return customFetch<EvidenceIngestResult>(getCompleteEvidenceIngestMetadataUrl(ingestId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCompleteEvidenceIngestMetadataMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeEvidenceIngestMetadata>>, TError,{ingestId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeEvidenceIngestMetadata>>, TError,{ingestId: string}, TContext> => {
+
+const mutationKey = ['completeEvidenceIngestMetadata'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeEvidenceIngestMetadata>>, {ingestId: string}> = (props) => {
+          const {ingestId} = props ?? {};
+
+          return  completeEvidenceIngestMetadata(ingestId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteEvidenceIngestMetadataMutationResult = NonNullable<Awaited<ReturnType<typeof completeEvidenceIngestMetadata>>>
+
+    export type CompleteEvidenceIngestMetadataMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Atomically create pending Evidence and source metadata
+ */
+export const useCompleteEvidenceIngestMetadata = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeEvidenceIngestMetadata>>, TError,{ingestId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof completeEvidenceIngestMetadata>>,
+        TError,
+        {ingestId: string},
+        TContext
+      > => {
+      return useMutation(getCompleteEvidenceIngestMetadataMutationOptions(options));
+    }
+
+export const getFinalizeEvidenceIngestUrl = (ingestId: string,) => {
+
+
+
+
+  return `/api/evidence/ingests/${ingestId}/promoted`
+}
+
+/**
+ * @summary Activate Evidence after atomic file promotion
+ */
+export const finalizeEvidenceIngest = async (ingestId: string, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceIngestResult> => {
+
+  return customFetch<EvidenceIngestResult>(getFinalizeEvidenceIngestUrl(ingestId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getFinalizeEvidenceIngestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof finalizeEvidenceIngest>>, TError,{ingestId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof finalizeEvidenceIngest>>, TError,{ingestId: string}, TContext> => {
+
+const mutationKey = ['finalizeEvidenceIngest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof finalizeEvidenceIngest>>, {ingestId: string}> = (props) => {
+          const {ingestId} = props ?? {};
+
+          return  finalizeEvidenceIngest(ingestId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FinalizeEvidenceIngestMutationResult = NonNullable<Awaited<ReturnType<typeof finalizeEvidenceIngest>>>
+
+    export type FinalizeEvidenceIngestMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Activate Evidence after atomic file promotion
+ */
+export const useFinalizeEvidenceIngest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof finalizeEvidenceIngest>>, TError,{ingestId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof finalizeEvidenceIngest>>,
+        TError,
+        {ingestId: string},
+        TContext
+      > => {
+      return useMutation(getFinalizeEvidenceIngestMutationOptions(options));
+    }
+
+export const getFailEvidenceIngestUrl = (ingestId: string,) => {
+
+
+
+
+  return `/api/evidence/ingests/${ingestId}/fail`
+}
+
+/**
+ * @summary Record a failed or compensated Evidence ingest
+ */
+export const failEvidenceIngest = async (ingestId: string,
+    evidenceIngestFailureInput: EvidenceIngestFailureInput, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceIngest> => {
+
+  return customFetch<EvidenceIngest>(getFailEvidenceIngestUrl(ingestId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(evidenceIngestFailureInput)
+  }
+);}
+
+
+
+
+
+export const getFailEvidenceIngestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof failEvidenceIngest>>, TError,{ingestId: string;data: BodyType<EvidenceIngestFailureInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof failEvidenceIngest>>, TError,{ingestId: string;data: BodyType<EvidenceIngestFailureInput>}, TContext> => {
+
+const mutationKey = ['failEvidenceIngest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof failEvidenceIngest>>, {ingestId: string;data: BodyType<EvidenceIngestFailureInput>}> = (props) => {
+          const {ingestId,data} = props ?? {};
+
+          return  failEvidenceIngest(ingestId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FailEvidenceIngestMutationResult = NonNullable<Awaited<ReturnType<typeof failEvidenceIngest>>>
+    export type FailEvidenceIngestMutationBody = BodyType<EvidenceIngestFailureInput>
+    export type FailEvidenceIngestMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Record a failed or compensated Evidence ingest
+ */
+export const useFailEvidenceIngest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof failEvidenceIngest>>, TError,{ingestId: string;data: BodyType<EvidenceIngestFailureInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof failEvidenceIngest>>,
+        TError,
+        {ingestId: string;data: BodyType<EvidenceIngestFailureInput>},
+        TContext
+      > => {
+      return useMutation(getFailEvidenceIngestMutationOptions(options));
     }
 
 export const getGetEvidenceUrl = (id: number,) => {

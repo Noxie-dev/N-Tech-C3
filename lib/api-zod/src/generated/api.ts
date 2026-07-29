@@ -1203,6 +1203,288 @@ export const CreateEvidenceResponse = zod.object({
 
 
 /**
+ * @summary List incomplete Evidence ingests for trusted restart reconciliation
+ */
+export const listRecoverableEvidenceIngestsResponseByteSizeMin = 0;
+
+export const listRecoverableEvidenceIngestsResponseSha256RegExp = new RegExp('^[0-9a-f]{64}$');
+export const listRecoverableEvidenceIngestsResponseRetryCountMin = 0;
+
+
+
+export const ListRecoverableEvidenceIngestsResponseItem = zod.object({
+  "id": zod.string(),
+  "workspaceId": zod.number(),
+  "stagedPath": zod.string().nullish(),
+  "finalPath": zod.string().nullish(),
+  "originalName": zod.string(),
+  "mediaType": zod.string().nullish(),
+  "byteSize": zod.number().min(listRecoverableEvidenceIngestsResponseByteSizeMin).nullish(),
+  "sha256": zod.string().regex(listRecoverableEvidenceIngestsResponseSha256RegExp).nullish(),
+  "state": zod.enum(['Staged', 'MetadataCommitted', 'Promoted', 'Completed', 'Compensating', 'Failed']),
+  "retryCount": zod.number().min(listRecoverableEvidenceIngestsResponseRetryCountMin),
+  "errorCategory": zod.string().nullish(),
+  "evidenceId": zod.number().nullish(),
+  "sourceId": zod.number().nullish(),
+  "idempotencyKey": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListRecoverableEvidenceIngestsResponse = zod.array(ListRecoverableEvidenceIngestsResponseItem)
+
+
+/**
+ * @summary Reserve an idempotent managed-file Evidence ingest
+ */
+
+
+export const createEvidenceIngestBodyIdempotencyKeyMin = 8;
+
+
+
+
+export const CreateEvidenceIngestBody = zod.object({
+  "workspaceId": zod.number().min(1),
+  "originalName": zod.string().min(1),
+  "mediaType": zod.string().optional(),
+  "idempotencyKey": zod.string().min(createEvidenceIngestBodyIdempotencyKeyMin),
+  "title": zod.string().min(1),
+  "type": zod.enum(['Screenshot', 'TerminalOutput', 'GitLog', 'Benchmark', 'Diagram', 'MeetingNotes', 'ResearchPDF', 'Image', 'Video', 'VoiceRecording', 'CodeSnippet', 'IssueReport', 'BuildLog', 'RepositoryAudit', 'Other']),
+  "classification": zod.enum(['FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference']).optional(),
+  "notes": zod.string().optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "storyId": zod.number().nullish(),
+  "repository": zod.string().optional()
+})
+
+export const createEvidenceIngestResponseByteSizeMin = 0;
+
+export const createEvidenceIngestResponseSha256RegExp = new RegExp('^[0-9a-f]{64}$');
+export const createEvidenceIngestResponseRetryCountMin = 0;
+
+
+
+export const CreateEvidenceIngestResponse = zod.object({
+  "id": zod.string(),
+  "workspaceId": zod.number(),
+  "stagedPath": zod.string().nullish(),
+  "finalPath": zod.string().nullish(),
+  "originalName": zod.string(),
+  "mediaType": zod.string().nullish(),
+  "byteSize": zod.number().min(createEvidenceIngestResponseByteSizeMin).nullish(),
+  "sha256": zod.string().regex(createEvidenceIngestResponseSha256RegExp).nullish(),
+  "state": zod.enum(['Staged', 'MetadataCommitted', 'Promoted', 'Completed', 'Compensating', 'Failed']),
+  "retryCount": zod.number().min(createEvidenceIngestResponseRetryCountMin),
+  "errorCategory": zod.string().nullish(),
+  "evidenceId": zod.number().nullish(),
+  "sourceId": zod.number().nullish(),
+  "idempotencyKey": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Record streamed staging metadata
+ */
+export const RecordEvidenceIngestStagedParams = zod.object({
+  "ingestId": zod.coerce.string()
+})
+
+export const recordEvidenceIngestStagedBodyByteSizeMin = 0;
+
+export const recordEvidenceIngestStagedBodySha256RegExp = new RegExp('^[0-9a-f]{64}$');
+
+
+export const RecordEvidenceIngestStagedBody = zod.object({
+  "byteSize": zod.number().min(recordEvidenceIngestStagedBodyByteSizeMin),
+  "sha256": zod.string().regex(recordEvidenceIngestStagedBodySha256RegExp)
+})
+
+export const recordEvidenceIngestStagedResponseByteSizeMin = 0;
+
+export const recordEvidenceIngestStagedResponseSha256RegExp = new RegExp('^[0-9a-f]{64}$');
+export const recordEvidenceIngestStagedResponseRetryCountMin = 0;
+
+
+
+export const RecordEvidenceIngestStagedResponse = zod.object({
+  "id": zod.string(),
+  "workspaceId": zod.number(),
+  "stagedPath": zod.string().nullish(),
+  "finalPath": zod.string().nullish(),
+  "originalName": zod.string(),
+  "mediaType": zod.string().nullish(),
+  "byteSize": zod.number().min(recordEvidenceIngestStagedResponseByteSizeMin).nullish(),
+  "sha256": zod.string().regex(recordEvidenceIngestStagedResponseSha256RegExp).nullish(),
+  "state": zod.enum(['Staged', 'MetadataCommitted', 'Promoted', 'Completed', 'Compensating', 'Failed']),
+  "retryCount": zod.number().min(recordEvidenceIngestStagedResponseRetryCountMin),
+  "errorCategory": zod.string().nullish(),
+  "evidenceId": zod.number().nullish(),
+  "sourceId": zod.number().nullish(),
+  "idempotencyKey": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Atomically create pending Evidence and source metadata
+ */
+export const CompleteEvidenceIngestMetadataParams = zod.object({
+  "ingestId": zod.coerce.string()
+})
+
+export const completeEvidenceIngestMetadataResponseIngestByteSizeMin = 0;
+
+export const completeEvidenceIngestMetadataResponseIngestSha256RegExp = new RegExp('^[0-9a-f]{64}$');
+export const completeEvidenceIngestMetadataResponseIngestRetryCountMin = 0;
+
+
+
+
+export const CompleteEvidenceIngestMetadataResponse = zod.object({
+  "ingest": zod.object({
+  "id": zod.string(),
+  "workspaceId": zod.number(),
+  "stagedPath": zod.string().nullish(),
+  "finalPath": zod.string().nullish(),
+  "originalName": zod.string(),
+  "mediaType": zod.string().nullish(),
+  "byteSize": zod.number().min(completeEvidenceIngestMetadataResponseIngestByteSizeMin).nullish(),
+  "sha256": zod.string().regex(completeEvidenceIngestMetadataResponseIngestSha256RegExp).nullish(),
+  "state": zod.enum(['Staged', 'MetadataCommitted', 'Promoted', 'Completed', 'Compensating', 'Failed']),
+  "retryCount": zod.number().min(completeEvidenceIngestMetadataResponseIngestRetryCountMin),
+  "errorCategory": zod.string().nullish(),
+  "evidenceId": zod.number().nullish(),
+  "sourceId": zod.number().nullish(),
+  "idempotencyKey": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "evidence": zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "type": zod.enum(['Screenshot', 'TerminalOutput', 'GitLog', 'Benchmark', 'Diagram', 'MeetingNotes', 'ResearchPDF', 'Image', 'Video', 'VoiceRecording', 'CodeSnippet', 'IssueReport', 'BuildLog', 'RepositoryAudit', 'Other']),
+  "source": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "tags": zod.array(zod.string()).optional(),
+  "storyId": zod.number().nullish(),
+  "projectId": zod.number().nullish().describe('Legacy alias retained for one compatibility window. Use workspaceId.'),
+  "workspaceId": zod.number().nullable().describe('Canonical Workspace owner. Null only for reported legacy migration exceptions.'),
+  "repository": zod.string().nullish(),
+  "classification": zod.enum(['FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference']),
+  "lifecycleStatus": zod.enum(['CapturePending', 'Active', 'Archived', 'IngestFailed']),
+  "reviewStatus": zod.enum(['Unreviewed', 'Reviewed', 'Disputed']),
+  "version": zod.number().min(1),
+  "archivedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+})
+
+
+/**
+ * @summary Activate Evidence after atomic file promotion
+ */
+export const FinalizeEvidenceIngestParams = zod.object({
+  "ingestId": zod.coerce.string()
+})
+
+export const finalizeEvidenceIngestResponseIngestByteSizeMin = 0;
+
+export const finalizeEvidenceIngestResponseIngestSha256RegExp = new RegExp('^[0-9a-f]{64}$');
+export const finalizeEvidenceIngestResponseIngestRetryCountMin = 0;
+
+
+
+
+export const FinalizeEvidenceIngestResponse = zod.object({
+  "ingest": zod.object({
+  "id": zod.string(),
+  "workspaceId": zod.number(),
+  "stagedPath": zod.string().nullish(),
+  "finalPath": zod.string().nullish(),
+  "originalName": zod.string(),
+  "mediaType": zod.string().nullish(),
+  "byteSize": zod.number().min(finalizeEvidenceIngestResponseIngestByteSizeMin).nullish(),
+  "sha256": zod.string().regex(finalizeEvidenceIngestResponseIngestSha256RegExp).nullish(),
+  "state": zod.enum(['Staged', 'MetadataCommitted', 'Promoted', 'Completed', 'Compensating', 'Failed']),
+  "retryCount": zod.number().min(finalizeEvidenceIngestResponseIngestRetryCountMin),
+  "errorCategory": zod.string().nullish(),
+  "evidenceId": zod.number().nullish(),
+  "sourceId": zod.number().nullish(),
+  "idempotencyKey": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "evidence": zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "type": zod.enum(['Screenshot', 'TerminalOutput', 'GitLog', 'Benchmark', 'Diagram', 'MeetingNotes', 'ResearchPDF', 'Image', 'Video', 'VoiceRecording', 'CodeSnippet', 'IssueReport', 'BuildLog', 'RepositoryAudit', 'Other']),
+  "source": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "tags": zod.array(zod.string()).optional(),
+  "storyId": zod.number().nullish(),
+  "projectId": zod.number().nullish().describe('Legacy alias retained for one compatibility window. Use workspaceId.'),
+  "workspaceId": zod.number().nullable().describe('Canonical Workspace owner. Null only for reported legacy migration exceptions.'),
+  "repository": zod.string().nullish(),
+  "classification": zod.enum(['FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference']),
+  "lifecycleStatus": zod.enum(['CapturePending', 'Active', 'Archived', 'IngestFailed']),
+  "reviewStatus": zod.enum(['Unreviewed', 'Reviewed', 'Disputed']),
+  "version": zod.number().min(1),
+  "archivedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+})
+
+
+/**
+ * @summary Record a failed or compensated Evidence ingest
+ */
+export const FailEvidenceIngestParams = zod.object({
+  "ingestId": zod.coerce.string()
+})
+
+
+
+
+export const FailEvidenceIngestBody = zod.object({
+  "errorCategory": zod.string().min(1),
+  "compensated": zod.boolean().optional()
+})
+
+export const failEvidenceIngestResponseByteSizeMin = 0;
+
+export const failEvidenceIngestResponseSha256RegExp = new RegExp('^[0-9a-f]{64}$');
+export const failEvidenceIngestResponseRetryCountMin = 0;
+
+
+
+export const FailEvidenceIngestResponse = zod.object({
+  "id": zod.string(),
+  "workspaceId": zod.number(),
+  "stagedPath": zod.string().nullish(),
+  "finalPath": zod.string().nullish(),
+  "originalName": zod.string(),
+  "mediaType": zod.string().nullish(),
+  "byteSize": zod.number().min(failEvidenceIngestResponseByteSizeMin).nullish(),
+  "sha256": zod.string().regex(failEvidenceIngestResponseSha256RegExp).nullish(),
+  "state": zod.enum(['Staged', 'MetadataCommitted', 'Promoted', 'Completed', 'Compensating', 'Failed']),
+  "retryCount": zod.number().min(failEvidenceIngestResponseRetryCountMin),
+  "errorCategory": zod.string().nullish(),
+  "evidenceId": zod.number().nullish(),
+  "sourceId": zod.number().nullish(),
+  "idempotencyKey": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
  * @summary Get an evidence item
  */
 export const GetEvidenceParams = zod.object({

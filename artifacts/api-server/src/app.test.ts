@@ -329,4 +329,144 @@ describe('local API', () => {
 
     expect(response.body.error).toContain('workspaceId');
   });
+
+  it('runs the managed-file Evidence ingest saga idempotently', async () => {
+    const workspace = await request(app)
+      .post('/api/workspaces')
+      .send({ name: 'Recoverable ingest workspace' })
+      .expect(201);
+    const start = {
+      workspaceId: workspace.body.id,
+      originalName: 'build-proof.png',
+      mediaType: 'image/png',
+      idempotencyKey: 'ingest-idempotency-proof-1',
+      title: 'Build proof',
+      type: 'Screenshot',
+      classification: 'FactualRecord',
+    };
+    const reserved = await request(app)
+      .post('/api/evidence/ingests')
+      .send(start)
+      .expect(201);
+    const repeated = await request(app)
+      .post('/api/evidence/ingests')
+      .send(start)
+      .expect(200);
+    expect(repeated.body.id).toBe(reserved.body.id);
+
+    const checksum = 'b'.repeat(64);
+    const staged = await request(app)
+      .post(`/api/evidence/ingests/${reserved.body.id}/staged`)
+      .send({ byteSize: 4096, sha256: checksum })
+      .expect(200);
+    expect(staged.body).toMatchObject({
+      state: 'Staged',
+      byteSize: 4096,
+      sha256: checksum,
+      finalPath: expect.stringContaining(reserved.body.id),
+    });
+
+    const committed = await request(app)
+      .post(`/api/evidence/ingests/${reserved.body.id}/complete`)
+      .expect(200);
+    expect(committed.body.ingest.state).toBe('MetadataCommitted');
+    expect(committed.body.evidence).toMatchObject({
+      title: 'Build proof',
+      workspaceId: workspace.body.id,
+      lifecycleStatus: 'CapturePending',
+    });
+    const repeatedCommit = await request(app)
+      .post(`/api/evidence/ingests/${reserved.body.id}/complete`)
+      .expect(200);
+    expect(repeatedCommit.body.evidence.id).toBe(committed.body.evidence.id);
+    expect(database.get(`
+      SELECT source_kind, sha256, vault_path, capture_method
+      FROM evidence_sources WHERE evidence_id = ?
+    `, [committed.body.evidence.id])).toEqual({
+      source_kind: 'ManagedFile',
+      sha256: checksum,
+      vault_path: staged.body.finalPath,
+      capture_method: 'DesktopFileImport',
+    });
+
+    const recoverable = await request(app).get('/api/evidence/ingests').expect(200);
+    expect(recoverable.body).toContainEqual(expect.objectContaining({
+      id: reserved.body.id,
+      state: 'MetadataCommitted',
+    }));
+
+    const finalized = await request(app)
+      .post(`/api/evidence/ingests/${reserved.body.id}/promoted`)
+      .expect(200);
+    expect(finalized.body).toMatchObject({
+      ingest: { state: 'Completed' },
+      evidence: { lifecycleStatus: 'Active', version: 2 },
+    });
+    await request(app)
+      .post(`/api/evidence/ingests/${reserved.body.id}/promoted`)
+      .expect(200);
+    expect(database.all(`
+      SELECT event_type FROM domain_events
+      WHERE aggregate_type = 'evidence' AND aggregate_id = ?
+      ORDER BY id
+    `, [committed.body.evidence.id])).toEqual([
+      { event_type: 'EvidenceCaptureRequested' },
+      { event_type: 'EvidenceCaptured' },
+    ]);
+  });
+
+  it('compensates pre-metadata failure and rolls back invalid metadata atomically', async () => {
+    const workspace = await request(app)
+      .post('/api/workspaces')
+      .send({ name: 'Failure boundary workspace' })
+      .expect(201);
+    const compensated = await request(app)
+      .post('/api/evidence/ingests')
+      .send({
+        workspaceId: workspace.body.id,
+        originalName: 'partial.log',
+        idempotencyKey: 'ingest-compensation-proof-1',
+        title: 'Partial capture',
+        type: 'BuildLog',
+      })
+      .expect(201);
+    await request(app)
+      .post(`/api/evidence/ingests/${compensated.body.id}/fail`)
+      .send({ errorCategory: 'InjectedStageFailure', compensated: true })
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body).toMatchObject({ state: 'Failed', retryCount: 1 });
+      });
+    expect(database.get(
+      'SELECT count(*) count FROM evidence WHERE title = ?',
+      ['Partial capture'],
+    )).toEqual({ count: 0 });
+
+    const invalid = await request(app)
+      .post('/api/evidence/ingests')
+      .send({
+        workspaceId: workspace.body.id,
+        originalName: 'invalid-link.log',
+        idempotencyKey: 'ingest-rollback-proof-1',
+        title: 'Invalid linked capture',
+        type: 'BuildLog',
+        storyId: 999999,
+      })
+      .expect(201);
+    await request(app)
+      .post(`/api/evidence/ingests/${invalid.body.id}/staged`)
+      .send({ byteSize: 10, sha256: 'c'.repeat(64) })
+      .expect(200);
+    await request(app)
+      .post(`/api/evidence/ingests/${invalid.body.id}/complete`)
+      .expect(500);
+    expect(database.get(
+      'SELECT state, evidence_id, source_id FROM evidence_ingests WHERE id = ?',
+      [invalid.body.id],
+    )).toEqual({ state: 'Staged', evidence_id: null, source_id: null });
+    expect(database.get(
+      'SELECT count(*) count FROM evidence WHERE title = ?',
+      ['Invalid linked capture'],
+    )).toEqual({ count: 0 });
+  });
 });

@@ -920,6 +920,132 @@ paths:
               schema:
                 $ref: "#/components/schemas/Evidence"
 
+  /evidence/ingests:
+    get:
+      operationId: listRecoverableEvidenceIngests
+      tags: [evidence]
+      summary: List incomplete Evidence ingests for trusted restart reconciliation
+      responses:
+        "200":
+          description: Recoverable ingests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EvidenceIngest"
+    post:
+      operationId: createEvidenceIngest
+      tags: [evidence]
+      summary: Reserve an idempotent managed-file Evidence ingest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvidenceIngestStartInput"
+      responses:
+        "200":
+          description: Existing idempotent ingest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceIngest"
+        "201":
+          description: Ingest reserved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceIngest"
+
+  /evidence/ingests/{ingestId}/staged:
+    post:
+      operationId: recordEvidenceIngestStaged
+      tags: [evidence]
+      summary: Record streamed staging metadata
+      parameters:
+        - name: ingestId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvidenceIngestStagedInput"
+      responses:
+        "200":
+          description: Staging metadata recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceIngest"
+
+  /evidence/ingests/{ingestId}/complete:
+    post:
+      operationId: completeEvidenceIngestMetadata
+      tags: [evidence]
+      summary: Atomically create pending Evidence and source metadata
+      parameters:
+        - name: ingestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Metadata already or newly committed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceIngestResult"
+
+  /evidence/ingests/{ingestId}/promoted:
+    post:
+      operationId: finalizeEvidenceIngest
+      tags: [evidence]
+      summary: Activate Evidence after atomic file promotion
+      parameters:
+        - name: ingestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Ingest completed idempotently
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceIngestResult"
+
+  /evidence/ingests/{ingestId}/fail:
+    post:
+      operationId: failEvidenceIngest
+      tags: [evidence]
+      summary: Record a failed or compensated Evidence ingest
+      parameters:
+        - name: ingestId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvidenceIngestFailureInput"
+      responses:
+        "200":
+          description: Failure recorded idempotently
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceIngest"
+
   /evidence/{id}:
     get:
       operationId: getEvidence
@@ -2174,7 +2300,7 @@ components:
         originalName:
           type: ["string", "null"]
         byteSize:
-          type: ["integer", "null"]
+          type: ["number", "null"]
           minimum: 0
         sha256:
           type: ["string", "null"]
@@ -2237,7 +2363,7 @@ components:
         mediaType:
           type: ["string", "null"]
         byteSize:
-          type: ["integer", "null"]
+          type: ["number", "null"]
           minimum: 0
         sha256:
           type: ["string", "null"]
@@ -2261,6 +2387,70 @@ components:
         updatedAt:
           type: string
           format: date-time
+
+    EvidenceIngestStartInput:
+      type: object
+      required: [workspaceId, originalName, idempotencyKey, title, type]
+      properties:
+        workspaceId:
+          type: number
+          minimum: 1
+        originalName:
+          type: string
+          minLength: 1
+        mediaType:
+          type: string
+        idempotencyKey:
+          type: string
+          minLength: 8
+        title:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          enum: [Screenshot, TerminalOutput, GitLog, Benchmark, Diagram, MeetingNotes, ResearchPDF, Image, Video, VoiceRecording, CodeSnippet, IssueReport, BuildLog, RepositoryAudit, Other]
+        classification:
+          $ref: "#/components/schemas/EvidenceClassification"
+        notes:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        storyId:
+          type: ["number", "null"]
+        repository:
+          type: string
+
+    EvidenceIngestStagedInput:
+      type: object
+      required: [byteSize, sha256]
+      properties:
+        byteSize:
+          type: number
+          minimum: 0
+        sha256:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+
+    EvidenceIngestFailureInput:
+      type: object
+      required: [errorCategory]
+      properties:
+        errorCategory:
+          type: string
+          minLength: 1
+        compensated:
+          type: boolean
+
+    EvidenceIngestResult:
+      type: object
+      required: [ingest, evidence]
+      properties:
+        ingest:
+          $ref: "#/components/schemas/EvidenceIngest"
+        evidence:
+          $ref: "#/components/schemas/Evidence"
 
     EvidenceMigrationAuditEntry:
       type: object

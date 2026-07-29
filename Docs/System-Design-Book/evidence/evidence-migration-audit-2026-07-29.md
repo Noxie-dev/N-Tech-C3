@@ -84,5 +84,11 @@ applies pending ordered migrations; back up a material Vault before first use.
 - Assign every `UnassignedWorkspace` row through a future user-directed workflow.
 - Verify managed files and resolve `ChecksumUnavailable` through
   `evidence-integrity@1.0.0`.
-- Do not enable source-version or recoverable-ingest flags before their APIs,
-  compensation, restart reconciliation, and failure-injection tests exist.
+- Keep source-version and detail-route flags disabled until their governed APIs and
+  experience exist.
+
+## Subsequent amendment
+
+Route 03 Pass 2B added migration 7 and enabled `evidence.recoverable-ingest` after
+streaming, compensation, restart reconciliation, and failure-injection evidence
+passed. The flag table above records its original Pass 2A default.

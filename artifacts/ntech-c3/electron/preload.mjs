@@ -1,11 +1,16 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 
 contextBridge.exposeInMainWorld('ntc3Vault', {
-  importFile: ({ name, mimeType, bytes }) =>
+  importFile: ({ file, workspaceId, title, type, classification, idempotencyKey }) =>
     ipcRenderer.invoke('vault:import-file', {
-      name,
-      mimeType,
-      bytes: new Uint8Array(bytes),
+      sourcePath: webUtils.getPathForFile(file),
+      name: file.name,
+      mimeType: file.type,
+      workspaceId,
+      title,
+      type,
+      classification,
+      idempotencyKey,
     }),
   getInfo: () => ipcRenderer.invoke('vault:info'),
   previewFile: (source) => ipcRenderer.invoke('vault:preview', source),

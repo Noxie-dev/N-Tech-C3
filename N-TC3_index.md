@@ -783,6 +783,53 @@ builds, the executable audit reporter on a disposable Vault, Markdown whitespace
 validation, and all 17 Vitest assertions passing across migration, API integration,
 and capture utility suites.
 
+### Route 03 Pass 2B execution report — recoverable file ingestion
+
+Status: **Implemented and verified**
+
+Desktop managed-file capture no longer transfers complete `ArrayBuffer` payloads
+through the renderer/IPC boundary. Electron preload derives an authorized source
+path with `webUtils.getPathForFile`; Electron main streams that file into
+`evidence/.staging`, enforces the configured 100 MiB ceiling, calculates SHA-256
+during the stream, and atomically promotes it to a unique final Vault-relative
+path.
+
+The API now coordinates a persisted, idempotent ingest saga:
+
+```text
+Staged → MetadataCommitted → Completed
+                      ↘ Failed
+```
+
+Migration 7 persists the safe capture payload needed after restart and enables
+`evidence.recoverable-ingest`. The saga reserves an idempotency key, records
+structured size/checksum/path metadata, atomically creates `CapturePending`
+Evidence plus immutable source version 1 and `EvidenceCaptureRequested`, then
+activates Evidence and appends `EvidenceCaptured` only after filesystem promotion.
+New desktop captures record `DesktopFileImport` provenance and no longer embed
+checksums in notes.
+
+Startup reconciliation examines both persisted state and managed-file presence.
+It resumes staged metadata, retries pre-rename promotion, finalizes a file already
+renamed before a crash, compensates incomplete staging, and records missing bytes
+as explicit `EvidenceIngestFailed` state. Duplicate reservation, metadata
+completion, and finalization are idempotent; a reused key with different input is
+rejected.
+
+Failure tests cover before/during streaming, before/after atomic rename,
+pre-metadata compensation, metadata transaction rollback, missing-file recovery,
+and duplicate commands. Evidence is recorded in
+`Docs/System-Design-Book/evidence/evidence-ingest-recovery-2026-07-29.md`.
+
+Verification completed with Electron module syntax checks, regenerated OpenAPI
+React/Zod clients, repository typecheck, production builds, Markdown whitespace
+validation, and all 25 Vitest assertions passing across migration, API integration,
+filesystem ingestion, symlink containment, and capture utility suites.
+
+Pass 2B does not change the separately bounded data-URL preview path, implement
+source/locator read endpoints, or add Evidence archive/restore and optimistic
+metadata commands. Those remain Pass 2C/3A work.
+
 ## 2B. Proposed Phase III — C³ Canon and Knowledge Intelligence
 
 Status: **Proposed future architecture — not implemented and not yet binding**
@@ -1565,12 +1612,12 @@ Current state: implemented. Terminal paste uses `content`; dropped files are cop
 
 ### Next implementation order
 
-1. Execute Route 03 Pass 2B: streaming staged ingestion, checksum metadata, atomic
-   promotion, compensation, and restart reconciliation.
-2. Execute Route 03 Pass 2C: domain API, optimistic concurrency, archive/restore,
+1. Execute Route 03 Pass 2C: domain API, optimistic concurrency, archive/restore,
    typed relationships, durable events, and replay-safe projections.
-3. Execute Route 03 Pass 3A: Evidence explorer/inspector migration, provenance,
+2. Execute Route 03 Pass 3A: Evidence explorer/inspector migration, provenance,
    recovery feedback, locators, and accessible archive/restore experience.
+3. Execute Route 03 Pass 3B: deterministic Evidence Integrity, bounded verification
+   jobs, invalidation, diagnostics, performance workloads, and Tier 1–3 evidence.
 
 ## 8. Contract and data workflow
 

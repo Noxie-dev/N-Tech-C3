@@ -1,10 +1,16 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { execFile, spawn } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+import {
+  compensateEvidenceFiles,
+  managedFileState,
+  promoteEvidenceFile,
+  stageEvidenceFile,
+} from './evidence-ingest.mjs';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const applicationRoot = path.resolve(currentDirectory, '..');
@@ -70,13 +76,83 @@ async function startApi() {
   for (let attempt = 0; attempt < 80; attempt += 1) {
     try {
       const response = await fetch(`http://127.0.0.1:${port}/api/healthz`);
-      if (response.ok) return;
+      if (response.ok) {
+        await reconcileEvidenceIngests();
+        return;
+      }
     } catch {
       // API is still starting.
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
   throw new Error('Local API did not become ready');
+}
+
+async function apiJson(route, options = {}) {
+  const response = await fetch(`http://127.0.0.1:${port}/api${route}`, {
+    method: options.method ?? 'GET',
+    headers: options.body ? { 'content-type': 'application/json' } : undefined,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  const payload = response.status === 204 ? undefined : await response.json();
+  if (!response.ok) {
+    throw new Error(payload?.error ?? `Local API request failed with ${response.status}`);
+  }
+  return payload;
+}
+
+async function reconcileEvidenceIngests() {
+  const root = await ensureVault();
+  const ingests = await apiJson('/evidence/ingests');
+  for (const ingest of ingests) {
+    try {
+      const fileState = await managedFileState({
+        root,
+        stagedPath: ingest.stagedPath,
+        finalPath: ingest.finalPath,
+      });
+      if (ingest.state === 'MetadataCommitted' || ingest.state === 'Promoted') {
+        if (!fileState.finalExists && fileState.stagedExists && ingest.finalPath) {
+          await promoteEvidenceFile({
+            root,
+            stagedPath: ingest.stagedPath,
+            finalPath: ingest.finalPath,
+          });
+        } else if (!fileState.finalExists) {
+          await apiJson(`/evidence/ingests/${ingest.id}/fail`, {
+            method: 'POST',
+            body: { errorCategory: 'MissingManagedFileAfterRestart', compensated: false },
+          });
+          continue;
+        }
+        await apiJson(`/evidence/ingests/${ingest.id}/promoted`, { method: 'POST' });
+        continue;
+      }
+      if (ingest.state === 'Staged') {
+        if (ingest.sha256 && fileState.stagedExists) {
+          const committed = await apiJson(`/evidence/ingests/${ingest.id}/complete`, { method: 'POST' });
+          await promoteEvidenceFile({
+            root,
+            stagedPath: committed.ingest.stagedPath,
+            finalPath: committed.ingest.finalPath,
+          });
+          await apiJson(`/evidence/ingests/${ingest.id}/promoted`, { method: 'POST' });
+        } else {
+          await compensateEvidenceFiles({
+            root,
+            stagedPath: ingest.stagedPath,
+            finalPath: ingest.finalPath,
+          });
+          await apiJson(`/evidence/ingests/${ingest.id}/fail`, {
+            method: 'POST',
+            body: { errorCategory: 'InterruptedBeforeStageComplete', compensated: true },
+          });
+        }
+      }
+    } catch (error) {
+      console.error(`Evidence ingest reconciliation failed for ${ingest.id}`, error);
+    }
+  }
 }
 
 async function stopApi() {
@@ -247,18 +323,81 @@ ipcMain.handle('vault:info', async () => {
 });
 
 ipcMain.handle('vault:import-file', async (_event, input) => {
-  if (!input || typeof input.name !== 'string' || !(input.bytes instanceof Uint8Array)) {
+  if (!input || typeof input.sourcePath !== 'string' || typeof input.name !== 'string'
+    || !Number.isInteger(input.workspaceId) || typeof input.title !== 'string'
+    || typeof input.type !== 'string') {
     throw new TypeError('Invalid vault file');
   }
-  if (input.bytes.byteLength > 100 * 1024 * 1024) {
-    throw new RangeError('Evidence files are limited to 100 MB');
-  }
   const root = await ensureVault();
-  const safeName = path.basename(input.name).replace(/[^a-zA-Z0-9._-]+/g, '-');
-  const checksum = createHash('sha256').update(input.bytes).digest('hex');
-  const relative = path.join('evidence', `${Date.now()}-${checksum.slice(0, 10)}-${safeName}`);
-  await writeFile(path.join(root, relative), input.bytes, { flag: 'wx' });
-  return { source: relative, checksum };
+  let ingest = await apiJson('/evidence/ingests', {
+    method: 'POST',
+    body: {
+      workspaceId: input.workspaceId,
+      originalName: input.name,
+      mediaType: input.mimeType || undefined,
+      idempotencyKey: input.idempotencyKey || randomUUID(),
+      title: input.title,
+      type: input.type,
+      classification: input.classification,
+    },
+  });
+  if (ingest.state === 'Completed') {
+    return {
+      source: ingest.finalPath,
+      checksum: ingest.sha256,
+      evidenceId: ingest.evidenceId,
+      ingestId: ingest.id,
+    };
+  }
+
+  try {
+    if (ingest.state === 'Staged' && !ingest.sha256) {
+      const staged = await stageEvidenceFile({
+        root,
+        sourcePath: input.sourcePath,
+        stagedPath: ingest.stagedPath,
+      });
+      ingest = await apiJson(`/evidence/ingests/${ingest.id}/staged`, {
+        method: 'POST',
+        body: staged,
+      });
+    }
+    let result = await apiJson(`/evidence/ingests/${ingest.id}/complete`, { method: 'POST' });
+    ingest = result.ingest;
+    const fileState = await managedFileState({
+      root,
+      stagedPath: ingest.stagedPath,
+      finalPath: ingest.finalPath,
+    });
+    if (!fileState.finalExists) {
+      if (!fileState.stagedExists) throw new Error('Staged Evidence file is missing');
+      await promoteEvidenceFile({
+        root,
+        stagedPath: ingest.stagedPath,
+        finalPath: ingest.finalPath,
+      });
+    }
+    result = await apiJson(`/evidence/ingests/${ingest.id}/promoted`, { method: 'POST' });
+    return {
+      source: result.ingest.finalPath,
+      checksum: result.ingest.sha256,
+      evidenceId: result.evidence.id,
+      ingestId: result.ingest.id,
+    };
+  } catch (error) {
+    if (ingest?.state === 'Staged') {
+      await compensateEvidenceFiles({
+        root,
+        stagedPath: ingest.stagedPath,
+        finalPath: ingest.finalPath,
+      });
+      await apiJson(`/evidence/ingests/${ingest.id}/fail`, {
+        method: 'POST',
+        body: { errorCategory: 'StageOrMetadataFailure', compensated: true },
+      }).catch(() => undefined);
+    }
+    throw error;
+  }
 });
 
 ipcMain.handle('vault:preview', async (_event, source) => {

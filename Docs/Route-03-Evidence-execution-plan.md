@@ -392,10 +392,24 @@ Execution evidence:
 
 ### Pass 2B — Vault capture foundation
 
+Status: **Implemented and verified 2026-07-29**
+
 - Implement streaming staging, SHA-256, atomic promotion, idempotent reconciliation,
   compensation, and restart recovery.
 - Enforce path/symlink containment and bounded resource policy.
 - Replace checksum-in-notes writes while retaining legacy reads.
+
+Execution evidence:
+
+- migration 7 persists recovery capture payloads and enables the rollout flag;
+- Electron preload converts authorized `File` objects to trusted paths without
+  renderer buffering;
+- `electron/evidence-ingest.mjs` supplies bounded streaming, hashing, containment,
+  atomic promotion, compensation, and restart-state inspection;
+- the local API owns idempotent ingest, metadata, source, lifecycle, and durable
+  event transitions; and
+- `System-Design-Book/evidence/evidence-ingest-recovery-2026-07-29.md` records the
+  failure-boundary matrix.
 
 ### Pass 2C — Domain API, events, and relationships
 

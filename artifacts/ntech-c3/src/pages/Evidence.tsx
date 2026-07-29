@@ -82,23 +82,27 @@ export function Evidence() {
     let imported = 0;
     for (const file of Array.from(files)) {
       try {
-        const result = window.ntc3Vault
-          ? await window.ntc3Vault.importFile({
-              name: file.name,
-              mimeType: file.type,
-              bytes: await file.arrayBuffer(),
-            })
-          : { source: file.name, checksum: '' };
         const type = evidenceTypeForMimeType(file.type);
-        await createEvidence.mutateAsync({
-          data: {
+        if (window.ntc3Vault) {
+          await window.ntc3Vault.importFile({
+            file,
+            workspaceId,
             title: file.name,
             type,
-            source: result.source,
-            notes: result.checksum ? `SHA-256: ${result.checksum}` : undefined,
-            workspaceId,
-          },
-        });
+            classification: 'FactualRecord',
+            idempotencyKey: crypto.randomUUID(),
+          });
+        } else {
+          await createEvidence.mutateAsync({
+            data: {
+              title: file.name,
+              type,
+              source: file.name,
+              classification: 'ExternalReference',
+              workspaceId,
+            },
+          });
+        }
         imported += 1;
       } catch {
         setImportMessage(`Imported ${imported}; failed on ${file.name}.`);

@@ -1044,6 +1044,64 @@ export interface EvidenceIngest {
   updatedAt: string;
 }
 
+export type EvidenceIngestStartInputType = typeof EvidenceIngestStartInputType[keyof typeof EvidenceIngestStartInputType];
+
+
+export const EvidenceIngestStartInputType = {
+  Screenshot: 'Screenshot',
+  TerminalOutput: 'TerminalOutput',
+  GitLog: 'GitLog',
+  Benchmark: 'Benchmark',
+  Diagram: 'Diagram',
+  MeetingNotes: 'MeetingNotes',
+  ResearchPDF: 'ResearchPDF',
+  Image: 'Image',
+  Video: 'Video',
+  VoiceRecording: 'VoiceRecording',
+  CodeSnippet: 'CodeSnippet',
+  IssueReport: 'IssueReport',
+  BuildLog: 'BuildLog',
+  RepositoryAudit: 'RepositoryAudit',
+  Other: 'Other',
+} as const;
+
+export interface EvidenceIngestStartInput {
+  /** @minimum 1 */
+  workspaceId: number;
+  /** @minLength 1 */
+  originalName: string;
+  mediaType?: string;
+  /** @minLength 8 */
+  idempotencyKey: string;
+  /** @minLength 1 */
+  title: string;
+  type: EvidenceIngestStartInputType;
+  classification?: EvidenceClassification;
+  notes?: string;
+  tags?: string[];
+  /** @nullable */
+  storyId?: number | null;
+  repository?: string;
+}
+
+export interface EvidenceIngestStagedInput {
+  /** @minimum 0 */
+  byteSize: number;
+  /** @pattern ^[0-9a-f]{64}$ */
+  sha256: string;
+}
+
+export interface EvidenceIngestFailureInput {
+  /** @minLength 1 */
+  errorCategory: string;
+  compensated?: boolean;
+}
+
+export interface EvidenceIngestResult {
+  ingest: EvidenceIngest;
+  evidence: Evidence;
+}
+
 export type EvidenceMigrationAuditEntrySeverity = typeof EvidenceMigrationAuditEntrySeverity[keyof typeof EvidenceMigrationAuditEntrySeverity];
 
 

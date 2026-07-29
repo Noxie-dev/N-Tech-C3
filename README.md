@@ -224,8 +224,15 @@ Canonical creation requires `workspaceId`; generated OpenAPI React/Zod contracts
 cover Evidence classification, lifecycle, review, sources, locators, and ingests.
 Legacy rows are conservatively backfilled without discarding existing fields or
 guessing missing ownership. Run `pnpm audit:evidence-migration` against a selected
-Vault to report unresolved upgrade findings. Recoverable file ingestion and source
-write endpoints remain disabled pending Pass 2B.
+Vault to report unresolved upgrade findings.
+
+Route 03 Pass 2B replaces renderer-wide file buffering with trusted-path bounded
+streaming. Desktop imports stage and hash files, commit structured source
+provenance, atomically promote managed bytes, and activate Evidence through an
+idempotent persisted saga. Startup reconciliation resumes either side of the
+rename boundary or records a visible failure; partial pre-metadata writes are
+compensated. The recoverable-ingest rollout flag is enabled. Preview streaming,
+archive/restore, and governed source/locator reads remain later work.
 
 The default desktop vault is `Documents/N-TechC3-Vault` and contains:
 

@@ -181,4 +181,18 @@ describe('SQLite migrations', () => {
       "SELECT enabled FROM feature_flags WHERE flag_key = 'evidence.recoverable-ingest'",
     ).get()).toEqual({ enabled: 0 });
   });
+
+  it('persists recovery payloads and enables recoverable Evidence ingestion', () => {
+    const database = new DatabaseSync(':memory:');
+    runMigrations(database);
+
+    expect(database.prepare('PRAGMA table_info(evidence_ingests)').all())
+      .toEqual(expect.arrayContaining([expect.objectContaining({
+        name: 'capture_payload',
+        notnull: 1,
+      })]));
+    expect(database.prepare(
+      "SELECT enabled FROM feature_flags WHERE flag_key = 'evidence.recoverable-ingest'",
+    ).get()).toEqual({ enabled: 1 });
+  });
 });
