@@ -68,6 +68,10 @@ export const entityConfigs = {
     fields: {
       title: 'title', content: 'content', category: 'category',
       tags: 'tags', linkedPageIds: 'linked_page_ids', projectId: 'project_id',
+      workspaceId: 'project_id', summary: 'summary', slug: 'slug', owner: 'owner',
+      lifecycleStatus: 'lifecycle_status', reviewStatus: 'review_status',
+      version: 'version', reviewedAt: 'reviewed_at', archivedAt: 'archived_at',
+      supersedesKnowledgeId: 'supersedes_knowledge_id',
     },
     jsonFields: ['tags', 'linkedPageIds'],
   },

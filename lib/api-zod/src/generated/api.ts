@@ -2000,16 +2000,29 @@ export const DeleteAssetResponse = zod.void()
  */
 export const ListKnowledgeQueryParams = zod.object({
   "category": zod.coerce.string().optional(),
-  "search": zod.coerce.string().optional()
+  "search": zod.coerce.string().optional(),
+  "workspaceId": zod.coerce.number().optional(),
+  "lifecycleStatus": zod.enum(['Idea', 'Research', 'Draft', 'Verified', 'Canonical', 'Archived']).optional(),
+  "reviewStatus": zod.enum(['Unreviewed', 'InReview', 'ChangesRequested', 'Approved']).optional()
 })
 
 export const ListKnowledgeResponseItem = zod.object({
   "id": zod.number(),
   "title": zod.string(),
+  "workspaceId": zod.number(),
+  "summary": zod.string().nullish(),
+  "slug": zod.string().nullish(),
+  "owner": zod.string().nullish(),
   "content": zod.string().nullish(),
   "category": zod.string().nullish(),
-  "tags": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()),
   "linkedPageIds": zod.array(zod.number()).optional(),
+  "lifecycleStatus": zod.enum(['Idea', 'Research', 'Draft', 'Verified', 'Canonical', 'Archived']),
+  "reviewStatus": zod.enum(['Unreviewed', 'InReview', 'ChangesRequested', 'Approved']),
+  "version": zod.number(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "supersedesKnowledgeId": zod.number().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -2022,21 +2035,35 @@ export const ListKnowledgeResponse = zod.array(ListKnowledgeResponseItem)
 
 
 
+
 export const CreateKnowledgeBody = zod.object({
   "title": zod.string().min(1),
+  "workspaceId": zod.number().min(1),
+  "summary": zod.string().optional(),
+  "slug": zod.string().optional(),
+  "owner": zod.string().optional(),
   "content": zod.string().optional(),
   "category": zod.string().optional(),
-  "tags": zod.array(zod.string()).optional(),
-  "linkedPageIds": zod.array(zod.number()).optional()
+  "tags": zod.array(zod.string()).optional()
 })
 
 export const CreateKnowledgeResponse = zod.object({
   "id": zod.number(),
   "title": zod.string(),
+  "workspaceId": zod.number(),
+  "summary": zod.string().nullish(),
+  "slug": zod.string().nullish(),
+  "owner": zod.string().nullish(),
   "content": zod.string().nullish(),
   "category": zod.string().nullish(),
-  "tags": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()),
   "linkedPageIds": zod.array(zod.number()).optional(),
+  "lifecycleStatus": zod.enum(['Idea', 'Research', 'Draft', 'Verified', 'Canonical', 'Archived']),
+  "reviewStatus": zod.enum(['Unreviewed', 'InReview', 'ChangesRequested', 'Approved']),
+  "version": zod.number(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "supersedesKnowledgeId": zod.number().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -2052,10 +2079,20 @@ export const GetKnowledgeParams = zod.object({
 export const GetKnowledgeResponse = zod.object({
   "id": zod.number(),
   "title": zod.string(),
+  "workspaceId": zod.number(),
+  "summary": zod.string().nullish(),
+  "slug": zod.string().nullish(),
+  "owner": zod.string().nullish(),
   "content": zod.string().nullish(),
   "category": zod.string().nullish(),
-  "tags": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()),
   "linkedPageIds": zod.array(zod.number()).optional(),
+  "lifecycleStatus": zod.enum(['Idea', 'Research', 'Draft', 'Verified', 'Canonical', 'Archived']),
+  "reviewStatus": zod.enum(['Unreviewed', 'InReview', 'ChangesRequested', 'Approved']),
+  "version": zod.number(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "supersedesKnowledgeId": zod.number().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -2071,34 +2108,417 @@ export const UpdateKnowledgeParams = zod.object({
 
 
 
+
 export const UpdateKnowledgeBody = zod.object({
+  "expectedVersion": zod.number().min(1),
   "title": zod.string().min(1).optional(),
   "content": zod.string().nullish(),
   "category": zod.string().nullish(),
   "tags": zod.array(zod.string()).optional(),
-  "linkedPageIds": zod.array(zod.number()).optional()
+  "summary": zod.string().nullish(),
+  "slug": zod.string().nullish(),
+  "owner": zod.string().nullish(),
+  "reviewStatus": zod.enum(['Unreviewed', 'InReview', 'ChangesRequested', 'Approved']).optional(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "supersedesKnowledgeId": zod.number().nullish(),
+  "changeSummary": zod.string().optional()
 })
 
 export const UpdateKnowledgeResponse = zod.object({
   "id": zod.number(),
   "title": zod.string(),
+  "workspaceId": zod.number(),
+  "summary": zod.string().nullish(),
+  "slug": zod.string().nullish(),
+  "owner": zod.string().nullish(),
   "content": zod.string().nullish(),
   "category": zod.string().nullish(),
-  "tags": zod.array(zod.string()).optional(),
+  "tags": zod.array(zod.string()),
   "linkedPageIds": zod.array(zod.number()).optional(),
+  "lifecycleStatus": zod.enum(['Idea', 'Research', 'Draft', 'Verified', 'Canonical', 'Archived']),
+  "reviewStatus": zod.enum(['Unreviewed', 'InReview', 'ChangesRequested', 'Approved']),
+  "version": zod.number(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "supersedesKnowledgeId": zod.number().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
 
 
 /**
- * @summary Delete a knowledge page
+ * @deprecated
+ * @summary Deprecated hard-delete compatibility endpoint
  */
 export const DeleteKnowledgeParams = zod.object({
   "id": zod.coerce.number()
 })
 
 export const DeleteKnowledgeResponse = zod.void()
+
+
+export const TransitionKnowledgeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const TransitionKnowledgeBody = zod.object({
+  "expectedVersion": zod.number().min(1),
+  "lifecycleStatus": zod.enum(['Idea', 'Research', 'Draft', 'Verified', 'Canonical', 'Archived'])
+})
+
+export const TransitionKnowledgeResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "workspaceId": zod.number(),
+  "summary": zod.string().nullish(),
+  "slug": zod.string().nullish(),
+  "owner": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "tags": zod.array(zod.string()),
+  "linkedPageIds": zod.array(zod.number()).optional(),
+  "lifecycleStatus": zod.enum(['Idea', 'Research', 'Draft', 'Verified', 'Canonical', 'Archived']),
+  "reviewStatus": zod.enum(['Unreviewed', 'InReview', 'ChangesRequested', 'Approved']),
+  "version": zod.number(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "supersedesKnowledgeId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const ArchiveKnowledgeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const ArchiveKnowledgeBody = zod.object({
+  "expectedVersion": zod.number().min(1)
+})
+
+export const ArchiveKnowledgeResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "workspaceId": zod.number(),
+  "summary": zod.string().nullish(),
+  "slug": zod.string().nullish(),
+  "owner": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "tags": zod.array(zod.string()),
+  "linkedPageIds": zod.array(zod.number()).optional(),
+  "lifecycleStatus": zod.enum(['Idea', 'Research', 'Draft', 'Verified', 'Canonical', 'Archived']),
+  "reviewStatus": zod.enum(['Unreviewed', 'InReview', 'ChangesRequested', 'Approved']),
+  "version": zod.number(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "supersedesKnowledgeId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const RestoreKnowledgeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const RestoreKnowledgeBody = zod.object({
+  "expectedVersion": zod.number().min(1)
+})
+
+export const RestoreKnowledgeResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "workspaceId": zod.number(),
+  "summary": zod.string().nullish(),
+  "slug": zod.string().nullish(),
+  "owner": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "tags": zod.array(zod.string()),
+  "linkedPageIds": zod.array(zod.number()).optional(),
+  "lifecycleStatus": zod.enum(['Idea', 'Research', 'Draft', 'Verified', 'Canonical', 'Archived']),
+  "reviewStatus": zod.enum(['Unreviewed', 'InReview', 'ChangesRequested', 'Approved']),
+  "version": zod.number(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "supersedesKnowledgeId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const ListKnowledgeRelationshipsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListKnowledgeRelationshipsResponseItem = zod.object({
+  "id": zod.number(),
+  "sourceKnowledgeId": zod.number(),
+  "targetKnowledgeId": zod.number(),
+  "relationshipType": zod.enum(['RelatedTo', 'DependsOn', 'Explains', 'Contradicts', 'Supersedes', 'DerivedFrom']),
+  "direction": zod.enum(['Outbound', 'Backlink']),
+  "targetTitle": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const ListKnowledgeRelationshipsResponse = zod.array(ListKnowledgeRelationshipsResponseItem)
+
+
+export const CreateKnowledgeRelationshipParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const CreateKnowledgeRelationshipBody = zod.object({
+  "targetKnowledgeId": zod.number().min(1),
+  "relationshipType": zod.enum(['RelatedTo', 'DependsOn', 'Explains', 'Contradicts', 'Supersedes', 'DerivedFrom']),
+  "notes": zod.string().optional()
+})
+
+export const CreateKnowledgeRelationshipResponse = zod.object({
+  "id": zod.number(),
+  "sourceKnowledgeId": zod.number(),
+  "targetKnowledgeId": zod.number(),
+  "relationshipType": zod.enum(['RelatedTo', 'DependsOn', 'Explains', 'Contradicts', 'Supersedes', 'DerivedFrom']),
+  "direction": zod.enum(['Outbound', 'Backlink']),
+  "targetTitle": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const DeleteKnowledgeRelationshipParams = zod.object({
+  "id": zod.coerce.number(),
+  "relationshipId": zod.coerce.number()
+})
+
+export const DeleteKnowledgeRelationshipResponse = zod.void()
+
+
+export const ListKnowledgeClaimsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListKnowledgeClaimsResponseItem = zod.object({
+  "id": zod.number(),
+  "knowledgeId": zod.number(),
+  "position": zod.number(),
+  "statement": zod.string(),
+  "claimKind": zod.enum(['Assertion', 'Decision', 'Definition', 'Procedure', 'Observation']),
+  "supportStatus": zod.enum(['Unsupported', 'PartiallySupported', 'Supported', 'Corroborated', 'Conflicting', 'Stale']),
+  "reviewStatus": zod.enum(['Unreviewed', 'InReview', 'ChangesRequested', 'HumanVerified']),
+  "reviewer": zod.string().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "version": zod.number(),
+  "citations": zod.array(zod.object({
+  "id": zod.number(),
+  "claimId": zod.number(),
+  "evidenceId": zod.number(),
+  "evidenceTitle": zod.string(),
+  "sourceId": zod.number(),
+  "sourceVersion": zod.number(),
+  "sourceKind": zod.string(),
+  "locatorId": zod.number().nullish(),
+  "locatorLabel": zod.string().nullish(),
+  "integrityStatus": zod.enum(['Pending', 'Valid', 'Missing', 'Modified', 'Unverifiable']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListKnowledgeClaimsResponse = zod.array(ListKnowledgeClaimsResponseItem)
+
+
+export const CreateKnowledgeClaimParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+export const createKnowledgeClaimBodyPositionMin = 0;
+
+
+
+export const CreateKnowledgeClaimBody = zod.object({
+  "statement": zod.string().min(1),
+  "position": zod.number().min(createKnowledgeClaimBodyPositionMin).optional(),
+  "claimKind": zod.enum(['Assertion', 'Decision', 'Definition', 'Procedure', 'Observation']).optional()
+})
+
+export const CreateKnowledgeClaimResponse = zod.object({
+  "id": zod.number(),
+  "knowledgeId": zod.number(),
+  "position": zod.number(),
+  "statement": zod.string(),
+  "claimKind": zod.enum(['Assertion', 'Decision', 'Definition', 'Procedure', 'Observation']),
+  "supportStatus": zod.enum(['Unsupported', 'PartiallySupported', 'Supported', 'Corroborated', 'Conflicting', 'Stale']),
+  "reviewStatus": zod.enum(['Unreviewed', 'InReview', 'ChangesRequested', 'HumanVerified']),
+  "reviewer": zod.string().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "version": zod.number(),
+  "citations": zod.array(zod.object({
+  "id": zod.number(),
+  "claimId": zod.number(),
+  "evidenceId": zod.number(),
+  "evidenceTitle": zod.string(),
+  "sourceId": zod.number(),
+  "sourceVersion": zod.number(),
+  "sourceKind": zod.string(),
+  "locatorId": zod.number().nullish(),
+  "locatorLabel": zod.string().nullish(),
+  "integrityStatus": zod.enum(['Pending', 'Valid', 'Missing', 'Modified', 'Unverifiable']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const UpdateKnowledgeClaimParams = zod.object({
+  "id": zod.coerce.number(),
+  "claimId": zod.coerce.number()
+})
+
+
+
+export const updateKnowledgeClaimBodyPositionMin = 0;
+
+
+
+export const UpdateKnowledgeClaimBody = zod.object({
+  "expectedVersion": zod.number().min(1),
+  "statement": zod.string().min(1).optional(),
+  "position": zod.number().min(updateKnowledgeClaimBodyPositionMin).optional(),
+  "claimKind": zod.enum(['Assertion', 'Decision', 'Definition', 'Procedure', 'Observation']).optional(),
+  "supportStatus": zod.enum(['Unsupported', 'PartiallySupported', 'Supported', 'Corroborated', 'Conflicting', 'Stale']).optional(),
+  "reviewStatus": zod.enum(['Unreviewed', 'InReview', 'ChangesRequested', 'HumanVerified']).optional(),
+  "reviewer": zod.string().nullish()
+})
+
+export const UpdateKnowledgeClaimResponse = zod.object({
+  "id": zod.number(),
+  "knowledgeId": zod.number(),
+  "position": zod.number(),
+  "statement": zod.string(),
+  "claimKind": zod.enum(['Assertion', 'Decision', 'Definition', 'Procedure', 'Observation']),
+  "supportStatus": zod.enum(['Unsupported', 'PartiallySupported', 'Supported', 'Corroborated', 'Conflicting', 'Stale']),
+  "reviewStatus": zod.enum(['Unreviewed', 'InReview', 'ChangesRequested', 'HumanVerified']),
+  "reviewer": zod.string().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "version": zod.number(),
+  "citations": zod.array(zod.object({
+  "id": zod.number(),
+  "claimId": zod.number(),
+  "evidenceId": zod.number(),
+  "evidenceTitle": zod.string(),
+  "sourceId": zod.number(),
+  "sourceVersion": zod.number(),
+  "sourceKind": zod.string(),
+  "locatorId": zod.number().nullish(),
+  "locatorLabel": zod.string().nullish(),
+  "integrityStatus": zod.enum(['Pending', 'Valid', 'Missing', 'Modified', 'Unverifiable']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const ListKnowledgeClaimCitationsParams = zod.object({
+  "id": zod.coerce.number(),
+  "claimId": zod.coerce.number()
+})
+
+export const ListKnowledgeClaimCitationsResponseItem = zod.object({
+  "id": zod.number(),
+  "claimId": zod.number(),
+  "evidenceId": zod.number(),
+  "evidenceTitle": zod.string(),
+  "sourceId": zod.number(),
+  "sourceVersion": zod.number(),
+  "sourceKind": zod.string(),
+  "locatorId": zod.number().nullish(),
+  "locatorLabel": zod.string().nullish(),
+  "integrityStatus": zod.enum(['Pending', 'Valid', 'Missing', 'Modified', 'Unverifiable']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListKnowledgeClaimCitationsResponse = zod.array(ListKnowledgeClaimCitationsResponseItem)
+
+
+export const CreateKnowledgeClaimCitationParams = zod.object({
+  "id": zod.coerce.number(),
+  "claimId": zod.coerce.number()
+})
+
+
+
+
+
+export const CreateKnowledgeClaimCitationBody = zod.object({
+  "evidenceId": zod.number().min(1),
+  "sourceId": zod.number().min(1),
+  "locatorId": zod.number().nullish(),
+  "notes": zod.string().optional()
+})
+
+export const CreateKnowledgeClaimCitationResponse = zod.object({
+  "id": zod.number(),
+  "claimId": zod.number(),
+  "evidenceId": zod.number(),
+  "evidenceTitle": zod.string(),
+  "sourceId": zod.number(),
+  "sourceVersion": zod.number(),
+  "sourceKind": zod.string(),
+  "locatorId": zod.number().nullish(),
+  "locatorLabel": zod.string().nullish(),
+  "integrityStatus": zod.enum(['Pending', 'Valid', 'Missing', 'Modified', 'Unverifiable']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const DeleteKnowledgeClaimCitationParams = zod.object({
+  "id": zod.coerce.number(),
+  "claimId": zod.coerce.number(),
+  "citationId": zod.coerce.number()
+})
+
+export const DeleteKnowledgeClaimCitationResponse = zod.void()
+
+
+export const ListKnowledgeVersionsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListKnowledgeVersionsResponseItem = zod.object({
+  "id": zod.number(),
+  "knowledgeId": zod.number(),
+  "version": zod.number(),
+  "title": zod.string(),
+  "summary": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "metadata": zod.record(zod.string(), zod.unknown()),
+  "changeSummary": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListKnowledgeVersionsResponse = zod.array(ListKnowledgeVersionsResponseItem)
 
 
 /**

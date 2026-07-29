@@ -1310,15 +1310,54 @@ export interface AssetPatch {
   projectId?: number | null;
 }
 
+export type KnowledgeLifecycleStatus = typeof KnowledgeLifecycleStatus[keyof typeof KnowledgeLifecycleStatus];
+
+
+export const KnowledgeLifecycleStatus = {
+  Idea: 'Idea',
+  Research: 'Research',
+  Draft: 'Draft',
+  Verified: 'Verified',
+  Canonical: 'Canonical',
+  Archived: 'Archived',
+} as const;
+
+export type KnowledgeReviewStatus = typeof KnowledgeReviewStatus[keyof typeof KnowledgeReviewStatus];
+
+
+export const KnowledgeReviewStatus = {
+  Unreviewed: 'Unreviewed',
+  InReview: 'InReview',
+  ChangesRequested: 'ChangesRequested',
+  Approved: 'Approved',
+} as const;
+
 export interface KnowledgePage {
   id: number;
   title: string;
+  workspaceId: number;
+  /** @nullable */
+  summary?: string | null;
+  /** @nullable */
+  slug?: string | null;
+  /** @nullable */
+  owner?: string | null;
   /** @nullable */
   content?: string | null;
   /** @nullable */
   category?: string | null;
-  tags?: string[];
+  tags: string[];
+  /** @deprecated */
   linkedPageIds?: number[];
+  lifecycleStatus: KnowledgeLifecycleStatus;
+  reviewStatus: KnowledgeReviewStatus;
+  version: number;
+  /** @nullable */
+  reviewedAt?: string | null;
+  /** @nullable */
+  archivedAt?: string | null;
+  /** @nullable */
+  supersedesKnowledgeId?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1326,13 +1365,19 @@ export interface KnowledgePage {
 export interface KnowledgeInput {
   /** @minLength 1 */
   title: string;
+  /** @minimum 1 */
+  workspaceId: number;
+  summary?: string;
+  slug?: string;
+  owner?: string;
   content?: string;
   category?: string;
   tags?: string[];
-  linkedPageIds?: number[];
 }
 
 export interface KnowledgePatch {
+  /** @minimum 1 */
+  expectedVersion: number;
   /** @minLength 1 */
   title?: string;
   /** @nullable */
@@ -1340,7 +1385,254 @@ export interface KnowledgePatch {
   /** @nullable */
   category?: string | null;
   tags?: string[];
-  linkedPageIds?: number[];
+  /** @nullable */
+  summary?: string | null;
+  /** @nullable */
+  slug?: string | null;
+  /** @nullable */
+  owner?: string | null;
+  reviewStatus?: KnowledgeReviewStatus;
+  /** @nullable */
+  reviewedAt?: string | null;
+  /** @nullable */
+  supersedesKnowledgeId?: number | null;
+  changeSummary?: string;
+}
+
+export interface KnowledgeTransitionInput {
+  /** @minimum 1 */
+  expectedVersion: number;
+  lifecycleStatus: KnowledgeLifecycleStatus;
+}
+
+export interface KnowledgeVersionInput {
+  /** @minimum 1 */
+  expectedVersion: number;
+}
+
+export type KnowledgeRelationshipRelationshipType = typeof KnowledgeRelationshipRelationshipType[keyof typeof KnowledgeRelationshipRelationshipType];
+
+
+export const KnowledgeRelationshipRelationshipType = {
+  RelatedTo: 'RelatedTo',
+  DependsOn: 'DependsOn',
+  Explains: 'Explains',
+  Contradicts: 'Contradicts',
+  Supersedes: 'Supersedes',
+  DerivedFrom: 'DerivedFrom',
+} as const;
+
+export type KnowledgeRelationshipDirection = typeof KnowledgeRelationshipDirection[keyof typeof KnowledgeRelationshipDirection];
+
+
+export const KnowledgeRelationshipDirection = {
+  Outbound: 'Outbound',
+  Backlink: 'Backlink',
+} as const;
+
+export interface KnowledgeRelationship {
+  id: number;
+  sourceKnowledgeId: number;
+  targetKnowledgeId: number;
+  relationshipType: KnowledgeRelationshipRelationshipType;
+  direction: KnowledgeRelationshipDirection;
+  targetTitle: string;
+  /** @nullable */
+  notes?: string | null;
+  createdBy: string;
+  createdAt: string;
+}
+
+export type KnowledgeRelationshipInputRelationshipType = typeof KnowledgeRelationshipInputRelationshipType[keyof typeof KnowledgeRelationshipInputRelationshipType];
+
+
+export const KnowledgeRelationshipInputRelationshipType = {
+  RelatedTo: 'RelatedTo',
+  DependsOn: 'DependsOn',
+  Explains: 'Explains',
+  Contradicts: 'Contradicts',
+  Supersedes: 'Supersedes',
+  DerivedFrom: 'DerivedFrom',
+} as const;
+
+export interface KnowledgeRelationshipInput {
+  /** @minimum 1 */
+  targetKnowledgeId: number;
+  relationshipType: KnowledgeRelationshipInputRelationshipType;
+  notes?: string;
+}
+
+export type KnowledgeClaimClaimKind = typeof KnowledgeClaimClaimKind[keyof typeof KnowledgeClaimClaimKind];
+
+
+export const KnowledgeClaimClaimKind = {
+  Assertion: 'Assertion',
+  Decision: 'Decision',
+  Definition: 'Definition',
+  Procedure: 'Procedure',
+  Observation: 'Observation',
+} as const;
+
+export type KnowledgeClaimSupportStatus = typeof KnowledgeClaimSupportStatus[keyof typeof KnowledgeClaimSupportStatus];
+
+
+export const KnowledgeClaimSupportStatus = {
+  Unsupported: 'Unsupported',
+  PartiallySupported: 'PartiallySupported',
+  Supported: 'Supported',
+  Corroborated: 'Corroborated',
+  Conflicting: 'Conflicting',
+  Stale: 'Stale',
+} as const;
+
+export type KnowledgeClaimReviewStatus = typeof KnowledgeClaimReviewStatus[keyof typeof KnowledgeClaimReviewStatus];
+
+
+export const KnowledgeClaimReviewStatus = {
+  Unreviewed: 'Unreviewed',
+  InReview: 'InReview',
+  ChangesRequested: 'ChangesRequested',
+  HumanVerified: 'HumanVerified',
+} as const;
+
+export type KnowledgeCitationIntegrityStatus = typeof KnowledgeCitationIntegrityStatus[keyof typeof KnowledgeCitationIntegrityStatus];
+
+
+export const KnowledgeCitationIntegrityStatus = {
+  Pending: 'Pending',
+  Valid: 'Valid',
+  Missing: 'Missing',
+  Modified: 'Modified',
+  Unverifiable: 'Unverifiable',
+} as const;
+
+export interface KnowledgeCitation {
+  id: number;
+  claimId: number;
+  evidenceId: number;
+  evidenceTitle: string;
+  sourceId: number;
+  sourceVersion: number;
+  sourceKind: string;
+  /** @nullable */
+  locatorId?: number | null;
+  /** @nullable */
+  locatorLabel?: string | null;
+  integrityStatus: KnowledgeCitationIntegrityStatus;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface KnowledgeClaim {
+  id: number;
+  knowledgeId: number;
+  position: number;
+  statement: string;
+  claimKind: KnowledgeClaimClaimKind;
+  supportStatus: KnowledgeClaimSupportStatus;
+  reviewStatus: KnowledgeClaimReviewStatus;
+  /** @nullable */
+  reviewer?: string | null;
+  /** @nullable */
+  reviewedAt?: string | null;
+  version: number;
+  citations: KnowledgeCitation[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type KnowledgeClaimInputClaimKind = typeof KnowledgeClaimInputClaimKind[keyof typeof KnowledgeClaimInputClaimKind];
+
+
+export const KnowledgeClaimInputClaimKind = {
+  Assertion: 'Assertion',
+  Decision: 'Decision',
+  Definition: 'Definition',
+  Procedure: 'Procedure',
+  Observation: 'Observation',
+} as const;
+
+export interface KnowledgeClaimInput {
+  /** @minLength 1 */
+  statement: string;
+  /** @minimum 0 */
+  position?: number;
+  claimKind?: KnowledgeClaimInputClaimKind;
+}
+
+export type KnowledgeClaimPatchClaimKind = typeof KnowledgeClaimPatchClaimKind[keyof typeof KnowledgeClaimPatchClaimKind];
+
+
+export const KnowledgeClaimPatchClaimKind = {
+  Assertion: 'Assertion',
+  Decision: 'Decision',
+  Definition: 'Definition',
+  Procedure: 'Procedure',
+  Observation: 'Observation',
+} as const;
+
+export type KnowledgeClaimPatchSupportStatus = typeof KnowledgeClaimPatchSupportStatus[keyof typeof KnowledgeClaimPatchSupportStatus];
+
+
+export const KnowledgeClaimPatchSupportStatus = {
+  Unsupported: 'Unsupported',
+  PartiallySupported: 'PartiallySupported',
+  Supported: 'Supported',
+  Corroborated: 'Corroborated',
+  Conflicting: 'Conflicting',
+  Stale: 'Stale',
+} as const;
+
+export type KnowledgeClaimPatchReviewStatus = typeof KnowledgeClaimPatchReviewStatus[keyof typeof KnowledgeClaimPatchReviewStatus];
+
+
+export const KnowledgeClaimPatchReviewStatus = {
+  Unreviewed: 'Unreviewed',
+  InReview: 'InReview',
+  ChangesRequested: 'ChangesRequested',
+  HumanVerified: 'HumanVerified',
+} as const;
+
+export interface KnowledgeClaimPatch {
+  /** @minimum 1 */
+  expectedVersion: number;
+  /** @minLength 1 */
+  statement?: string;
+  /** @minimum 0 */
+  position?: number;
+  claimKind?: KnowledgeClaimPatchClaimKind;
+  supportStatus?: KnowledgeClaimPatchSupportStatus;
+  reviewStatus?: KnowledgeClaimPatchReviewStatus;
+  /** @nullable */
+  reviewer?: string | null;
+}
+
+export interface KnowledgeCitationInput {
+  /** @minimum 1 */
+  evidenceId: number;
+  /** @minimum 1 */
+  sourceId: number;
+  /** @nullable */
+  locatorId?: number | null;
+  notes?: string;
+}
+
+export type KnowledgeVersionMetadata = { [key: string]: unknown };
+
+export interface KnowledgeVersion {
+  id: number;
+  knowledgeId: number;
+  version: number;
+  title: string;
+  /** @nullable */
+  summary?: string | null;
+  /** @nullable */
+  content?: string | null;
+  metadata: KnowledgeVersionMetadata;
+  /** @nullable */
+  changeSummary?: string | null;
+  createdAt: string;
 }
 
 export type TemplateType = typeof TemplateType[keyof typeof TemplateType];
@@ -1533,6 +1825,9 @@ storyId?: number | null;
 export type ListKnowledgeParams = {
 category?: string;
 search?: string;
+workspaceId?: number;
+lifecycleStatus?: KnowledgeLifecycleStatus;
+reviewStatus?: KnowledgeReviewStatus;
 };
 
 export type ListTemplatesParams = {

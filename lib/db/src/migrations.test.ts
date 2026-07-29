@@ -108,6 +108,40 @@ describe('SQLite migrations', () => {
       .toEqual(expect.arrayContaining([expect.objectContaining({ name: 'source_event_id' })]));
   });
 
+  it('migrates legacy Knowledge conservatively into governed relationships and versions', () => {
+    const database = new DatabaseSync(':memory:');
+    database.exec('PRAGMA foreign_keys = ON');
+    migrations.slice(0, 10).forEach((migration) => database.exec(migration.sql));
+    const workspace = database.prepare("INSERT INTO projects (name, slug) VALUES ('Knowledge Workspace', 'knowledge-workspace')").run();
+    const first = database.prepare(`INSERT INTO knowledge (title, content, project_id)
+      VALUES ('Architecture', 'Use an outbox.', ?)`).run(workspace.lastInsertRowid);
+    const second = database.prepare(`INSERT INTO knowledge (title, linked_page_ids, project_id)
+      VALUES ('Delivery', ?, ?)`).run(JSON.stringify([Number(first.lastInsertRowid), 999]), workspace.lastInsertRowid);
+    const unassigned = database.prepare("INSERT INTO knowledge (title) VALUES ('Legacy orphan')").run();
+
+    database.exec(migrations[10].sql);
+
+    expect(database.prepare(`SELECT lifecycle_status, review_status, version
+      FROM knowledge WHERE id = ?`).get(first.lastInsertRowid)).toEqual({
+      lifecycle_status: 'Draft', review_status: 'Unreviewed', version: 1,
+    });
+    expect(database.prepare(`SELECT source_knowledge_id, target_knowledge_id, relationship_type
+      FROM knowledge_relationships`).get()).toEqual({
+      source_knowledge_id: second.lastInsertRowid,
+      target_knowledge_id: first.lastInsertRowid,
+      relationship_type: 'RelatedTo',
+    });
+    expect(database.prepare('SELECT version, title FROM knowledge_versions WHERE knowledge_id = ?')
+      .get(first.lastInsertRowid)).toEqual({ version: 1, title: 'Architecture' });
+    expect(database.prepare(`SELECT issue_code, severity FROM knowledge_migration_audit
+      WHERE knowledge_id = ?`).get(unassigned.lastInsertRowid)).toEqual({
+      issue_code: 'UnassignedWorkspace', severity: 'ActionRequired',
+    });
+    expect(database.prepare(`SELECT issue_code FROM knowledge_migration_audit
+      WHERE knowledge_id = ? AND issue_code = 'InvalidLegacyLink'`).get(second.lastInsertRowid))
+      .toEqual({ issue_code: 'InvalidLegacyLink' });
+  });
+
   it('backfills legacy Evidence conservatively and records migration exceptions', () => {
     const database = new DatabaseSync(':memory:');
     database.exec('PRAGMA foreign_keys = ON');

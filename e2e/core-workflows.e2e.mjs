@@ -1,49 +1,62 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from "@playwright/test";
 
-test('creates a workspace and finds its captured evidence globally', async ({ page }) => {
+test("creates a workspace and finds its captured evidence globally", async ({
+  page,
+}) => {
   const suffix = Date.now();
   const workspaceName = `Browser Workspace ${suffix}`;
   const evidenceTitle = `Browser Evidence ${suffix}`;
 
-  await page.goto('/workspaces');
-  await expect(page.getByRole('heading', { name: 'Workspaces' })).toBeVisible();
-  await page.getByRole('button', { name: /new workspace/i }).first().click();
-  await page.getByPlaceholder('Workspace name').fill(workspaceName);
-  await page.getByPlaceholder('What is this initiative?').fill('Created by the browser workflow test');
-  await page.getByRole('button', { name: 'Create Workspace' }).click();
+  await page.goto("/workspaces");
+  await expect(page.getByRole("heading", { name: "Workspaces" })).toBeVisible();
+  await page
+    .getByRole("button", { name: /new workspace/i })
+    .first()
+    .click();
+  await page.getByPlaceholder("Workspace name").fill(workspaceName);
+  await page
+    .getByPlaceholder("What is this initiative?")
+    .fill("Created by the browser workflow test");
+  await page.getByRole("button", { name: "Create Workspace" }).click();
   await expect(page.getByText(workspaceName)).toBeVisible();
   await page.getByText(workspaceName).click();
-  await expect(page.getByRole('heading', { name: workspaceName })).toBeVisible();
-  const workspaceId = Number(new URL(page.url()).pathname.split('/').pop());
+  await expect(
+    page.getByRole("heading", { name: workspaceName }),
+  ).toBeVisible();
+  const workspaceId = Number(new URL(page.url()).pathname.split("/").pop());
 
-  const response = await page.request.post('/api/evidence', {
+  const response = await page.request.post("/api/evidence", {
     data: {
       title: evidenceTitle,
-      type: 'TerminalOutput',
-      content: 'playwright-verification-token',
+      type: "TerminalOutput",
+      content: "playwright-verification-token",
       workspaceId,
     },
   });
   expect(response.ok()).toBeTruthy();
 
-  await page.goto('/search');
-  await page.getByPlaceholder('Search engineering intelligence…').fill('playwright verification');
-  await page.getByLabel('Entity type').selectOption('evidence');
+  await page.goto("/search");
+  await page
+    .getByPlaceholder("Search engineering intelligence…")
+    .fill("playwright verification");
+  await page.getByLabel("Entity type").selectOption("evidence");
   await expect(page.getByText(evidenceTitle)).toBeVisible();
 });
 
-test('authors rich text and imports a file through the evidence UI', async ({ page }) => {
+test("authors rich text and imports a file through the evidence UI", async ({
+  page,
+}) => {
   const suffix = Date.now();
-  const workspace = await page.request.post('/api/workspaces', {
-    data: { name: `Editor Workspace ${suffix}`, purpose: 'Product' },
+  const workspace = await page.request.post("/api/workspaces", {
+    data: { name: `Editor Workspace ${suffix}`, purpose: "Product" },
   });
   expect(workspace.ok()).toBeTruthy();
   const workspaceRecord = await workspace.json();
-  const story = await page.request.post('/api/stories', {
+  const story = await page.request.post("/api/stories", {
     data: {
       title: `Editor Story ${suffix}`,
-      status: 'Draft',
-      content: '',
+      status: "Draft",
+      content: "",
       workspaceId: workspaceRecord.id,
     },
   });
@@ -51,34 +64,43 @@ test('authors rich text and imports a file through the evidence UI', async ({ pa
   const storyRecord = await story.json();
 
   await page.goto(`/stories/${storyRecord.id}`);
-  await page.getByRole('button', { name: 'Editor' }).click();
-  const editor = page.locator('.ProseMirror');
-  await editor.fill('Browser-authored engineering narrative');
-  await page.getByRole('button', { name: /sync changes/i }).click();
-  await expect(page.getByRole('button', { name: /synced/i })).toBeDisabled();
+  await page.getByRole("button", { name: "Editor" }).click();
+  const editor = page.locator(".ProseMirror");
+  await editor.fill("Browser-authored engineering narrative");
+  await page.getByRole("button", { name: /sync changes/i }).click();
+  await expect(page.getByRole("button", { name: /synced/i })).toBeDisabled();
   const persisted = await page.request.get(`/api/stories/${storyRecord.id}`);
-  expect((await persisted.json()).content).toContain('Browser-authored engineering narrative');
+  expect((await persisted.json()).content).toContain(
+    "Browser-authored engineering narrative",
+  );
 
-  await page.goto('/evidence');
-  await page.getByLabel('Import evidence files').setInputFiles({
+  await page.goto("/evidence");
+  await page.getByLabel("Import evidence files").setInputFiles({
     name: `browser-artifact-${suffix}.txt`,
-    mimeType: 'text/plain',
-    buffer: Buffer.from('browser file ingestion'),
+    mimeType: "text/plain",
+    buffer: Buffer.from("browser file ingestion"),
   });
-  await expect(page.getByRole('heading', { name: `browser-artifact-${suffix}.txt`, exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: `browser-artifact-${suffix}.txt`,
+      exact: true,
+    }),
+  ).toBeVisible();
 });
 
-test('loads the governed Evidence inspector and runs deterministic verification', async ({ page }) => {
+test("loads the governed Evidence inspector and runs deterministic verification", async ({
+  page,
+}) => {
   const suffix = Date.now();
-  const workspace = await page.request.post('/api/workspaces', {
+  const workspace = await page.request.post("/api/workspaces", {
     data: { name: `Inspector Workspace ${suffix}` },
   });
   const workspaceRecord = await workspace.json();
-  const evidence = await page.request.post('/api/evidence', {
+  const evidence = await page.request.post("/api/evidence", {
     data: {
       title: `Inspector Evidence ${suffix}`,
-      type: 'TerminalOutput',
-      content: 'deterministic inspector evidence',
+      type: "TerminalOutput",
+      content: "deterministic inspector evidence",
       workspaceId: workspaceRecord.id,
     },
   });
@@ -86,11 +108,82 @@ test('loads the governed Evidence inspector and runs deterministic verification'
 
   const started = performance.now();
   await page.goto(`/evidence/${evidenceRecord.id}`);
-  await expect(page.getByRole('heading', { name: evidenceRecord.title })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Sources and provenance' })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: evidenceRecord.title }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Sources and provenance" }),
+  ).toBeVisible();
   expect(performance.now() - started).toBeLessThan(5000);
 
-  await page.getByRole('button', { name: 'Verify Evidence' }).click();
-  await expect(page.getByText('Unverifiable', { exact: true })).toBeVisible();
-  await expect(page.getByText('evidence-integrity@1.0.0', { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "Verify Evidence" }).click();
+  await expect(page.getByText("Unverifiable", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("evidence-integrity@1.0.0", { exact: false }),
+  ).toBeVisible();
+});
+
+test("authors, governs, versions, and archives Workspace Knowledge", async ({
+  page,
+}) => {
+  const suffix = Date.now();
+  const workspace = await page.request.post("/api/workspaces", {
+    data: { name: `Knowledge Workspace ${suffix}` },
+  });
+  expect(workspace.ok()).toBeTruthy();
+  const workspaceRecord = await workspace.json();
+  const created = await page.request.post("/api/knowledge", {
+    data: {
+      title: `Governed Knowledge ${suffix}`,
+      content: "<p>Initial reviewed understanding</p>",
+      workspaceId: workspaceRecord.id,
+    },
+  });
+  expect(created.ok()).toBeTruthy();
+  const knowledge = await created.json();
+
+  const started = performance.now();
+  await page.goto(`/knowledge/${knowledge.id}`);
+  const titleInput = page.locator("input").first();
+  await expect(titleInput).toHaveValue(knowledge.title);
+  expect(performance.now() - started).toBeLessThan(5000);
+  await expect(
+    page.getByRole("heading", { name: "Claims and Evidence citations" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Lifecycle and review" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Typed relationships" }),
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Versions" })).toBeVisible();
+  await page
+    .getByPlaceholder("Concise reusable summary")
+    .fill("Browser-verified reusable summary");
+  await page.getByPlaceholder("Knowledge owner").fill("Browser Owner");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByText("Studio save", { exact: false })).toBeVisible();
+
+  const claim = `Browser-reviewed claim ${suffix}`;
+  await page.getByPlaceholder("Add a discrete, reviewable claim").fill(claim);
+  await page
+    .getByPlaceholder("Add a discrete, reviewable claim")
+    .press("Enter");
+  await expect(page.getByText(claim, { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Archive", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Restore Knowledge" }),
+  ).toBeVisible();
+  await expect(titleInput).toBeDisabled();
+  await page.getByRole("button", { name: "Restore Knowledge" }).click();
+  await expect(
+    page.getByRole("button", { name: "Archive", exact: true }),
+  ).toBeVisible();
+
+  const persisted = await page.request.get(`/api/knowledge/${knowledge.id}`);
+  const record = await persisted.json();
+  expect(record.summary).toBe("Browser-verified reusable summary");
+  expect(record.owner).toBe("Browser Owner");
+  expect(record.version).toBeGreaterThan(1);
 });

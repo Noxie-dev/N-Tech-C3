@@ -18,8 +18,8 @@ When sources disagree, use this precedence:
    `Docs/Route-02-Stories-execution-plan.md` — accepted route-specific decisions.
 5. `Docs/Route-03-Evidence-execution-plan.md` — accepted Route 03 RDF v1 dossier
    and staged execution authority.
-6. `Docs/Route-04-Knowledge-execution-plan.md` — accepted Route 04 RDF v1 dossier
-   and first authorized implementation boundary.
+6. `Docs/Route-04-Knowledge-execution-plan.md` — implemented Route 04 RDF v1
+   dossier and L3 Integrated decision.
 7. `wireframe.png` and `branding-brief.png` — binding visual sources for the Home composition and complete brand/design system.
 8. `Docs/NTC3_UI-UX_Spec.md` — reconciled governing UI/UX specification for information architecture, interaction, visual language, accessibility, and screen behavior.
 9. Executable code and configuration — truth for current behavior, but not authority to override approved target visuals.
@@ -629,9 +629,9 @@ Verification completed with repository typecheck and production builds passing,
 Markdown whitespace validation passing.
 
 Remaining Pass 2 expansion debt: Story link/unlink and hard-delete paths still need
-atomic durable events; Campaign, Knowledge, Asset, and Template mutations still use
-legacy Activity writes; event projection lag diagnostics and background scheduling
-remain future Platform Services work.
+atomic durable events; Campaign, Asset, and Template mutations still use legacy
+Activity writes; event projection lag diagnostics and background scheduling remain
+future Platform Services work. Knowledge mutations were migrated in Route 04.
 
 ### NB3RP Pass 3 execution report — constitutional completion and scale evidence
 
@@ -1389,7 +1389,7 @@ migrations, and automated conformance tests wherever practical.
 
 ### Route 04 Knowledge Base
 
-Status: **L1 Defined; Pass 1 authorized; current CRUD seed exists**
+Status: **L3 Integrated; Passes 1–3 implemented and verified**
 
 One-sentence target:
 
@@ -1411,44 +1411,40 @@ classification.
 
 The current `/knowledge` and `/knowledge/:id` routes provide:
 
-- Workspace-compatible SQLite storage through the physical `project_id`;
-- list, title search, category filtering, create, read, update, and hard delete;
-- shared TipTap HTML authoring with explicit save feedback;
-- tags, category, and a lightweight `linkedPageIds` array;
-- global FTS5 indexing of title, content, and tags; and
+- required canonical Workspace ownership over physical `project_id` storage;
+- Workspace/lifecycle/review/search filters and active-only FTS5 indexing;
+- shared TipTap HTML authoring with optimistic save and version checkpoints;
+- Idea, Research, Draft, Verified, Canonical, and Archived lifecycle controls;
+- ordered, versioned claims with categorical support and human review state;
+- citations to governed Evidence source versions and optional precise locators;
+- typed same-Workspace relationships, backlinks, and acyclic supersession;
+- guarded Verified/Canonical promotion, archive/restore, and hard-delete rejection;
+- durable mutation events with event-projected Activity; and
 - Story-to-Knowledge linking through the Story Engine graph.
 
-This is an implementation seed, not Route 04 completion. Current gaps include
-mandatory canonical Workspace ownership, archived-Workspace mutation guards,
-archive/restore, a Knowledge lifecycle, version history, reviews, claim-level
-citations, typed Knowledge relationships, backlinks, Evidence provenance,
-authority/freshness state, durable Knowledge events, and EIE capabilities.
+#### Implemented Route 04 domain model
 
-#### Future Route 04 domain model
-
-A Knowledge page will contain reviewed claims rather than merely a block of text.
+A Knowledge page contains reviewable claims rather than merely a block of text.
 Each claim may cite one or more Evidence records with a precise locator such as a
 PDF page, text range, repository snapshot, image region, or media timestamp.
 Unsupported, conflicting, stale, and superseded claims remain visible rather than
 being silently resolved.
 
-Proposed Knowledge lifecycle:
+Implemented Knowledge lifecycle:
 
 ```text
-Idea → Research → Draft → Verified → Referenced → Canonical → Archived
+Idea → Research → Draft → Verified → Canonical → Archived
 ```
 
 - `Verified` means reviewed against cited Evidence.
-- `Referenced` is derived from actual downstream usage.
+- Downstream reference state is derived from actual links, not stored as a
+  competing lifecycle state.
 - `Canonical` represents an accepted organizational position and requires an
-  owner, review date, and sufficient supporting Evidence.
+  owner, approved review date, and human-verified cited Evidence.
 - Archived or superseded Knowledge remains historically accessible.
 
-Initial Route 04 scope should include Workspace ownership, collections, rich
-authoring, claims and citations, Evidence/Story/Knowledge relationships, backlinks,
-full-text search, version checkpoints, review state, archive/restore, provenance,
-and a capability-driven Inspector. Animated graphs and AI querying are not initial
-route requirements.
+Collections, animated graphs, semantic search, automatic classification, and AI
+querying are not current Route 04 functionality.
 
 #### Future Knowledge Intelligence capabilities
 
@@ -1502,10 +1498,10 @@ source behavior. It also depends on the corrective platform passes covering
 archived-Workspace guards, canonical Workspace identifiers, durable events, and
 remaining Filesystem and Platform Services specifications.
 
-Route 03 has now passed its L3 gate. The prerequisite audit and accepted RDF
-dossier authorize only Route 04 Pass 1 — Aggregate contracts and schema. Later
-claims, citations, Intelligence, graph, and semantic-search passes remain
-unauthorized until their preceding evidence is accepted.
+Route 03 has passed its L3 gate. Route 04 Passes 1–3 have now consumed its governed
+Evidence/source/locator contracts and passed the L3 Integrated gate. Pass 4
+Knowledge Intelligence, graphs, semantic search, and automatic promotion remain
+future and require separate authorization and evidence.
 
 ### Route 04 prerequisite and RDF execution report
 
@@ -1534,10 +1530,10 @@ projections, and benchmark methods.
 `Docs/Route-04-Knowledge-execution-plan.md` defines the canonical aggregate,
 lifecycle, claims, Evidence citations, typed Knowledge relationships, commands,
 queries, events, experience contract, migration policy, and conformance gates.
-Route 04 is accepted at **L1 Defined**.
+At this prerequisite checkpoint, Route 04 was accepted at **L1 Defined**.
 
-The only authorized next implementation boundary is **Route 04 Pass 1 — Aggregate
-contracts and schema**: require Workspace ownership, add aggregate lifecycle/review
+The only implementation boundary authorized by that checkpoint was **Route 04
+Pass 1 — Aggregate contracts and schema**: require Workspace ownership, add aggregate lifecycle/review
 and optimistic version fields, append the conservative migration/audit, introduce
 typed Knowledge relationships, replace normal deletion with archive/restore,
 append events atomically, rebuild active-only FTS5, regenerate clients, and update
@@ -1546,6 +1542,35 @@ semantic search, and automatic promotion are explicitly excluded.
 
 The controlled prerequisite record is
 `Docs/System-Design-Book/evidence/route-04-prerequisite-audit-2026-07-29.md`.
+
+### Route 04 Passes 1–3 execution report
+
+Status: **Implemented and verified — L3 Integrated**
+
+Pass 1 replaced the legacy seed contract with canonical Workspace-owned Knowledge,
+optimistic versioning, lifecycle/review metadata, archive/restore, typed
+relationships, durable events, active-only search, generated React/Zod clients,
+and append-only migration 11. The migration preserves legacy rows, creates initial
+checkpoints, backfills only valid same-Workspace links, and records unowned or
+invalid-link compatibility findings without inventing ownership.
+
+Pass 2 implements ordered claims, categorical support/review state, governed
+Evidence source-version/locator citations, relationship backlinks, acyclic
+supersession, checkpoints, and the integrated Studio. `Verified` requires a cited
+human-verified claim; `Canonical` additionally requires an owner, approved review,
+and review date. Archived Knowledge is read-only and normal hard deletion is
+rejected.
+
+Pass 3 verifies the browser/Electron-compatible experience, visible conflict and
+read-only states, event-projected Activity, migration audit command, and named
+performance workloads. On Apple M1/8 GB with 10,000 Knowledge records, p95
+catalogue/search/detail/save/citation measurements were respectively 8.175,
+9.561, 0.074, 10.456, and 0.176 ms. Four browser workflows, 33 repository tests,
+workspace typecheck/build, and unpacked Electron packaging form the final gate.
+
+The controlled decision and reproducible evidence are in
+`Docs/System-Design-Book/evidence/route-04-knowledge-conformance-2026-07-29.md`.
+Pass 4 Knowledge Intelligence remains explicitly future functionality.
 
 ## 2C. Accepted Route Discovery Framework v1
 
@@ -1694,8 +1719,8 @@ V1 is committed to Electron + SQLite + filesystem vault. The local Express servi
 | `/campaigns`                       | Campaigns              | List and create                                                                                                                                                |
 | `/campaigns/:id`                   | Campaign detail        | Read, edit core fields, delete                                                                                                                                 |
 | `/evidence`                        | Evidence Vault         | Workspace-scoped capture, type/search filter, recoverable import, preview, typed Story linking, and governed archive/restore API                               |
-| `/knowledge`                       | Knowledge Base         | List/search and create                                                                                                                                         |
-| `/knowledge/:id`                   | Knowledge detail       | Read and explicitly save TipTap HTML content; permanent delete remains compatibility debt                                                                      |
+| `/knowledge`                       | Knowledge Base         | Workspace/lifecycle/search catalogue and Workspace-required creation                                                                                           |
+| `/knowledge/:id`                   | Knowledge Studio       | Optimistic TipTap authoring, claims/citations, lifecycle/review, typed relationships/backlinks, versions, and archive/restore                                  |
 | `/assets`                          | Assets                 | List/filter and create URL/path metadata                                                                                                                       |
 | `/templates`                       | Templates              | List/filter and create                                                                                                                                         |
 | `/projects`, `/projects/:id`       | Compatibility          | Redirect old browser links to canonical Workspace routes                                                                                                       |
@@ -1735,58 +1760,63 @@ Current SQLite tables:
 - Story Engine graph tables: `story_outline_items`, `story_evidence`,
   `story_knowledge`, `story_assets`, `story_campaigns`, `story_relations`,
   `story_outputs`, `story_versions`, and `story_events`
+- governed Knowledge tables: `knowledge_relationships`, `knowledge_claims`,
+  `knowledge_claim_citations`, `knowledge_versions`, and
+  `knowledge_migration_audit`
 
 The physical `projects` table is retained as a backward-compatible storage detail;
 the canonical product and API domain term is **Workspace**. Migration v3 extends it
 with Workspace identity, status, DNA, repository, preference, and recency fields.
 
-Relationships remain lighter than the complete future graph:
+Relationship coverage remains domain-specific:
 
 - stories carry a physical `project_id` exposed as Workspace context in new flows
 - evidence and assets carry Workspace/project foreign keys
-- campaigns, knowledge pages, and templates now have Workspace/project foreign keys
-- knowledge pages may carry `linkedPageIds`
+- campaigns, Knowledge pages, and templates have Workspace/project foreign keys
+- Knowledge uses typed relationship edges and backlinks; `linked_page_ids` is
+  read-only compatibility data
 
-Workspace relationships are enforced by SQLite foreign keys and indexed. Many-to-many
-story/evidence/asset/campaign relationships and automatic backlinks are not implemented.
+Workspace relationships are enforced by SQLite foreign keys and indexed.
+Knowledge backlinks and Story/Evidence many-to-many links are implemented;
+campaign/asset relationship coverage remains incomplete.
 
 ## 6. Feature status against the product documents
 
 Legend: **Implemented**, **Partial**, **Not implemented**.
 
-| Capability                         | Status                   | Evidence/current limitation                                                                                                                                                                                                                                |
-| ---------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Home landing                       | Partial                  | Approved wireframe composition, production N-Tech C³ application icon hero, six Get Started cards, workspaces, activity, live metrics/focus, and bottom strip exist; Calendar/Exports routes remain                                                         |
-| Stories (Route 02)                 | Implemented              | Global/Workspace catalogues, mandatory Workspace ownership, guarded lifecycle, transactional outline, Draft-only Output creation, relationship graph, deterministic health, timeline, versions, optimistic concurrency, and archive/restore                |
-| Story authoring                    | Implemented              | Shared TipTap editor with canonical HTML persistence, word/read-time derivation, version-safe explicit saves, and conflict rejection                                                                                                                       |
-| Campaigns CRUD                     | Implemented              | Core records only; no timeline/tasks/metrics/outputs                                                                                                                                                                                                       |
-| Evidence Vault governed operations | Implemented — L3 Governed | Workspace-owned/source-versioned capture, recoverable streamed ingestion, HTTP range previews, locators, optimistic metadata, typed Story links, archive/restore, lifecycle-aware search, inspector UX, and deterministic Integrity are verified          |
-| Knowledge Base CRUD                | Partial                  | TipTap authoring and a stored linked-ID array exist; no rendered wiki graph/backlinks                                                                                                                                                                      |
-| Assets                             | Partial                  | URL/path metadata catalog; no upload, processing, thumbnailing, or local asset storage                                                                                                                                                                     |
-| Templates                          | Partial                  | Core records exist; no template application/export workflow                                                                                                                                                                                                |
-| Workspaces (Route 01)              | Implemented              | Canonical picker, overview and settings routes; filtered list, initial DNA, scoped metrics/activity, health components, duplicate, archive/restore, integrity, manifest export, and old `/projects` redirects                                              |
-| Legacy Projects                    | Deprecated compatibility | Physical table and API remain temporarily to preserve existing vaults and integrations                                                                                                                                                                     |
-| Activity feed                      | Partial                  | Workspace creation projects a durable event through an idempotent consumer; remaining legacy writes are still direct and lossy                                                                                                                             |
-| Rich text editor                   | Implemented              | Shared Story/Knowledge TipTap component stores HTML                                                                                                                                                                                                        |
-| Quick capture                      | Implemented              | Global button, Cmd/Ctrl+K, and paste-to-TerminalOutput flow                                                                                                                                                                                                |
-| Evidence file drop                 | Implemented              | Electron streams trusted paths through staged SHA-256 capture, atomic promotion, persisted recovery, and structured source provenance                                                                                                                      |
-| Global search                      | Implemented              | Migration-backed FTS5 index, automatic triggers, ranked API/UI, and entity/project/status/date filters                                                                                                                                                     |
-| Publishing Calendar/AFI            | Not implemented          | `/calendar`, Deployment scheduling, Calendar projections, and AFI remain future work; AFI is Accepted as the primary route interaction architecture                                                                                                        |
-| Actionable queue                   | Not implemented          | No route, API, or schema                                                                                                                                                                                                                                   |
-| Export pipeline                    | Partial                  | Desktop exports portable JSON plus human-readable Markdown; HTML/PDF/DOCX exporters remain                                                                                                                                                                 |
-| Version history                    | Partial                  | Story checkpoints and timeline exist; Knowledge and most other entities store only current rows and timestamps                                                                                                                                             |
-| Backup/restore                     | Implemented              | Desktop creates compressed portable Vault archives; tested restore covers database, active/archived/staged Evidence bytes, failed-ingest metadata, traversal rejection, recovery copy, and rollback                                                        |
-| Repository integration             | Partial                  | Secure desktop folder selection captures branch, commit, package manager, frameworks, dependencies, TODOs, README, readiness, and optional project association                                                                                             |
-| Repository Intelligence Engine     | Partial                  | Deterministic, fingerprinted snapshots become searchable `RepositoryAudit` evidence with per-project history counts and metric diffs; deeper dependency/security analysis remains                                                                          |
-| Workspace health score             | Implemented              | Server calculates and explains recency, evidence, campaign, knowledge, and asset components with insufficient-data handling                                                                                                                                |
-| Story health score                 | Implemented              | Deterministic weighted outline, Evidence, Knowledge, Asset, metadata, readability, and Output components with blockers                                                                                                                                     |
-| Evidence/knowledge health scores   | Not implemented          | Workspace and Story health exist; standalone Evidence/Knowledge engines remain                                                                                                                                                                             |
-| Local vault/filesystem             | Implemented              | SQLite database and documented vault directories initialize locally                                                                                                                                                                                        |
-| Electron desktop shell             | Implemented              | Main/preload lifecycle, local API launch, static UI serving, secure file IPC                                                                                                                                                                               |
-| Branded application shell          | Partial                  | Approved palette/typography, preserved checkered background, top bar, wireframe navigation, Quick Capture panel, production header logo, Electron application icon, and complete favicon/PWA set exist; compact/mobile drawer remains                    |
-| Plugin manager                     | Not implemented          | Architectural direction only                                                                                                                                                                                                                               |
-| AI provider adapter                | Not implemented          | Future architecture only                                                                                                                                                                                                                                   |
-| Authentication/multi-user          | Intentionally excluded   | v0.1 non-goal                                                                                                                                                                                                                                              |
+| Capability                         | Status                      | Evidence/current limitation                                                                                                                                                                                                                      |
+| ---------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Home landing                       | Partial                     | Approved wireframe composition, production N-Tech C³ application icon hero, six Get Started cards, workspaces, activity, live metrics/focus, and bottom strip exist; Calendar/Exports routes remain                                              |
+| Stories (Route 02)                 | Implemented                 | Global/Workspace catalogues, mandatory Workspace ownership, guarded lifecycle, transactional outline, Draft-only Output creation, relationship graph, deterministic health, timeline, versions, optimistic concurrency, and archive/restore      |
+| Story authoring                    | Implemented                 | Shared TipTap editor with canonical HTML persistence, word/read-time derivation, version-safe explicit saves, and conflict rejection                                                                                                             |
+| Campaigns CRUD                     | Implemented                 | Core records only; no timeline/tasks/metrics/outputs                                                                                                                                                                                             |
+| Evidence Vault governed operations | Implemented — L3 Governed   | Workspace-owned/source-versioned capture, recoverable streamed ingestion, HTTP range previews, locators, optimistic metadata, typed Story links, archive/restore, lifecycle-aware search, inspector UX, and deterministic Integrity are verified |
+| Knowledge governed operations      | Implemented — L3 Integrated | Workspace-owned aggregate, lifecycle/review, optimistic authoring, claims, Evidence source/locator citations, typed backlinks, versions, active search, durable events, and archive/restore are verified                                         |
+| Assets                             | Partial                     | URL/path metadata catalog; no upload, processing, thumbnailing, or local asset storage                                                                                                                                                           |
+| Templates                          | Partial                     | Core records exist; no template application/export workflow                                                                                                                                                                                      |
+| Workspaces (Route 01)              | Implemented                 | Canonical picker, overview and settings routes; filtered list, initial DNA, scoped metrics/activity, health components, duplicate, archive/restore, integrity, manifest export, and old `/projects` redirects                                    |
+| Legacy Projects                    | Deprecated compatibility    | Physical table and API remain temporarily to preserve existing vaults and integrations                                                                                                                                                           |
+| Activity feed                      | Partial                     | Workspace creation projects a durable event through an idempotent consumer; remaining legacy writes are still direct and lossy                                                                                                                   |
+| Rich text editor                   | Implemented                 | Shared Story/Knowledge TipTap component stores HTML                                                                                                                                                                                              |
+| Quick capture                      | Implemented                 | Global button, Cmd/Ctrl+K, and paste-to-TerminalOutput flow                                                                                                                                                                                      |
+| Evidence file drop                 | Implemented                 | Electron streams trusted paths through staged SHA-256 capture, atomic promotion, persisted recovery, and structured source provenance                                                                                                            |
+| Global search                      | Implemented                 | Migration-backed FTS5 index, automatic triggers, ranked API/UI, and entity/project/status/date filters                                                                                                                                           |
+| Publishing Calendar/AFI            | Not implemented             | `/calendar`, Deployment scheduling, Calendar projections, and AFI remain future work; AFI is Accepted as the primary route interaction architecture                                                                                              |
+| Actionable queue                   | Not implemented             | No route, API, or schema                                                                                                                                                                                                                         |
+| Export pipeline                    | Partial                     | Desktop exports portable JSON plus human-readable Markdown; HTML/PDF/DOCX exporters remain                                                                                                                                                       |
+| Version history                    | Partial                     | Story and Knowledge checkpoints exist; most other entities store only current rows and timestamps                                                                                                                                                |
+| Backup/restore                     | Implemented                 | Desktop creates compressed portable Vault archives; tested restore covers database, active/archived/staged Evidence bytes, failed-ingest metadata, traversal rejection, recovery copy, and rollback                                              |
+| Repository integration             | Partial                     | Secure desktop folder selection captures branch, commit, package manager, frameworks, dependencies, TODOs, README, readiness, and optional project association                                                                                   |
+| Repository Intelligence Engine     | Partial                     | Deterministic, fingerprinted snapshots become searchable `RepositoryAudit` evidence with per-project history counts and metric diffs; deeper dependency/security analysis remains                                                                |
+| Workspace health score             | Implemented                 | Server calculates and explains recency, evidence, campaign, knowledge, and asset components with insufficient-data handling                                                                                                                      |
+| Story health score                 | Implemented                 | Deterministic weighted outline, Evidence, Knowledge, Asset, metadata, readability, and Output components with blockers                                                                                                                           |
+| Evidence/knowledge health scores   | Not implemented             | Workspace and Story health exist; standalone Evidence/Knowledge engines remain                                                                                                                                                                   |
+| Local vault/filesystem             | Implemented                 | SQLite database and documented vault directories initialize locally                                                                                                                                                                              |
+| Electron desktop shell             | Implemented                 | Main/preload lifecycle, local API launch, static UI serving, secure file IPC                                                                                                                                                                     |
+| Branded application shell          | Partial                     | Approved palette/typography, preserved checkered background, top bar, wireframe navigation, Quick Capture panel, production header logo, Electron application icon, and complete favicon/PWA set exist; compact/mobile drawer remains            |
+| Plugin manager                     | Not implemented             | Architectural direction only                                                                                                                                                                                                                     |
+| AI provider adapter                | Not implemented             | Future architecture only                                                                                                                                                                                                                         |
+| Authentication/multi-user          | Intentionally excluded      | v0.1 non-goal                                                                                                                                                                                                                                    |
 
 ## 7. Active feature briefs
 
@@ -1818,10 +1848,12 @@ atomic promotion, and restart reconciliation.
 
 ### Next implementation order
 
-1. Execute Route 04 Pass 1 — Aggregate contracts and schema.
-2. Review the Pass 1 migration, compatibility, event, search, and UI evidence.
-3. Authorize Pass 2 claims/citations only if Pass 1 reaches L2 without unresolved
-   blocking conformance failures.
+1. Audit Route 05 Campaigns against the implemented code and the accepted Route
+   Discovery Framework.
+2. Produce the Route 05 RDF v1 dossier, invariants, migration/compatibility plan,
+   conformance gates, and staged execution passes before extending Campaign CRUD.
+3. Authorize only the first Route 05 implementation boundary after the dossier is
+   reviewed; keep Route 04 Pass 4 Knowledge Intelligence separate and future.
 
 ## 8. Contract and data workflow
 

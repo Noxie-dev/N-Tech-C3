@@ -9,8 +9,12 @@
 export interface KnowledgeInput {
   /** @minLength 1 */
   title: string;
+  /** @minimum 1 */
+  workspaceId: number;
+  summary?: string;
+  slug?: string;
+  owner?: string;
   content?: string;
   category?: string;
   tags?: string[];
-  linkedPageIds?: number[];
 }

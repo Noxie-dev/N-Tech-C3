@@ -1,122 +1,568 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useGetKnowledge, useUpdateKnowledge, useDeleteKnowledge, getGetKnowledgeQueryKey } from '@workspace/api-client-react';
-import { Card, Button, Input, Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/shared';
-import { Save, Trash2, ArrowLeft, Clock } from 'lucide-react';
-import { Link, useParams, useLocation } from 'wouter';
-import { useQueryClient } from '@tanstack/react-query';
-import { formatShortDate } from '@/lib/utils';
-import { RichTextEditor } from '@/components/RichTextEditor';
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useGetKnowledge,
+  useUpdateKnowledge,
+  getGetKnowledgeQueryKey,
+  useListKnowledgeClaims,
+  useListKnowledgeRelationships,
+  useListKnowledgeVersions,
+  useListKnowledge,
+  useListEvidence,
+  listEvidenceSources,
+  createKnowledgeClaim,
+  updateKnowledgeClaim,
+  createKnowledgeClaimCitation,
+  deleteKnowledgeClaimCitation,
+  createKnowledgeRelationship,
+  deleteKnowledgeRelationship,
+  archiveKnowledge,
+  restoreKnowledge,
+  transitionKnowledge,
+} from "@workspace/api-client-react";
+import type { KnowledgeLifecycleStatus } from "@workspace/api-client-react";
+import { Card, Button, Input, Select, Textarea } from "@/components/shared";
+import {
+  Save,
+  ArrowLeft,
+  Clock,
+  Archive,
+  RotateCcw,
+  Plus,
+  Link2,
+  ShieldCheck,
+  History,
+} from "lucide-react";
+import { Link, useParams } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
+import { formatShortDate } from "@/lib/utils";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 export function KnowledgeDetail() {
   const params = useParams();
   const id = Number(params.id);
-  const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-
   const { data: page, isLoading } = useGetKnowledge(id);
+  const { data: claims = [] } = useListKnowledgeClaims(id);
+  const { data: relationships = [] } = useListKnowledgeRelationships(id);
+  const { data: versions = [] } = useListKnowledgeVersions(id);
+  const { data: knowledge = [] } = useListKnowledge({
+    workspaceId: page?.workspaceId,
+  });
+  const { data: evidence = [] } = useListEvidence({
+    workspaceId: page?.workspaceId,
+  });
   const updateKnowledge = useUpdateKnowledge();
-  const deleteKnowledge = useDeleteKnowledge();
 
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [title, setTitle] = useState("");
+  const [summary, setSummary] = useState("");
+  const [owner, setOwner] = useState("");
+  const [content, setContent] = useState("");
   const [isDirty, setIsDirty] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const initVersion = useRef<number | undefined>(undefined);
 
-  const initRef = useRef(false);
+  const refresh = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: getGetKnowledgeQueryKey(id) }),
+      queryClient.invalidateQueries({
+        queryKey: [`/api/knowledge/${id}/claims`],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: [`/api/knowledge/${id}/relationships`],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: [`/api/knowledge/${id}/versions`],
+      }),
+      queryClient.invalidateQueries({ queryKey: ["/api/knowledge"] }),
+    ]);
+  }, [id, queryClient]);
 
   useEffect(() => {
-    if (page && !initRef.current) {
+    if (page && initVersion.current !== page.version) {
       setTitle(page.title);
-      setContent(page.content || '');
-      initRef.current = true;
+      setSummary(page.summary || "");
+      setOwner(page.owner || "");
+      setContent(page.content || "");
+      initVersion.current = page.version;
     }
   }, [page]);
 
   const handleSave = useCallback(() => {
-    if (!isDirty) return;
-    updateKnowledge.mutate({ 
-      id, 
-      data: { title, content } 
-    }, {
-      onSuccess: (data) => {
-        setIsDirty(false);
-        queryClient.setQueryData(getGetKnowledgeQueryKey(id), data);
-      }
-    });
-  }, [id, title, content, isDirty, updateKnowledge, queryClient]);
+    if (!page || !isDirty) return;
+    setError("");
+    updateKnowledge.mutate(
+      {
+        id,
+        data: {
+          title,
+          summary: summary || null,
+          owner: owner || null,
+          content,
+          expectedVersion: page.version,
+          changeSummary: "Studio save",
+        },
+      },
+      {
+        onSuccess: async (data) => {
+          setIsDirty(false);
+          queryClient.setQueryData(getGetKnowledgeQueryKey(id), data);
+          await refresh();
+        },
+        onError: () =>
+          setError(
+            "Save failed because the page changed or is read-only. Reload and review the latest version.",
+          ),
+      },
+    );
+  }, [
+    content,
+    id,
+    isDirty,
+    owner,
+    page,
+    queryClient,
+    refresh,
+    summary,
+    title,
+    updateKnowledge,
+  ]);
 
-  const handleDelete = () => {
-    deleteKnowledge.mutate({ id }, {
-      onSuccess: () => setLocation('/knowledge')
-    });
+  const perform = async (operation: () => Promise<unknown>) => {
+    setBusy(true);
+    setError("");
+    try {
+      await operation();
+      await refresh();
+    } catch {
+      setError(
+        "The operation could not be completed. Check lifecycle, ownership, and version requirements.",
+      );
+    } finally {
+      setBusy(false);
+    }
   };
 
-  if (isLoading) return <div className="p-8 text-muted-foreground font-mono text-center">Loading page...</div>;
-  if (!page) return <div className="p-8 text-muted-foreground font-mono text-center">Page not found.</div>;
+  if (isLoading)
+    return (
+      <div className="p-8 text-center font-mono text-muted-foreground">
+        Loading Knowledge…
+      </div>
+    );
+  if (!page)
+    return (
+      <div
+        role="alert"
+        className="p-8 text-center font-mono text-muted-foreground"
+      >
+        Knowledge page not found.
+      </div>
+    );
+  const archived = page.lifecycleStatus === "Archived";
 
   return (
-    <div className="space-y-4 h-[calc(100vh-8rem)] flex flex-col">
-      <div className="flex items-center gap-4 text-sm font-mono text-muted-foreground shrink-0">
-        <Link href="/knowledge" className="hover:text-primary transition-colors flex items-center gap-1">
-          <ArrowLeft className="w-4 h-4" /> Base
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 text-sm font-mono text-muted-foreground">
+        <Link
+          href="/knowledge"
+          className="flex items-center gap-1 hover:text-primary"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Knowledge
         </Link>
         <span>/</span>
-        {page.category && (
-          <>
-            <span className="uppercase">{page.category}</span>
-            <span>/</span>
-          </>
-        )}
-        <span className="text-foreground truncate">{page.title}</span>
+        <span className="truncate text-foreground">{page.title}</span>
+        <span className="ml-auto rounded border px-2 py-1 text-[10px]">
+          {page.lifecycleStatus} · v{page.version}
+        </span>
       </div>
 
-      <div className="flex justify-between items-center shrink-0">
-        <Input 
-          value={title} 
-          onChange={(e) => { setTitle(e.target.value); setIsDirty(true); }}
-          className="text-2xl font-bold font-sans h-auto py-2 px-0 bg-transparent border-transparent hover:border-input focus:border-input shadow-none rounded-none focus-visible:ring-0 w-full"
-        />
-        <div className="flex gap-2 shrink-0">
-          <Button 
-            onClick={handleSave} 
-            disabled={!isDirty || updateKnowledge.isPending}
-            variant={isDirty ? "default" : "secondary"}
-            className="gap-2 font-mono text-xs uppercase"
-          >
-            <Save className="w-4 h-4" /> {updateKnowledge.isPending ? 'Syncing...' : isDirty ? 'Save' : 'Saved'}
-          </Button>
-          
-          <Dialog open={isDeleting} onOpenChange={setIsDeleting}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="icon" className="text-destructive hover:bg-destructive hover:text-destructive-foreground">
-                <Trash2 className="w-4 h-4" />
+      {error && (
+        <p
+          role="alert"
+          className="rounded border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+        >
+          {error}
+        </p>
+      )}
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.75fr)]">
+        <div className="space-y-4">
+          <Card className="space-y-3 p-4">
+            <div className="flex gap-2">
+              <Input
+                value={title}
+                disabled={archived}
+                onChange={(event) => {
+                  setTitle(event.target.value);
+                  setIsDirty(true);
+                }}
+                className="text-xl font-bold"
+              />
+              <Button
+                onClick={handleSave}
+                disabled={archived || !isDirty || updateKnowledge.isPending}
+              >
+                <Save className="mr-2 h-4 w-4" />
+                {updateKnowledge.isPending ? "Saving…" : "Save"}
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="text-destructive font-mono uppercase">Delete Page</DialogTitle>
-              </DialogHeader>
-              <div className="py-4 text-sm text-muted-foreground">Permanently delete this knowledge page?</div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsDeleting(false)}>Cancel</Button>
-                <Button variant="destructive" onClick={handleDelete} disabled={deleteKnowledge.isPending}>Delete</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+            </div>
+            <Input
+              value={summary}
+              disabled={archived}
+              onChange={(event) => {
+                setSummary(event.target.value);
+                setIsDirty(true);
+              }}
+              placeholder="Concise reusable summary"
+            />
+            <Input
+              value={owner}
+              disabled={archived}
+              onChange={(event) => {
+                setOwner(event.target.value);
+                setIsDirty(true);
+              }}
+              placeholder="Knowledge owner"
+            />
+            <div
+              className={`min-h-[360px] overflow-hidden rounded border ${archived ? "pointer-events-none opacity-60" : ""}`}
+            >
+              <RichTextEditor
+                value={content}
+                onChange={(html) => {
+                  if (!archived) {
+                    setContent(html);
+                    setIsDirty(true);
+                  }
+                }}
+                placeholder="Distill reviewed understanding…"
+              />
+            </div>
+            <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
+              <span>{content.length} bytes</span>
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                Updated {formatShortDate(page.updatedAt)}
+              </span>
+            </div>
+          </Card>
 
-      <Card className="flex-1 flex flex-col border-border shadow-sm min-h-0 overflow-hidden">
-        <RichTextEditor
-          value={content}
-          onChange={(html) => { setContent(html); setIsDirty(true); }}
-          placeholder="Start typing..."
-        />
-        <div className="bg-muted/20 border-t border-border/50 p-2 px-4 flex justify-between items-center text-[10px] font-mono text-muted-foreground shrink-0 rounded-b-lg">
-          <span>{content.length} bytes</span>
-          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Last modified: {formatShortDate(page.updatedAt)}</span>
+          <Card className="space-y-4 p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold">Claims and Evidence citations</h2>
+              <span className="text-xs text-muted-foreground">
+                {claims.length} claim(s)
+              </span>
+            </div>
+            {!archived && (
+              <form
+                className="flex gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const formElement = event.currentTarget;
+                  const form = new FormData(formElement);
+                  const statement = String(form.get("statement") || "").trim();
+                  if (statement)
+                    void perform(async () => {
+                      await createKnowledgeClaim(id, { statement });
+                      formElement.reset();
+                    });
+                }}
+              >
+                <Input
+                  name="statement"
+                  required
+                  placeholder="Add a discrete, reviewable claim"
+                />
+                <Button disabled={busy}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </form>
+            )}
+            {claims.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No claims yet. Verified Knowledge requires at least one
+                human-verified cited claim.
+              </p>
+            )}
+            {claims.map((claim) => (
+              <article key={claim.id} className="space-y-3 rounded border p-3">
+                <p className="text-sm">{claim.statement}</p>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <span className="rounded bg-muted px-2 py-1">
+                    {claim.claimKind}
+                  </span>
+                  <span className="rounded bg-muted px-2 py-1">
+                    {claim.supportStatus}
+                  </span>
+                  <span className="rounded bg-muted px-2 py-1">
+                    {claim.reviewStatus}
+                  </span>
+                </div>
+                {!archived && (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      onClick={() =>
+                        void perform(() =>
+                          updateKnowledgeClaim(id, claim.id, {
+                            expectedVersion: claim.version,
+                            supportStatus:
+                              claim.citations.length > 1
+                                ? "Corroborated"
+                                : claim.citations.length
+                                  ? "Supported"
+                                  : "Unsupported",
+                            reviewStatus: "HumanVerified",
+                            reviewer: "Local Owner",
+                          }),
+                        )
+                      }
+                    >
+                      <ShieldCheck className="mr-1 h-3.5 w-3.5" />
+                      Verify claim
+                    </Button>
+                    <form
+                      className="flex min-w-[280px] flex-1 gap-2"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        const evidenceId = Number(
+                          new FormData(event.currentTarget).get("evidenceId"),
+                        );
+                        if (!evidenceId) return;
+                        void perform(async () => {
+                          const sources = await listEvidenceSources(evidenceId);
+                          if (!sources[0]) throw new Error("No source");
+                          await createKnowledgeClaimCitation(id, claim.id, {
+                            evidenceId,
+                            sourceId: sources[0].id,
+                          });
+                        });
+                      }}
+                    >
+                      <Select name="evidenceId" required defaultValue="">
+                        <option value="" disabled>
+                          Cite Evidence…
+                        </option>
+                        {evidence.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.title}
+                          </option>
+                        ))}
+                      </Select>
+                      <Button size="sm" variant="outline" disabled={busy}>
+                        <Link2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </form>
+                  </div>
+                )}
+                {claim.citations.map((citation) => (
+                  <div
+                    key={citation.id}
+                    className="flex items-center gap-2 rounded bg-muted/40 p-2 text-xs"
+                  >
+                    <Link
+                      href={`/evidence/${citation.evidenceId}`}
+                      className="font-medium text-primary"
+                    >
+                      {citation.evidenceTitle}
+                    </Link>
+                    <span>source v{citation.sourceVersion}</span>
+                    <span>{citation.integrityStatus}</span>
+                    {!archived && (
+                      <button
+                        className="ml-auto text-destructive"
+                        onClick={() =>
+                          void perform(() =>
+                            deleteKnowledgeClaimCitation(
+                              id,
+                              claim.id,
+                              citation.id,
+                            ),
+                          )
+                        }
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </article>
+            ))}
+          </Card>
         </div>
-      </Card>
+
+        <aside className="space-y-4">
+          <Card className="space-y-3 p-4">
+            <h2 className="font-semibold">Lifecycle and review</h2>
+            <p className="text-xs text-muted-foreground">
+              Review: {page.reviewStatus}
+              {page.reviewedAt ? ` · ${formatShortDate(page.reviewedAt)}` : ""}
+            </p>
+            {!archived ? (
+              <div className="grid grid-cols-2 gap-2">
+                {(
+                  [
+                    "Idea",
+                    "Research",
+                    "Draft",
+                    "Verified",
+                    "Canonical",
+                  ] as KnowledgeLifecycleStatus[]
+                ).map((status) => (
+                  <Button
+                    key={status}
+                    size="sm"
+                    variant={
+                      status === page.lifecycleStatus ? "secondary" : "outline"
+                    }
+                    disabled={busy || status === page.lifecycleStatus}
+                    onClick={() =>
+                      void perform(() =>
+                        transitionKnowledge(id, {
+                          expectedVersion: page.version,
+                          lifecycleStatus: status,
+                        }),
+                      )
+                    }
+                  >
+                    {status}
+                  </Button>
+                ))}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() =>
+                    void perform(() =>
+                      archiveKnowledge(id, { expectedVersion: page.version }),
+                    )
+                  }
+                >
+                  <Archive className="mr-1 h-3.5 w-3.5" />
+                  Archive
+                </Button>
+              </div>
+            ) : (
+              <Button
+                disabled={busy}
+                onClick={() =>
+                  void perform(() =>
+                    restoreKnowledge(id, { expectedVersion: page.version }),
+                  )
+                }
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Restore Knowledge
+              </Button>
+            )}
+          </Card>
+
+          <Card className="space-y-3 p-4">
+            <h2 className="font-semibold">Typed relationships</h2>
+            {!archived && (
+              <form
+                className="space-y-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const form = new FormData(event.currentTarget);
+                  const targetKnowledgeId = Number(
+                    form.get("targetKnowledgeId"),
+                  );
+                  const relationshipType = String(
+                    form.get("relationshipType"),
+                  ) as "RelatedTo";
+                  if (targetKnowledgeId)
+                    void perform(() =>
+                      createKnowledgeRelationship(id, {
+                        targetKnowledgeId,
+                        relationshipType,
+                      }),
+                    );
+                }}
+              >
+                <Select name="targetKnowledgeId" required defaultValue="">
+                  <option value="" disabled>
+                    Link Knowledge…
+                  </option>
+                  {knowledge
+                    .filter((item) => item.id !== id)
+                    .map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.title}
+                      </option>
+                    ))}
+                </Select>
+                <div className="flex gap-2">
+                  <Select name="relationshipType">
+                    {[
+                      "RelatedTo",
+                      "DependsOn",
+                      "Explains",
+                      "Contradicts",
+                      "Supersedes",
+                      "DerivedFrom",
+                    ].map((type) => (
+                      <option key={type}>{type}</option>
+                    ))}
+                  </Select>
+                  <Button disabled={busy}>Link</Button>
+                </div>
+              </form>
+            )}
+            {relationships.map((relationship) => (
+              <div
+                key={`${relationship.direction}-${relationship.id}`}
+                className="rounded border p-2 text-xs"
+              >
+                <div>
+                  <span className="font-medium">{relationship.direction}</span>{" "}
+                  · {relationship.relationshipType}
+                </div>
+                <div className="mt-1 text-muted-foreground">
+                  {relationship.targetTitle}
+                </div>
+                {!archived && relationship.direction === "Outbound" && (
+                  <button
+                    className="mt-1 text-destructive"
+                    onClick={() =>
+                      void perform(() =>
+                        deleteKnowledgeRelationship(id, relationship.id),
+                      )
+                    }
+                  >
+                    Unlink
+                  </button>
+                )}
+              </div>
+            ))}
+            {relationships.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                No relationships or backlinks.
+              </p>
+            )}
+          </Card>
+
+          <Card className="space-y-2 p-4">
+            <h2 className="flex items-center gap-2 font-semibold">
+              <History className="h-4 w-4" />
+              Versions
+            </h2>
+            {versions.map((version) => (
+              <div key={version.id} className="rounded border p-2 text-xs">
+                <strong>v{version.version}</strong> ·{" "}
+                {version.changeSummary || "Checkpoint"}
+                <div className="text-muted-foreground">
+                  {formatShortDate(version.createdAt)}
+                </div>
+              </div>
+            ))}
+          </Card>
+        </aside>
+      </div>
     </div>
   );
 }

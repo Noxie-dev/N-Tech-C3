@@ -5,8 +5,11 @@
  * N-Tech C³ Engineering Intelligence Operating System API
  * OpenAPI spec version: 0.1.0
  */
+import type { KnowledgeReviewStatus } from './knowledgeReviewStatus';
 
 export interface KnowledgePatch {
+  /** @minimum 1 */
+  expectedVersion: number;
   /** @minLength 1 */
   title?: string;
   /** @nullable */
@@ -14,5 +17,16 @@ export interface KnowledgePatch {
   /** @nullable */
   category?: string | null;
   tags?: string[];
-  linkedPageIds?: number[];
+  /** @nullable */
+  summary?: string | null;
+  /** @nullable */
+  slug?: string | null;
+  /** @nullable */
+  owner?: string | null;
+  reviewStatus?: KnowledgeReviewStatus;
+  /** @nullable */
+  reviewedAt?: Date | null;
+  /** @nullable */
+  supersedesKnowledgeId?: number | null;
+  changeSummary?: string;
 }

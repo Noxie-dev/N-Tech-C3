@@ -5,16 +5,35 @@
  * N-Tech C³ Engineering Intelligence Operating System API
  * OpenAPI spec version: 0.1.0
  */
+import type { KnowledgeLifecycleStatus } from './knowledgeLifecycleStatus';
+import type { KnowledgeReviewStatus } from './knowledgeReviewStatus';
 
 export interface KnowledgePage {
   id: number;
   title: string;
+  workspaceId: number;
+  /** @nullable */
+  summary?: string | null;
+  /** @nullable */
+  slug?: string | null;
+  /** @nullable */
+  owner?: string | null;
   /** @nullable */
   content?: string | null;
   /** @nullable */
   category?: string | null;
-  tags?: string[];
+  tags: string[];
+  /** @deprecated */
   linkedPageIds?: number[];
+  lifecycleStatus: KnowledgeLifecycleStatus;
+  reviewStatus: KnowledgeReviewStatus;
+  version: number;
+  /** @nullable */
+  reviewedAt?: Date | null;
+  /** @nullable */
+  archivedAt?: Date | null;
+  /** @nullable */
+  supersedesKnowledgeId?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }

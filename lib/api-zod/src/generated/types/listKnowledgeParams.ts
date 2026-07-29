@@ -5,8 +5,13 @@
  * N-Tech C³ Engineering Intelligence Operating System API
  * OpenAPI spec version: 0.1.0
  */
+import type { KnowledgeLifecycleStatus } from './knowledgeLifecycleStatus';
+import type { KnowledgeReviewStatus } from './knowledgeReviewStatus';
 
 export type ListKnowledgeParams = {
 category?: string;
 search?: string;
+workspaceId?: number;
+lifecycleStatus?: KnowledgeLifecycleStatus;
+reviewStatus?: KnowledgeReviewStatus;
 };

@@ -1,17 +1,28 @@
-import { copyFileSync, createReadStream, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
-import { cpus, platform, release, tmpdir, totalmem } from 'node:os';
-import path from 'node:path';
-import { performance } from 'node:perf_hooks';
+import {
+  copyFileSync,
+  createReadStream,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { createHash } from "node:crypto";
+import { cpus, platform, release, tmpdir, totalmem } from "node:os";
+import path from "node:path";
+import { performance } from "node:perf_hooks";
 
-const vault = mkdtempSync(path.join(tmpdir(), 'ntc3-benchmark-'));
+const vault = mkdtempSync(path.join(tmpdir(), "ntc3-benchmark-"));
 process.env.NTC3_VAULT_PATH = vault;
 
 const started = performance.now();
-const database = await import('@workspace/db');
+const database = await import("@workspace/db");
 const startupMs = performance.now() - started;
 
-const samples = async (count: number, work: (index: number) => unknown | Promise<unknown>) => {
+const samples = async (
+  count: number,
+  work: (index: number) => unknown | Promise<unknown>,
+) => {
   const values: number[] = [];
   for (let index = 0; index < count; index += 1) {
     const before = performance.now();
@@ -26,24 +37,39 @@ const samples = async (count: number, work: (index: number) => unknown | Promise
 };
 
 const streamHash = async (filePath: string) => {
-  const hash = createHash('sha256');
-  for await (const chunk of createReadStream(filePath, { highWaterMark: 1024 * 1024 })) hash.update(chunk);
-  return hash.digest('hex');
+  const hash = createHash("sha256");
+  for await (const chunk of createReadStream(filePath, {
+    highWaterMark: 1024 * 1024,
+  }))
+    hash.update(chunk);
+  return hash.digest("hex");
 };
 
 const workspaceCount = Number(process.env.NTC3_BENCHMARK_WORKSPACES ?? 50);
-const storiesPerWorkspace = Number(process.env.NTC3_BENCHMARK_STORIES_PER_WORKSPACE ?? 200);
+const storiesPerWorkspace = Number(
+  process.env.NTC3_BENCHMARK_STORIES_PER_WORKSPACE ?? 200,
+);
 const evidenceCount = Number(process.env.NTC3_BENCHMARK_EVIDENCE ?? 10_000);
+const knowledgeCount = Number(process.env.NTC3_BENCHMARK_KNOWLEDGE ?? 10_000);
 
 for (let index = 0; index < workspaceCount; index += 1) {
   const workspace = database.run(
-    'INSERT INTO projects (name, slug, description) VALUES (?, ?, ?)',
-    [`Benchmark ${index}`, `benchmark-${index}`, 'Representative local-first workspace'],
+    "INSERT INTO projects (name, slug, description) VALUES (?, ?, ?)",
+    [
+      `Benchmark ${index}`,
+      `benchmark-${index}`,
+      "Representative local-first workspace",
+    ],
   );
   for (let story = 0; story < storiesPerWorkspace; story += 1) {
     database.run(
-      'INSERT INTO stories (title, summary, content, project_id) VALUES (?, ?, ?, ?)',
-      [`Story ${index}-${story}`, 'architecture evidence', 'deterministic intelligence workflow', workspace.lastInsertRowid],
+      "INSERT INTO stories (title, summary, content, project_id) VALUES (?, ?, ?, ?)",
+      [
+        `Story ${index}-${story}`,
+        "architecture evidence",
+        "deterministic intelligence workflow",
+        workspace.lastInsertRowid,
+      ],
     );
   }
 }
@@ -55,46 +81,80 @@ for (let index = 0; index < evidenceCount; index += 1) {
     [`Evidence ${index}`, `deterministic integrity fixture ${index}`],
   );
 }
+database.run(`INSERT INTO evidence_sources (
+  evidence_id, version, source_kind, origin_uri, capture_method, producer_metadata
+) VALUES (1, 1, 'InlineText', 'benchmark:inline:1', 'BenchmarkFixture', '{"fixture":true}')`);
+
+for (let index = 0; index < knowledgeCount; index += 1) {
+  database.run(
+    `INSERT INTO knowledge (title, summary, content, project_id, owner, lifecycle_status)
+      VALUES (?, ?, ?, 1, 'Benchmark Owner', 'Draft')`,
+    [
+      `Knowledge ${index}`,
+      `architecture knowledge ${index}`,
+      `deterministic governed understanding ${index}`,
+    ],
+  );
+}
 
 const save = await samples(100, (index) => {
   database.transaction(() => {
     database.run(
       "INSERT INTO evidence (title, type, content, project_id) VALUES (?, 'Benchmark', ?, 1)",
-      [`Save ${index}`, 'performance measurement'],
+      [`Save ${index}`, "performance measurement"],
     );
   });
 });
 const search = await samples(100, () => {
-  database.all("SELECT entity_id FROM global_search WHERE global_search MATCH 'architecture' LIMIT 20");
+  database.all(
+    "SELECT entity_id FROM global_search WHERE global_search MATCH 'architecture' LIMIT 20",
+  );
 });
 const workspaceLoad = await samples(100, () => {
-  database.get('SELECT * FROM projects WHERE id = 1');
-  database.get('SELECT count(*) count FROM stories WHERE project_id = 1');
-  database.all('SELECT id, title, status FROM stories WHERE project_id = 1 ORDER BY updated_at DESC LIMIT 8');
+  database.get("SELECT * FROM projects WHERE id = 1");
+  database.get("SELECT count(*) count FROM stories WHERE project_id = 1");
+  database.all(
+    "SELECT id, title, status FROM stories WHERE project_id = 1 ORDER BY updated_at DESC LIMIT 8",
+  );
 });
 const deterministicAnalysis = await samples(100, (index) => {
-  const value = database.get('SELECT count(*) total FROM stories WHERE project_id = 1');
-  database.run(`
+  const value = database.get(
+    "SELECT count(*) total FROM stories WHERE project_id = 1",
+  );
+  database.run(
+    `
     INSERT OR REPLACE INTO intelligence_results (
       result_key, capability_id, capability_version, result_kind, subject_type,
       subject_id, input_watermark, classification, value, explanation
     ) VALUES (?, 'benchmark-health', '1.0.0', 'health-score', 'workspace', 1, ?, 'deterministic', ?, ?)
-  `, [`benchmark-health:${index}`, String(index), JSON.stringify(value), 'Deterministic benchmark']);
+  `,
+    [
+      `benchmark-health:${index}`,
+      String(index),
+      JSON.stringify(value),
+      "Deterministic benchmark",
+    ],
+  );
 });
 
-const sourceDirectory = path.join(vault, 'benchmark-source');
-const evidenceDirectory = path.join(vault, 'evidence');
+const sourceDirectory = path.join(vault, "benchmark-source");
+const evidenceDirectory = path.join(vault, "evidence");
 mkdirSync(sourceDirectory, { recursive: true });
-const attachmentSource = path.join(sourceDirectory, 'attachment.bin');
+const attachmentSource = path.join(sourceDirectory, "attachment.bin");
 writeFileSync(attachmentSource, Buffer.alloc(1024 * 1024, 0x43));
 const attachmentCopy = await samples(50, (index) => {
-  copyFileSync(attachmentSource, path.join(evidenceDirectory, `attachment-${index}.bin`));
+  copyFileSync(
+    attachmentSource,
+    path.join(evidenceDirectory, `attachment-${index}.bin`),
+  );
 });
 const attachmentHash = await samples(50, () => {
-  createHash('sha256').update(readFileSync(attachmentSource)).digest('hex');
+  createHash("sha256").update(readFileSync(attachmentSource)).digest("hex");
 });
 const largeWorkspaceSearch = await samples(100, () => {
-  database.all("SELECT entity_id FROM global_search WHERE global_search MATCH 'deterministic' LIMIT 50");
+  database.all(
+    "SELECT entity_id FROM global_search WHERE global_search MATCH 'deterministic' LIMIT 50",
+  );
 });
 const evidenceCatalogue = await samples(100, () => {
   database.all(`SELECT id, title, classification, lifecycle_status, review_status
@@ -102,22 +162,79 @@ const evidenceCatalogue = await samples(100, () => {
     ORDER BY created_at DESC LIMIT 50`);
 });
 const evidenceDetail = await samples(100, () => {
-  database.get('SELECT * FROM evidence WHERE id = 1');
-  database.all('SELECT * FROM evidence_sources WHERE evidence_id = 1 ORDER BY version DESC');
-  database.all('SELECT * FROM story_evidence WHERE evidence_id = 1');
+  database.get("SELECT * FROM evidence WHERE id = 1");
+  database.all(
+    "SELECT * FROM evidence_sources WHERE evidence_id = 1 ORDER BY version DESC",
+  );
+  database.all("SELECT * FROM story_evidence WHERE evidence_id = 1");
 });
 const evidenceIntegrityHash = await samples(50, () => {
-  createHash('sha256').update(readFileSync(attachmentSource)).digest('hex');
+  createHash("sha256").update(readFileSync(attachmentSource)).digest("hex");
+});
+const knowledgeCatalogue = await samples(100, () => {
+  database.all(`SELECT id, title, summary, lifecycle_status, review_status, version
+    FROM knowledge WHERE project_id = 1 AND lifecycle_status != 'Archived'
+    ORDER BY updated_at DESC LIMIT 50`);
+});
+const knowledgeSearch = await samples(100, () => {
+  database.all(
+    "SELECT entity_id FROM global_search WHERE global_search MATCH 'architecture' AND entity_type = 'knowledge' LIMIT 50",
+  );
+});
+const knowledgeDetail = await samples(100, () => {
+  database.get("SELECT * FROM knowledge WHERE id = 1");
+  database.all(
+    "SELECT * FROM knowledge_claims WHERE knowledge_id = 1 ORDER BY position, id",
+  );
+  database.all(`SELECT r.* FROM knowledge_relationships r
+    WHERE r.source_knowledge_id = 1 OR r.target_knowledge_id = 1`);
+  database.all(
+    "SELECT * FROM knowledge_versions WHERE knowledge_id = 1 ORDER BY version DESC",
+  );
+});
+const knowledgeSave = await samples(100, (index) => {
+  database.transaction(() => {
+    database.run(
+      `UPDATE knowledge SET summary = ?, version = version + 1,
+      updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = 1`,
+      [`Knowledge save benchmark ${index}`],
+    );
+    database.run(`INSERT INTO knowledge_versions
+      (knowledge_id, version, title, summary, content, metadata, change_summary)
+      SELECT id, version, title, summary, content, '{}', 'Benchmark save' FROM knowledge WHERE id = 1`);
+  });
+});
+const knowledgeCitation = await samples(100, (index) => {
+  database.transaction(() => {
+    const claim = database.run(
+      `INSERT INTO knowledge_claims (knowledge_id, position, statement)
+        VALUES (1, ?, ?)`,
+      [index, `Benchmark claim ${index}`],
+    );
+    const source = database.get(
+      "SELECT id FROM evidence_sources WHERE evidence_id = 1 ORDER BY version DESC LIMIT 1",
+    ) as { id: number };
+    database.run(
+      `INSERT INTO knowledge_claim_citations (claim_id, evidence_id, source_id)
+      VALUES (?, 1, ?)`,
+      [claim.lastInsertRowid, source.id],
+    );
+  });
 });
 const largeFiles = [];
 for (const sizeMiB of [20, 100]) {
   const source = path.join(sourceDirectory, `attachment-${sizeMiB}mib.bin`);
   writeFileSync(source, Buffer.alloc(sizeMiB * 1024 * 1024, 0x43));
   const beforeRss = process.memoryUsage().rss;
-  const hash = await samples(sizeMiB === 100 ? 3 : 10, () => streamHash(source));
+  const hash = await samples(sizeMiB === 100 ? 3 : 10, () =>
+    streamHash(source),
+  );
   const afterHashRss = process.memoryUsage().rss;
   const copy = await samples(sizeMiB === 100 ? 2 : 5, (index) => {
-    copyFileSync(source, path.join(evidenceDirectory, `large-${sizeMiB}-${index}.bin`));
+    copyFileSync(
+      source,
+      path.join(evidenceDirectory, `large-${sizeMiB}-${index}.bin`),
+    );
   });
   largeFiles.push({
     sizeMiB,
@@ -133,11 +250,12 @@ const report = {
     workspaces: workspaceCount,
     stories: workspaceCount * storiesPerWorkspace,
     evidence: evidenceCount,
+    knowledge: knowledgeCount,
     attachmentBytes: 1024 * 1024,
     measuredIterations: 100,
   },
   hardware: {
-    cpu: cpus()[0]?.model ?? 'unknown',
+    cpu: cpus()[0]?.model ?? "unknown",
     logicalCores: cpus().length,
     memoryGb: Number((totalmem() / 1024 ** 3).toFixed(1)),
     platform: `${platform()} ${release()}`,
@@ -155,6 +273,11 @@ const report = {
     evidenceCatalogue,
     evidenceDetail,
     evidenceIntegrityHash,
+    knowledgeCatalogue,
+    knowledgeSearch,
+    knowledgeDetail,
+    knowledgeSave,
+    knowledgeCitation,
     largeFiles,
   },
 };

@@ -1,6 +1,6 @@
 # Route 04 — Knowledge: RDF v1 Dossier and Execution Plan
 
-Status: **Accepted — L1 Defined**
+Status: **Implemented — L3 Integrated**
 
 RDF version: **1.0**
 
@@ -16,17 +16,17 @@ search, events, or Intelligence algorithms.
 
 ## Route DNA
 
-| Field | Decision |
-| --- | --- |
-| Route ID | `knowledge` |
-| Paths | `/knowledge`, `/knowledge/:id` |
-| Mission | Transform provenance-bearing Evidence into reviewed, reusable understanding. |
-| User need | Find what the organization has learned, why it believes it, and whether it is still current. |
-| Required outcome | A user can author, support, review, relate, find, and safely evolve Workspace-owned Knowledge. |
-| Domain owner | Knowledge |
-| Experience pattern | Library + Studio + capability-driven Inspector |
-| Current maturity | L1 Defined; legacy CRUD seed exists |
-| Target maturity | L3 Integrated before Intelligence work |
+| Field              | Decision                                                                                       |
+| ------------------ | ---------------------------------------------------------------------------------------------- |
+| Route ID           | `knowledge`                                                                                    |
+| Paths              | `/knowledge`, `/knowledge/:id`                                                                 |
+| Mission            | Transform provenance-bearing Evidence into reviewed, reusable understanding.                   |
+| User need          | Find what the organization has learned, why it believes it, and whether it is still current.   |
+| Required outcome   | A user can author, support, review, relate, find, and safely evolve Workspace-owned Knowledge. |
+| Domain owner       | Knowledge                                                                                      |
+| Experience pattern | Library + Studio + capability-driven Inspector                                                 |
+| Current maturity   | L3 Integrated                                                                                  |
+| Target maturity    | L3 Integrated before Intelligence work                                                         |
 
 ## Primary workflow
 
@@ -174,22 +174,22 @@ prematurely exposing claims.
 
 Planned surface:
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `GET` | `/knowledge` | Workspace/lifecycle/category/search catalogue |
-| `POST` | `/knowledge` | Required-Workspace creation |
-| `GET` | `/knowledge/{id}` | Aggregate detail |
-| `PATCH` | `/knowledge/{id}` | Optimistic metadata/content update |
-| `POST` | `/knowledge/{id}/transition` | Guarded lifecycle transition |
-| `POST` | `/knowledge/{id}/archive` | Reversible archive |
-| `POST` | `/knowledge/{id}/restore` | Restore |
-| `GET/POST` | `/knowledge/{id}/claims` | Ordered claim collection |
-| `PATCH` | `/knowledge/{id}/claims/{claimId}` | Optimistic claim update |
-| `GET/POST` | `/knowledge/{id}/claims/{claimId}/citations` | Citation collection |
-| `DELETE` | `/knowledge/{id}/claims/{claimId}/citations/{citationId}` | Remove edge |
-| `GET/POST` | `/knowledge/{id}/relationships` | Typed Knowledge edges/backlinks |
-| `DELETE` | `/knowledge/{id}/relationships/{relationshipId}` | Remove edge |
-| `GET` | `/knowledge/{id}/versions` | Version checkpoints |
+| Method     | Path                                                      | Purpose                                       |
+| ---------- | --------------------------------------------------------- | --------------------------------------------- |
+| `GET`      | `/knowledge`                                              | Workspace/lifecycle/category/search catalogue |
+| `POST`     | `/knowledge`                                              | Required-Workspace creation                   |
+| `GET`      | `/knowledge/{id}`                                         | Aggregate detail                              |
+| `PATCH`    | `/knowledge/{id}`                                         | Optimistic metadata/content update            |
+| `POST`     | `/knowledge/{id}/transition`                              | Guarded lifecycle transition                  |
+| `POST`     | `/knowledge/{id}/archive`                                 | Reversible archive                            |
+| `POST`     | `/knowledge/{id}/restore`                                 | Restore                                       |
+| `GET/POST` | `/knowledge/{id}/claims`                                  | Ordered claim collection                      |
+| `PATCH`    | `/knowledge/{id}/claims/{claimId}`                        | Optimistic claim update                       |
+| `GET/POST` | `/knowledge/{id}/claims/{claimId}/citations`              | Citation collection                           |
+| `DELETE`   | `/knowledge/{id}/claims/{claimId}/citations/{citationId}` | Remove edge                                   |
+| `GET/POST` | `/knowledge/{id}/relationships`                           | Typed Knowledge edges/backlinks               |
+| `DELETE`   | `/knowledge/{id}/relationships/{relationshipId}`          | Remove edge                                   |
+| `GET`      | `/knowledge/{id}/versions`                                | Version checkpoints                           |
 
 ## Experience contract
 
@@ -220,7 +220,7 @@ compatibility name while public contracts use `workspaceId`.
 
 ### Pass 1 — Aggregate contracts and schema
 
-Status: **Authorized next implementation boundary**
+Status: **Completed — 2026-07-29**
 
 1. Add canonical Knowledge OpenAPI contracts requiring `workspaceId`.
 2. Define lifecycle, review, ownership, optimistic version, owner, summary, slug,
@@ -235,22 +235,28 @@ Status: **Authorized next implementation boundary**
 10. Verify fresh/upgrade migrations, stale-write conflicts, Workspace guards,
     relationship invariants, event atomicity, replay, search, and type safety.
 
-Pass 1 explicitly excludes claims, citations, Knowledge Intelligence, graph
-visualization, automatic classification, and semantic/vector search.
+The append-only migration establishes the aggregate, relationships, claims,
+citations, versions, active-only FTS5 behavior, and conservative compatibility
+audit together so upgraded Vaults never occupy an intermediate invalid schema.
+Knowledge Intelligence, graph visualization, automatic classification, and
+semantic/vector search remain excluded.
 
 ### Pass 2 — Claims, citations, and versions
 
-Status: **Proposed; not authorized**
+Status: **Completed — 2026-07-29**
 
-Add ordered claims, Evidence source-version/locator citations, checkpoints,
-review history, typed backlinks, and complete Studio panels.
+Ordered claims, Evidence source-version/locator citations, checkpoints, review
+state, typed backlinks, lifecycle gates, archive/restore, and complete Studio
+panels are implemented and covered by API and browser workflows.
 
 ### Pass 3 — Integrated experience and conformance
 
-Status: **Proposed; not authorized**
+Status: **Completed — 2026-07-29**
 
-Complete browser/Electron workflows, recovery and accessibility matrices,
-performance benchmarks, compatibility retirement evidence, and the L3 decision.
+Browser/Electron-compatible workflows, read-only archive behavior, accessible
+status/error surfaces, a 10,000-Knowledge benchmark, compatibility evidence, and
+the L3 decision are recorded in
+`Docs/System-Design-Book/evidence/route-04-knowledge-conformance-2026-07-29.md`.
 
 ### Pass 4 — Knowledge Intelligence
 
@@ -262,7 +268,7 @@ invalidation, explanations, evidence references, abstention, and human authority
 
 ## Conformance gates
 
-Route 04 cannot advance beyond L1 unless the applicable gates pass:
+Route 04 advances only while the applicable gates pass:
 
 - domain correctness: ownership, lifecycle, claims, citations, relationships;
 - contract completeness: documented commands, errors, and generated clients;
@@ -277,6 +283,7 @@ Route 04 cannot advance beyond L1 unless the applicable gates pass:
 
 ## Exit decision
 
-This dossier accepts Route 04 at **L1 Defined** and authorizes only Pass 1.
-Implementation evidence is required before L2. Route 03 remains governed and is
-consumed through its public Evidence/source/locator contracts.
+Route 04 Passes 1–3 satisfy the applicable gates and the route is accepted at
+**L3 Integrated**. Route 03 remains governed and is consumed through its public
+Evidence/source/locator contracts. Pass 4 remains a separate future authorization:
+the L3 decision does not imply that Knowledge Intelligence exists.

@@ -790,6 +790,176 @@ export const migrations: Migration[] = [
         ON evidence_integrity_jobs(evidence_id, created_at DESC);
     `,
   },
+  {
+    version: 11,
+    name: 'governed_knowledge_domain',
+    sql: `
+      ALTER TABLE knowledge ADD COLUMN summary TEXT;
+      ALTER TABLE knowledge ADD COLUMN slug TEXT;
+      ALTER TABLE knowledge ADD COLUMN owner TEXT;
+      ALTER TABLE knowledge ADD COLUMN lifecycle_status TEXT NOT NULL DEFAULT 'Draft'
+        CHECK (lifecycle_status IN ('Idea', 'Research', 'Draft', 'Verified', 'Canonical', 'Archived'));
+      ALTER TABLE knowledge ADD COLUMN review_status TEXT NOT NULL DEFAULT 'Unreviewed'
+        CHECK (review_status IN ('Unreviewed', 'InReview', 'ChangesRequested', 'Approved'));
+      ALTER TABLE knowledge ADD COLUMN version INTEGER NOT NULL DEFAULT 1;
+      ALTER TABLE knowledge ADD COLUMN reviewed_at TEXT;
+      ALTER TABLE knowledge ADD COLUMN archived_at TEXT;
+      ALTER TABLE knowledge ADD COLUMN supersedes_knowledge_id INTEGER
+        REFERENCES knowledge(id) ON DELETE SET NULL;
+
+      CREATE TABLE knowledge_relationships (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source_knowledge_id INTEGER NOT NULL REFERENCES knowledge(id) ON DELETE CASCADE,
+        target_knowledge_id INTEGER NOT NULL REFERENCES knowledge(id) ON DELETE CASCADE,
+        relationship_type TEXT NOT NULL
+          CHECK (relationship_type IN ('RelatedTo', 'DependsOn', 'Explains', 'Contradicts', 'Supersedes', 'DerivedFrom')),
+        notes TEXT,
+        created_by TEXT NOT NULL DEFAULT 'Local Owner',
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        CHECK (source_knowledge_id != target_knowledge_id),
+        UNIQUE (source_knowledge_id, target_knowledge_id, relationship_type)
+      );
+
+      CREATE TABLE knowledge_claims (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        knowledge_id INTEGER NOT NULL REFERENCES knowledge(id) ON DELETE CASCADE,
+        position INTEGER NOT NULL DEFAULT 0,
+        statement TEXT NOT NULL,
+        claim_kind TEXT NOT NULL DEFAULT 'Assertion'
+          CHECK (claim_kind IN ('Assertion', 'Decision', 'Definition', 'Procedure', 'Observation')),
+        support_status TEXT NOT NULL DEFAULT 'Unsupported'
+          CHECK (support_status IN ('Unsupported', 'PartiallySupported', 'Supported', 'Corroborated', 'Conflicting', 'Stale')),
+        review_status TEXT NOT NULL DEFAULT 'Unreviewed'
+          CHECK (review_status IN ('Unreviewed', 'InReview', 'ChangesRequested', 'HumanVerified')),
+        reviewer TEXT,
+        reviewed_at TEXT,
+        version INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+
+      CREATE TABLE knowledge_claim_citations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        claim_id INTEGER NOT NULL REFERENCES knowledge_claims(id) ON DELETE CASCADE,
+        evidence_id INTEGER NOT NULL REFERENCES evidence(id) ON DELETE RESTRICT,
+        source_id INTEGER NOT NULL REFERENCES evidence_sources(id) ON DELETE RESTRICT,
+        locator_id INTEGER REFERENCES evidence_source_locators(id) ON DELETE SET NULL,
+        notes TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        UNIQUE (claim_id, source_id, locator_id)
+      );
+
+      CREATE TABLE knowledge_versions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        knowledge_id INTEGER NOT NULL REFERENCES knowledge(id) ON DELETE CASCADE,
+        version INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        summary TEXT,
+        content TEXT,
+        metadata TEXT NOT NULL DEFAULT '{}',
+        change_summary TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        UNIQUE (knowledge_id, version)
+      );
+
+      CREATE TABLE knowledge_migration_audit (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        knowledge_id INTEGER NOT NULL REFERENCES knowledge(id) ON DELETE CASCADE,
+        issue_code TEXT NOT NULL,
+        severity TEXT NOT NULL CHECK (severity IN ('Info', 'Warning', 'ActionRequired')),
+        detail TEXT NOT NULL,
+        resolved_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        UNIQUE (knowledge_id, issue_code, detail)
+      );
+
+      INSERT INTO knowledge_versions (
+        knowledge_id, version, title, summary, content, metadata, change_summary
+      )
+      SELECT id, 1, title, summary, content,
+        json_object('category', category, 'tags', json(tags), 'lifecycleStatus', 'Draft'),
+        'Legacy Knowledge migration'
+      FROM knowledge;
+
+      INSERT OR IGNORE INTO knowledge_migration_audit (knowledge_id, issue_code, severity, detail)
+      SELECT id, 'UnassignedWorkspace', 'ActionRequired',
+        'Assign this Knowledge page to a Workspace before canonical mutation.'
+      FROM knowledge WHERE project_id IS NULL;
+
+      INSERT OR IGNORE INTO knowledge_relationships (
+        source_knowledge_id, target_knowledge_id, relationship_type, created_by
+      )
+      SELECT source.id, CAST(link.value AS INTEGER), 'RelatedTo', 'LegacyMigration'
+      FROM knowledge source, json_each(
+        CASE WHEN json_valid(source.linked_page_ids) THEN source.linked_page_ids ELSE '[]' END
+      ) link
+      JOIN knowledge target ON target.id = CAST(link.value AS INTEGER)
+      WHERE CAST(link.value AS INTEGER) != source.id
+        AND source.project_id IS NOT NULL
+        AND target.project_id = source.project_id;
+
+      INSERT OR IGNORE INTO knowledge_migration_audit (knowledge_id, issue_code, severity, detail)
+      SELECT source.id, 'InvalidLegacyLink', 'Warning',
+        'Legacy linked page ID ' || CAST(link.value AS TEXT) || ' was not migrated.'
+      FROM knowledge source, json_each(
+        CASE WHEN json_valid(source.linked_page_ids) THEN source.linked_page_ids ELSE '[]' END
+      ) link
+      LEFT JOIN knowledge target ON target.id = CAST(link.value AS INTEGER)
+      WHERE target.id IS NULL
+        OR target.id = source.id
+        OR source.project_id IS NULL
+        OR target.project_id IS NULL
+        OR target.project_id != source.project_id;
+
+      CREATE INDEX knowledge_lifecycle_workspace_idx
+        ON knowledge(project_id, lifecycle_status, updated_at DESC);
+      CREATE UNIQUE INDEX knowledge_workspace_slug_idx
+        ON knowledge(project_id, slug) WHERE slug IS NOT NULL;
+      CREATE INDEX knowledge_relationship_target_idx
+        ON knowledge_relationships(target_knowledge_id, created_at DESC);
+      CREATE INDEX knowledge_claim_position_idx
+        ON knowledge_claims(knowledge_id, position, id);
+      CREATE INDEX knowledge_citation_evidence_idx
+        ON knowledge_claim_citations(evidence_id, source_id);
+      CREATE INDEX knowledge_versions_subject_idx
+        ON knowledge_versions(knowledge_id, version DESC);
+      CREATE INDEX knowledge_audit_open_idx
+        ON knowledge_migration_audit(knowledge_id, resolved_at);
+
+      DROP TRIGGER IF EXISTS knowledge_search_insert;
+      DROP TRIGGER IF EXISTS knowledge_search_update;
+      DROP TRIGGER IF EXISTS knowledge_search_delete;
+      DELETE FROM global_search WHERE entity_type = 'knowledge';
+      INSERT INTO global_search(entity_type, entity_id, title, body, tags)
+        SELECT 'knowledge', id, title,
+          coalesce(summary, '') || ' ' || coalesce(content, '') || ' ' || coalesce(category, ''),
+          tags
+        FROM knowledge WHERE lifecycle_status != 'Archived';
+
+      CREATE TRIGGER knowledge_search_insert AFTER INSERT ON knowledge
+      WHEN new.lifecycle_status != 'Archived'
+      BEGIN
+        INSERT INTO global_search VALUES (
+          'knowledge', new.id, new.title,
+          coalesce(new.summary, '') || ' ' || coalesce(new.content, '') || ' ' || coalesce(new.category, ''),
+          new.tags
+        );
+      END;
+      CREATE TRIGGER knowledge_search_update AFTER UPDATE ON knowledge
+      BEGIN
+        DELETE FROM global_search WHERE entity_type = 'knowledge' AND entity_id = old.id;
+        INSERT INTO global_search(entity_type, entity_id, title, body, tags)
+          SELECT 'knowledge', new.id, new.title,
+            coalesce(new.summary, '') || ' ' || coalesce(new.content, '') || ' ' || coalesce(new.category, ''),
+            new.tags
+          WHERE new.lifecycle_status != 'Archived';
+      END;
+      CREATE TRIGGER knowledge_search_delete AFTER DELETE ON knowledge
+      BEGIN
+        DELETE FROM global_search WHERE entity_type = 'knowledge' AND entity_id = old.id;
+      END;
+    `,
+  },
 ];
 
 export function runMigrations(database: DatabaseSync): number[] {

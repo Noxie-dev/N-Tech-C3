@@ -97,7 +97,8 @@ paths:
           in: query
           schema:
             type: string
-            enum: [story, evidence, knowledge, campaign, asset, template, workspace]
+            enum:
+              [story, evidence, knowledge, campaign, asset, template, workspace]
         - name: projectId
           in: query
           schema:
@@ -1246,7 +1247,12 @@ paths:
       parameters:
         - { name: id, in: path, required: true, schema: { type: number } }
         - { name: sourceId, in: path, required: true, schema: { type: number } }
-        - { name: locatorId, in: path, required: true, schema: { type: number } }
+        - {
+            name: locatorId,
+            in: path,
+            required: true,
+            schema: { type: number },
+          }
       responses:
         "204": { description: Locator removed }
         "404": { description: Locator not found }
@@ -1465,6 +1471,18 @@ paths:
           in: query
           schema:
             type: string
+        - name: workspaceId
+          in: query
+          schema:
+            type: number
+        - name: lifecycleStatus
+          in: query
+          schema:
+            $ref: "#/components/schemas/KnowledgeLifecycleStatus"
+        - name: reviewStatus
+          in: query
+          schema:
+            $ref: "#/components/schemas/KnowledgeReviewStatus"
       responses:
         "200":
           description: List of knowledge pages
@@ -1540,7 +1558,8 @@ paths:
     delete:
       operationId: deleteKnowledge
       tags: [knowledge]
-      summary: Delete a knowledge page
+      summary: Deprecated hard-delete compatibility endpoint
+      deprecated: true
       parameters:
         - name: id
           in: path
@@ -1548,10 +1567,230 @@ paths:
           schema:
             type: number
       responses:
-        "204":
-          description: Deleted
-        "404":
-          description: Not found
+        "409": { description: Archive Knowledge instead }
+
+  /knowledge/{id}/transition:
+    post:
+      operationId: transitionKnowledge
+      tags: [knowledge]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/KnowledgeTransitionInput" }
+      responses:
+        "200":
+          description: Transitioned
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/KnowledgePage" }
+        "409": { description: Invalid transition or unmet invariant }
+
+  /knowledge/{id}/archive:
+    post:
+      operationId: archiveKnowledge
+      tags: [knowledge]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/KnowledgeVersionInput" }
+      responses:
+        "200":
+          description: Archived
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/KnowledgePage" }
+        "404": { description: Not found }
+
+  /knowledge/{id}/restore:
+    post:
+      operationId: restoreKnowledge
+      tags: [knowledge]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/KnowledgeVersionInput" }
+      responses:
+        "200":
+          description: Restored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/KnowledgePage" }
+        "404": { description: Not found }
+
+  /knowledge/{id}/relationships:
+    get:
+      operationId: listKnowledgeRelationships
+      tags: [knowledge]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+      responses:
+        "200":
+          description: Relationships and backlinks
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/KnowledgeRelationship" }
+    post:
+      operationId: createKnowledgeRelationship
+      tags: [knowledge]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/KnowledgeRelationshipInput" }
+      responses:
+        "201":
+          description: Relationship created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/KnowledgeRelationship" }
+        "409": { description: Relationship invariant failed }
+
+  /knowledge/{id}/relationships/{relationshipId}:
+    delete:
+      operationId: deleteKnowledgeRelationship
+      tags: [knowledge]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+        - {
+            name: relationshipId,
+            in: path,
+            required: true,
+            schema: { type: number },
+          }
+      responses:
+        "204": { description: Relationship removed }
+        "404": { description: Not found }
+
+  /knowledge/{id}/claims:
+    get:
+      operationId: listKnowledgeClaims
+      tags: [knowledge]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+      responses:
+        "200":
+          description: Ordered claims
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/KnowledgeClaim" }
+    post:
+      operationId: createKnowledgeClaim
+      tags: [knowledge]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/KnowledgeClaimInput" }
+      responses:
+        "201":
+          description: Claim created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/KnowledgeClaim" }
+        "409": { description: Archived Knowledge }
+
+  /knowledge/{id}/claims/{claimId}:
+    patch:
+      operationId: updateKnowledgeClaim
+      tags: [knowledge]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+        - { name: claimId, in: path, required: true, schema: { type: number } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/KnowledgeClaimPatch" }
+      responses:
+        "200":
+          description: Claim updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/KnowledgeClaim" }
+        "409": { description: Version conflict or archived Knowledge }
+
+  /knowledge/{id}/claims/{claimId}/citations:
+    get:
+      operationId: listKnowledgeClaimCitations
+      tags: [knowledge]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+        - { name: claimId, in: path, required: true, schema: { type: number } }
+      responses:
+        "200":
+          description: Claim citations
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/KnowledgeCitation" }
+    post:
+      operationId: createKnowledgeClaimCitation
+      tags: [knowledge]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+        - { name: claimId, in: path, required: true, schema: { type: number } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/KnowledgeCitationInput" }
+      responses:
+        "201":
+          description: Citation created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/KnowledgeCitation" }
+        "409": { description: Citation invariant failed }
+
+  /knowledge/{id}/claims/{claimId}/citations/{citationId}:
+    delete:
+      operationId: deleteKnowledgeClaimCitation
+      tags: [knowledge]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+        - { name: claimId, in: path, required: true, schema: { type: number } }
+        - {
+            name: citationId,
+            in: path,
+            required: true,
+            schema: { type: number },
+          }
+      responses:
+        "204": { description: Citation removed }
+        "404": { description: Not found }
+
+  /knowledge/{id}/versions:
+    get:
+      operationId: listKnowledgeVersions
+      tags: [knowledge]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+      responses:
+        "200":
+          description: Version checkpoints
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/KnowledgeVersion" }
 
   # Templates
   /templates:
@@ -1665,7 +1904,16 @@ components:
     # Dashboard
     DashboardStats:
       type: object
-      required: [totalStories, totalCampaigns, totalEvidence, totalAssets, totalKnowledge, storiesByStatus, activeCampaigns]
+      required:
+        [
+          totalStories,
+          totalCampaigns,
+          totalEvidence,
+          totalAssets,
+          totalKnowledge,
+          storiesByStatus,
+          activeCampaigns,
+        ]
       properties:
         totalStories:
           type: number
@@ -1714,7 +1962,23 @@ components:
     # Workspaces
     Workspace:
       type: object
-      required: [id, name, slug, status, purpose, owner, tags, repositoryLinks, preferredExportFormats, knowledgeDomains, isFavorite, isPinned, createdAt, updatedAt]
+      required:
+        [
+          id,
+          name,
+          slug,
+          status,
+          purpose,
+          owner,
+          tags,
+          repositoryLinks,
+          preferredExportFormats,
+          knowledgeDomains,
+          isFavorite,
+          isPinned,
+          createdAt,
+          updatedAt,
+        ]
       properties:
         id:
           type: number
@@ -2024,7 +2288,18 @@ components:
           type: ["string", "null"]
         status:
           type: string
-          enum: [Idea, Research, EvidenceGathering, Outline, Draft, Review, Approved, Published, Archived]
+          enum:
+            [
+              Idea,
+              Research,
+              EvidenceGathering,
+              Outline,
+              Draft,
+              Review,
+              Approved,
+              Published,
+              Archived,
+            ]
         category:
           type: ["string", "null"]
         priority:
@@ -2049,7 +2324,22 @@ components:
           type: ["number", "null"]
         storyType:
           type: string
-          enum: [EngineeringJournal, BlogArticle, SocialSeries, CaseStudy, TechnicalDocumentation, ADR, ResearchNote, LearningNote, ProductUpdate, ChangelogNarrative, InternalMemo, Presentation, Other]
+          enum:
+            [
+              EngineeringJournal,
+              BlogArticle,
+              SocialSeries,
+              CaseStudy,
+              TechnicalDocumentation,
+              ADR,
+              ResearchNote,
+              LearningNote,
+              ProductUpdate,
+              ChangelogNarrative,
+              InternalMemo,
+              Presentation,
+              Other,
+            ]
         author:
           type: ["string", "null"]
         objective:
@@ -2090,7 +2380,18 @@ components:
           type: string
         status:
           type: string
-          enum: [Idea, Research, EvidenceGathering, Outline, Draft, Review, Approved, Published, Archived]
+          enum:
+            [
+              Idea,
+              Research,
+              EvidenceGathering,
+              Outline,
+              Draft,
+              Review,
+              Approved,
+              Published,
+              Archived,
+            ]
         category:
           type: string
         priority:
@@ -2113,7 +2414,22 @@ components:
           type: ["number", "null"]
         storyType:
           type: string
-          enum: [EngineeringJournal, BlogArticle, SocialSeries, CaseStudy, TechnicalDocumentation, ADR, ResearchNote, LearningNote, ProductUpdate, ChangelogNarrative, InternalMemo, Presentation, Other]
+          enum:
+            [
+              EngineeringJournal,
+              BlogArticle,
+              SocialSeries,
+              CaseStudy,
+              TechnicalDocumentation,
+              ADR,
+              ResearchNote,
+              LearningNote,
+              ProductUpdate,
+              ChangelogNarrative,
+              InternalMemo,
+              Presentation,
+              Other,
+            ]
         author:
           type: string
         objective:
@@ -2138,7 +2454,18 @@ components:
           type: ["string", "null"]
         status:
           type: string
-          enum: [Idea, Research, EvidenceGathering, Outline, Draft, Review, Approved, Published, Archived]
+          enum:
+            [
+              Idea,
+              Research,
+              EvidenceGathering,
+              Outline,
+              Draft,
+              Review,
+              Approved,
+              Published,
+              Archived,
+            ]
         category:
           type: ["string", "null"]
         priority:
@@ -2161,7 +2488,22 @@ components:
           type: ["number", "null"]
         storyType:
           type: string
-          enum: [EngineeringJournal, BlogArticle, SocialSeries, CaseStudy, TechnicalDocumentation, ADR, ResearchNote, LearningNote, ProductUpdate, ChangelogNarrative, InternalMemo, Presentation, Other]
+          enum:
+            [
+              EngineeringJournal,
+              BlogArticle,
+              SocialSeries,
+              CaseStudy,
+              TechnicalDocumentation,
+              ADR,
+              ResearchNote,
+              LearningNote,
+              ProductUpdate,
+              ChangelogNarrative,
+              InternalMemo,
+              Presentation,
+              Other,
+            ]
         author:
           type: ["string", "null"]
         objective:
@@ -2182,7 +2524,18 @@ components:
       properties:
         status:
           type: string
-          enum: [Idea, Research, EvidenceGathering, Outline, Draft, Review, Approved, Published, Archived]
+          enum:
+            [
+              Idea,
+              Research,
+              EvidenceGathering,
+              Outline,
+              Draft,
+              Review,
+              Approved,
+              Published,
+              Archived,
+            ]
 
     StoryArchiveInput:
       type: object
@@ -2193,7 +2546,8 @@ components:
 
     StoryOutlineItem:
       type: object
-      required: [id, storyId, position, title, completionStatus, createdAt, updatedAt]
+      required:
+        [id, storyId, position, title, completionStatus, createdAt, updatedAt]
       properties:
         id: { type: number }
         storyId: { type: number }
@@ -2244,11 +2598,31 @@ components:
       type: object
       required: [evidence, knowledge, assets, campaigns, stories]
       properties:
-        evidence: { type: array, items: { $ref: "#/components/schemas/StoryLinkedEntity" } }
-        knowledge: { type: array, items: { $ref: "#/components/schemas/StoryLinkedEntity" } }
-        assets: { type: array, items: { $ref: "#/components/schemas/StoryLinkedEntity" } }
-        campaigns: { type: array, items: { $ref: "#/components/schemas/StoryLinkedEntity" } }
-        stories: { type: array, items: { $ref: "#/components/schemas/StoryLinkedEntity" } }
+        evidence:
+          {
+            type: array,
+            items: { $ref: "#/components/schemas/StoryLinkedEntity" },
+          }
+        knowledge:
+          {
+            type: array,
+            items: { $ref: "#/components/schemas/StoryLinkedEntity" },
+          }
+        assets:
+          {
+            type: array,
+            items: { $ref: "#/components/schemas/StoryLinkedEntity" },
+          }
+        campaigns:
+          {
+            type: array,
+            items: { $ref: "#/components/schemas/StoryLinkedEntity" },
+          }
+        stories:
+          {
+            type: array,
+            items: { $ref: "#/components/schemas/StoryLinkedEntity" },
+          }
 
     StoryOutput:
       type: object
@@ -2379,7 +2753,14 @@ components:
     # Evidence
     EvidenceClassification:
       type: string
-      enum: [FactualRecord, Observation, Testimony, DerivedAnalysis, ExternalReference]
+      enum:
+        [
+          FactualRecord,
+          Observation,
+          Testimony,
+          DerivedAnalysis,
+          ExternalReference,
+        ]
 
     EvidenceLifecycleStatus:
       type: string
@@ -2395,15 +2776,37 @@ components:
 
     EvidenceIngestState:
       type: string
-      enum: [Staged, MetadataCommitted, Promoted, Completed, Compensating, Failed]
+      enum:
+        [Staged, MetadataCommitted, Promoted, Completed, Compensating, Failed]
 
     EvidenceLocatorKind:
       type: string
-      enum: [WholeArtifact, TextRange, Page, Timestamp, ImageRegion, RepositoryPath, JsonPointer]
+      enum:
+        [
+          WholeArtifact,
+          TextRange,
+          Page,
+          Timestamp,
+          ImageRegion,
+          RepositoryPath,
+          JsonPointer,
+        ]
 
     Evidence:
       type: object
-      required: [id, title, type, workspaceId, classification, lifecycleStatus, reviewStatus, version, createdAt, updatedAt]
+      required:
+        [
+          id,
+          title,
+          type,
+          workspaceId,
+          classification,
+          lifecycleStatus,
+          reviewStatus,
+          version,
+          createdAt,
+          updatedAt,
+        ]
       properties:
         id:
           type: number
@@ -2411,7 +2814,24 @@ components:
           type: string
         type:
           type: string
-          enum: [Screenshot, TerminalOutput, GitLog, Benchmark, Diagram, MeetingNotes, ResearchPDF, Image, Video, VoiceRecording, CodeSnippet, IssueReport, BuildLog, RepositoryAudit, Other]
+          enum:
+            [
+              Screenshot,
+              TerminalOutput,
+              GitLog,
+              Benchmark,
+              Diagram,
+              MeetingNotes,
+              ResearchPDF,
+              Image,
+              Video,
+              VoiceRecording,
+              CodeSnippet,
+              IssueReport,
+              BuildLog,
+              RepositoryAudit,
+              Other,
+            ]
         source:
           type: ["string", "null"]
         notes:
@@ -2461,7 +2881,24 @@ components:
           minLength: 1
         type:
           type: string
-          enum: [Screenshot, TerminalOutput, GitLog, Benchmark, Diagram, MeetingNotes, ResearchPDF, Image, Video, VoiceRecording, CodeSnippet, IssueReport, BuildLog, RepositoryAudit, Other]
+          enum:
+            [
+              Screenshot,
+              TerminalOutput,
+              GitLog,
+              Benchmark,
+              Diagram,
+              MeetingNotes,
+              ResearchPDF,
+              Image,
+              Video,
+              VoiceRecording,
+              CodeSnippet,
+              IssueReport,
+              BuildLog,
+              RepositoryAudit,
+              Other,
+            ]
         source:
           type: string
         notes:
@@ -2494,7 +2931,24 @@ components:
           minLength: 1
         type:
           type: string
-          enum: [Screenshot, TerminalOutput, GitLog, Benchmark, Diagram, MeetingNotes, ResearchPDF, Image, Video, VoiceRecording, CodeSnippet, IssueReport, BuildLog, RepositoryAudit, Other]
+          enum:
+            [
+              Screenshot,
+              TerminalOutput,
+              GitLog,
+              Benchmark,
+              Diagram,
+              MeetingNotes,
+              ResearchPDF,
+              Image,
+              Video,
+              VoiceRecording,
+              CodeSnippet,
+              IssueReport,
+              BuildLog,
+              RepositoryAudit,
+              Other,
+            ]
         notes:
           type: ["string", "null"]
         tags:
@@ -2572,7 +3026,18 @@ components:
 
     EvidenceIntegrityResult:
       type: object
-      required: [state, capabilityId, capabilityVersion, inputWatermark, calculatedAt, components, explanation, evidenceRefs, repairGuidance]
+      required:
+        [
+          state,
+          capabilityId,
+          capabilityVersion,
+          inputWatermark,
+          calculatedAt,
+          components,
+          explanation,
+          evidenceRefs,
+          repairGuidance,
+        ]
       properties:
         state:
           $ref: "#/components/schemas/EvidenceIntegrityState"
@@ -2593,7 +3058,16 @@ components:
 
     EvidenceSource:
       type: object
-      required: [id, evidenceId, version, sourceKind, captureMethod, producerMetadata, createdAt]
+      required:
+        [
+          id,
+          evidenceId,
+          version,
+          sourceKind,
+          captureMethod,
+          producerMetadata,
+          createdAt,
+        ]
       properties:
         id:
           type: number
@@ -2669,7 +3143,17 @@ components:
 
     EvidenceIngest:
       type: object
-      required: [id, workspaceId, originalName, state, retryCount, idempotencyKey, createdAt, updatedAt]
+      required:
+        [
+          id,
+          workspaceId,
+          originalName,
+          state,
+          retryCount,
+          idempotencyKey,
+          createdAt,
+          updatedAt,
+        ]
       properties:
         id:
           type: string
@@ -2729,7 +3213,24 @@ components:
           minLength: 1
         type:
           type: string
-          enum: [Screenshot, TerminalOutput, GitLog, Benchmark, Diagram, MeetingNotes, ResearchPDF, Image, Video, VoiceRecording, CodeSnippet, IssueReport, BuildLog, RepositoryAudit, Other]
+          enum:
+            [
+              Screenshot,
+              TerminalOutput,
+              GitLog,
+              Benchmark,
+              Diagram,
+              MeetingNotes,
+              ResearchPDF,
+              Image,
+              Video,
+              VoiceRecording,
+              CodeSnippet,
+              IssueReport,
+              BuildLog,
+              RepositoryAudit,
+              Other,
+            ]
         classification:
           $ref: "#/components/schemas/EvidenceClassification"
         notes:
@@ -2820,7 +3321,19 @@ components:
           type: string
         type:
           type: string
-          enum: [Image, Icon, Illustration, Logo, Video, SVG, PDF, BrandAsset, ScreenRecording, Other]
+          enum:
+            [
+              Image,
+              Icon,
+              Illustration,
+              Logo,
+              Video,
+              SVG,
+              PDF,
+              BrandAsset,
+              ScreenRecording,
+              Other,
+            ]
         url:
           type: ["string", "null"]
         filePath:
@@ -2851,7 +3364,19 @@ components:
           minLength: 1
         type:
           type: string
-          enum: [Image, Icon, Illustration, Logo, Video, SVG, PDF, BrandAsset, ScreenRecording, Other]
+          enum:
+            [
+              Image,
+              Icon,
+              Illustration,
+              Logo,
+              Video,
+              SVG,
+              PDF,
+              BrandAsset,
+              ScreenRecording,
+              Other,
+            ]
         url:
           type: string
         filePath:
@@ -2875,7 +3400,19 @@ components:
           minLength: 1
         type:
           type: string
-          enum: [Image, Icon, Illustration, Logo, Video, SVG, PDF, BrandAsset, ScreenRecording, Other]
+          enum:
+            [
+              Image,
+              Icon,
+              Illustration,
+              Logo,
+              Video,
+              SVG,
+              PDF,
+              BrandAsset,
+              ScreenRecording,
+              Other,
+            ]
         url:
           type: ["string", "null"]
         filePath:
@@ -2892,14 +3429,41 @@ components:
           type: ["number", "null"]
 
     # Knowledge Base
+    KnowledgeLifecycleStatus:
+      type: string
+      enum: [Idea, Research, Draft, Verified, Canonical, Archived]
+
+    KnowledgeReviewStatus:
+      type: string
+      enum: [Unreviewed, InReview, ChangesRequested, Approved]
+
     KnowledgePage:
       type: object
-      required: [id, title, createdAt, updatedAt]
+      required:
+        [
+          id,
+          title,
+          workspaceId,
+          lifecycleStatus,
+          reviewStatus,
+          version,
+          tags,
+          createdAt,
+          updatedAt,
+        ]
       properties:
         id:
           type: number
         title:
           type: string
+        workspaceId:
+          type: number
+        summary:
+          type: ["string", "null"]
+        slug:
+          type: ["string", "null"]
+        owner:
+          type: ["string", "null"]
         content:
           type: ["string", "null"]
         category:
@@ -2912,6 +3476,21 @@ components:
           type: array
           items:
             type: number
+          deprecated: true
+        lifecycleStatus:
+          $ref: "#/components/schemas/KnowledgeLifecycleStatus"
+        reviewStatus:
+          $ref: "#/components/schemas/KnowledgeReviewStatus"
+        version:
+          type: number
+        reviewedAt:
+          type: ["string", "null"]
+          format: date-time
+        archivedAt:
+          type: ["string", "null"]
+          format: date-time
+        supersedesKnowledgeId:
+          type: ["number", "null"]
         createdAt:
           type: string
           format: date-time
@@ -2921,11 +3500,20 @@ components:
 
     KnowledgeInput:
       type: object
-      required: [title]
+      required: [title, workspaceId]
       properties:
         title:
           type: string
           minLength: 1
+        workspaceId:
+          type: number
+          minimum: 1
+        summary:
+          type: string
+        slug:
+          type: string
+        owner:
+          type: string
         content:
           type: string
         category:
@@ -2934,14 +3522,14 @@ components:
           type: array
           items:
             type: string
-        linkedPageIds:
-          type: array
-          items:
-            type: number
 
     KnowledgePatch:
       type: object
+      required: [expectedVersion]
       properties:
+        expectedVersion:
+          type: number
+          minimum: 1
         title:
           type: string
           minLength: 1
@@ -2953,10 +3541,225 @@ components:
           type: array
           items:
             type: string
-        linkedPageIds:
+        summary:
+          type: ["string", "null"]
+        slug:
+          type: ["string", "null"]
+        owner:
+          type: ["string", "null"]
+        reviewStatus:
+          $ref: "#/components/schemas/KnowledgeReviewStatus"
+        reviewedAt:
+          type: ["string", "null"]
+          format: date-time
+        supersedesKnowledgeId:
+          type: ["number", "null"]
+        changeSummary:
+          type: string
+
+    KnowledgeTransitionInput:
+      type: object
+      required: [expectedVersion, lifecycleStatus]
+      properties:
+        expectedVersion: { type: number, minimum: 1 }
+        lifecycleStatus:
+          { $ref: "#/components/schemas/KnowledgeLifecycleStatus" }
+
+    KnowledgeVersionInput:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: number, minimum: 1 }
+
+    KnowledgeRelationship:
+      type: object
+      required:
+        [
+          id,
+          sourceKnowledgeId,
+          targetKnowledgeId,
+          relationshipType,
+          direction,
+          targetTitle,
+          createdBy,
+          createdAt,
+        ]
+      properties:
+        id: { type: number }
+        sourceKnowledgeId: { type: number }
+        targetKnowledgeId: { type: number }
+        relationshipType:
+          type: string
+          enum:
+            [
+              RelatedTo,
+              DependsOn,
+              Explains,
+              Contradicts,
+              Supersedes,
+              DerivedFrom,
+            ]
+        direction:
+          type: string
+          enum: [Outbound, Backlink]
+        targetTitle: { type: string }
+        notes: { type: ["string", "null"] }
+        createdBy: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    KnowledgeRelationshipInput:
+      type: object
+      required: [targetKnowledgeId, relationshipType]
+      properties:
+        targetKnowledgeId: { type: number, minimum: 1 }
+        relationshipType:
+          type: string
+          enum:
+            [
+              RelatedTo,
+              DependsOn,
+              Explains,
+              Contradicts,
+              Supersedes,
+              DerivedFrom,
+            ]
+        notes: { type: string }
+
+    KnowledgeClaim:
+      type: object
+      required:
+        [
+          id,
+          knowledgeId,
+          position,
+          statement,
+          claimKind,
+          supportStatus,
+          reviewStatus,
+          version,
+          citations,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id: { type: number }
+        knowledgeId: { type: number }
+        position: { type: number }
+        statement: { type: string }
+        claimKind:
+          type: string
+          enum: [Assertion, Decision, Definition, Procedure, Observation]
+        supportStatus:
+          type: string
+          enum:
+            [
+              Unsupported,
+              PartiallySupported,
+              Supported,
+              Corroborated,
+              Conflicting,
+              Stale,
+            ]
+        reviewStatus:
+          type: string
+          enum: [Unreviewed, InReview, ChangesRequested, HumanVerified]
+        reviewer: { type: ["string", "null"] }
+        reviewedAt: { type: ["string", "null"], format: date-time }
+        version: { type: number }
+        citations:
           type: array
-          items:
-            type: number
+          items: { $ref: "#/components/schemas/KnowledgeCitation" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    KnowledgeClaimInput:
+      type: object
+      required: [statement]
+      properties:
+        statement: { type: string, minLength: 1 }
+        position: { type: number, minimum: 0 }
+        claimKind:
+          type: string
+          enum: [Assertion, Decision, Definition, Procedure, Observation]
+
+    KnowledgeClaimPatch:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: number, minimum: 1 }
+        statement: { type: string, minLength: 1 }
+        position: { type: number, minimum: 0 }
+        claimKind:
+          type: string
+          enum: [Assertion, Decision, Definition, Procedure, Observation]
+        supportStatus:
+          type: string
+          enum:
+            [
+              Unsupported,
+              PartiallySupported,
+              Supported,
+              Corroborated,
+              Conflicting,
+              Stale,
+            ]
+        reviewStatus:
+          type: string
+          enum: [Unreviewed, InReview, ChangesRequested, HumanVerified]
+        reviewer: { type: ["string", "null"] }
+
+    KnowledgeCitation:
+      type: object
+      required:
+        [
+          id,
+          claimId,
+          evidenceId,
+          evidenceTitle,
+          sourceId,
+          sourceVersion,
+          sourceKind,
+          integrityStatus,
+          createdAt,
+        ]
+      properties:
+        id: { type: number }
+        claimId: { type: number }
+        evidenceId: { type: number }
+        evidenceTitle: { type: string }
+        sourceId: { type: number }
+        sourceVersion: { type: number }
+        sourceKind: { type: string }
+        locatorId: { type: ["number", "null"] }
+        locatorLabel: { type: ["string", "null"] }
+        integrityStatus:
+          type: string
+          enum: [Pending, Valid, Missing, Modified, Unverifiable]
+        notes: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+
+    KnowledgeCitationInput:
+      type: object
+      required: [evidenceId, sourceId]
+      properties:
+        evidenceId: { type: number, minimum: 1 }
+        sourceId: { type: number, minimum: 1 }
+        locatorId: { type: ["number", "null"] }
+        notes: { type: string }
+
+    KnowledgeVersion:
+      type: object
+      required: [id, knowledgeId, version, title, metadata, createdAt]
+      properties:
+        id: { type: number }
+        knowledgeId: { type: number }
+        version: { type: number }
+        title: { type: string }
+        summary: { type: ["string", "null"] }
+        content: { type: ["string", "null"] }
+        metadata: { type: object, additionalProperties: true }
+        changeSummary: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
 
     # Templates
     Template:
@@ -2969,7 +3772,21 @@ components:
           type: string
         type:
           type: string
-          enum: [LinkedIn, Blog, XThread, Facebook, ReleaseNotes, CaseStudy, EngineeringJournal, RepositoryAudit, ArchitectureReview, SprintReview, Retrospective, Other]
+          enum:
+            [
+              LinkedIn,
+              Blog,
+              XThread,
+              Facebook,
+              ReleaseNotes,
+              CaseStudy,
+              EngineeringJournal,
+              RepositoryAudit,
+              ArchitectureReview,
+              SprintReview,
+              Retrospective,
+              Other,
+            ]
         content:
           type: ["string", "null"]
         description:
@@ -2990,7 +3807,21 @@ components:
           minLength: 1
         type:
           type: string
-          enum: [LinkedIn, Blog, XThread, Facebook, ReleaseNotes, CaseStudy, EngineeringJournal, RepositoryAudit, ArchitectureReview, SprintReview, Retrospective, Other]
+          enum:
+            [
+              LinkedIn,
+              Blog,
+              XThread,
+              Facebook,
+              ReleaseNotes,
+              CaseStudy,
+              EngineeringJournal,
+              RepositoryAudit,
+              ArchitectureReview,
+              SprintReview,
+              Retrospective,
+              Other,
+            ]
         content:
           type: string
         description:
@@ -3004,7 +3835,21 @@ components:
           minLength: 1
         type:
           type: string
-          enum: [LinkedIn, Blog, XThread, Facebook, ReleaseNotes, CaseStudy, EngineeringJournal, RepositoryAudit, ArchitectureReview, SprintReview, Retrospective, Other]
+          enum:
+            [
+              LinkedIn,
+              Blog,
+              XThread,
+              Facebook,
+              ReleaseNotes,
+              CaseStudy,
+              EngineeringJournal,
+              RepositoryAudit,
+              ArchitectureReview,
+              SprintReview,
+              Retrospective,
+              Other,
+            ]
         content:
           type: ["string", "null"]
         description:
