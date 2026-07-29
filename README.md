@@ -328,11 +328,12 @@ Electron.
 Run the API and frontend in separate terminals:
 
 ```bash
-PORT=8080 NTC3_VAULT_PATH=./vault pnpm --filter @workspace/api-server run dev
+PORT=4317 NTC3_VAULT_PATH=./vault pnpm --filter @workspace/api-server run dev
 PORT=5173 BASE_PATH=/ pnpm --filter @workspace/ntech-c3 run dev
 ```
 
-The Vite configuration proxies `/api` to the configured API port. Use a disposable
+Vite proxies `/api` to `http://127.0.0.1:4317` by default. Set `API_ORIGIN` on the
+frontend command when using another API origin. Use a disposable
 `NTC3_VAULT_PATH` when testing migrations or destructive workflows.
 
 ### Environment variables
@@ -341,6 +342,7 @@ The Vite configuration proxies `/api` to the configured API port. Use a disposab
 | ----------------- | ------------------------- | ----------------------------------- |
 | `PORT`            | API or Vite port          | Required for standalone development |
 | `BASE_PATH`       | Frontend deployment base  | `/`                                 |
+| `API_ORIGIN`      | Vite `/api` proxy target  | `http://127.0.0.1:4317`             |
 | `NTC3_VAULT_PATH` | Override local vault root | Desktop Documents vault             |
 
 ## Verify the repository
