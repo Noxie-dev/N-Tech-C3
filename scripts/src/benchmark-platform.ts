@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { cpus, platform, release, tmpdir, totalmem } from 'node:os';
 import path from 'node:path';
 import { performance } from 'node:perf_hooks';
@@ -24,12 +25,15 @@ const samples = async (count: number, work: (index: number) => void | Promise<vo
   };
 };
 
-for (let index = 0; index < 10; index += 1) {
+const workspaceCount = Number(process.env.NTC3_BENCHMARK_WORKSPACES ?? 50);
+const storiesPerWorkspace = Number(process.env.NTC3_BENCHMARK_STORIES_PER_WORKSPACE ?? 200);
+
+for (let index = 0; index < workspaceCount; index += 1) {
   const workspace = database.run(
     'INSERT INTO projects (name, slug, description) VALUES (?, ?, ?)',
     [`Benchmark ${index}`, `benchmark-${index}`, 'Representative local-first workspace'],
   );
-  for (let story = 0; story < 100; story += 1) {
+  for (let story = 0; story < storiesPerWorkspace; story += 1) {
     database.run(
       'INSERT INTO stories (title, summary, content, project_id) VALUES (?, ?, ?, ?)',
       [`Story ${index}-${story}`, 'architecture evidence', 'deterministic intelligence workflow', workspace.lastInsertRowid],
@@ -63,9 +67,29 @@ const deterministicAnalysis = await samples(100, (index) => {
   `, [`benchmark-health:${index}`, String(index), JSON.stringify(value), 'Deterministic benchmark']);
 });
 
+const sourceDirectory = path.join(vault, 'benchmark-source');
+const evidenceDirectory = path.join(vault, 'evidence');
+mkdirSync(sourceDirectory, { recursive: true });
+const attachmentSource = path.join(sourceDirectory, 'attachment.bin');
+writeFileSync(attachmentSource, Buffer.alloc(1024 * 1024, 0x43));
+const attachmentCopy = await samples(50, (index) => {
+  copyFileSync(attachmentSource, path.join(evidenceDirectory, `attachment-${index}.bin`));
+});
+const attachmentHash = await samples(50, () => {
+  createHash('sha256').update(readFileSync(attachmentSource)).digest('hex');
+});
+const largeWorkspaceSearch = await samples(100, () => {
+  database.all("SELECT entity_id FROM global_search WHERE global_search MATCH 'deterministic' LIMIT 50");
+});
+
 const report = {
   measuredAt: new Date().toISOString(),
-  fixture: { workspaces: 10, stories: 1000, measuredIterations: 100 },
+  fixture: {
+    workspaces: workspaceCount,
+    stories: workspaceCount * storiesPerWorkspace,
+    attachmentBytes: 1024 * 1024,
+    measuredIterations: 100,
+  },
   hardware: {
     cpu: cpus()[0]?.model ?? 'unknown',
     logicalCores: cpus().length,
@@ -79,6 +103,9 @@ const report = {
     search,
     workspaceLoad,
     deterministicAnalysis,
+    attachmentCopy,
+    attachmentHash,
+    largeWorkspaceSearch,
   },
 };
 

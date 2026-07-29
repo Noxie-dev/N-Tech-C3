@@ -474,7 +474,7 @@ Before beginning Route 03 implementation:
 8. resume feature implementation only after the governing specifications are
    versioned and their open decisions are explicit.
 
-Specifications 03–07 and 09 may mature incrementally, but no affected subsystem may
+Specifications 04, 05, and 07 may mature incrementally, but no affected subsystem may
 be declared production-ready while its governing specification remains proposed.
 
 ### Updated implementation recommendation
@@ -562,8 +562,8 @@ Verification: repository typecheck passed; 14 Vitest tests passed across three
 files, including the new migration, durable-event projection, replay idempotency,
 and Intelligence provenance assertions.
 
-Route 03 remains paused until the highest-risk corrective work is completed and the
-remaining foundation specifications needed by Evidence Vault are accepted.
+At this checkpoint Route 03 remained paused. That status is superseded by the
+NB3RP Pass 3 gate decision below.
 
 ### NB3RP Pass 1 execution report — invariant enforcement
 
@@ -629,6 +629,60 @@ atomic durable events; Campaign, Knowledge, Asset, and Template mutations still 
 legacy Activity writes; event projection lag diagnostics and background scheduling
 remain future Platform Services work.
 
+### NB3RP Pass 3 execution report — constitutional completion and scale evidence
+
+Status: **Implemented and verified**
+
+The third Next Best Recommended Pass accepts:
+
+- Specification 03 Filesystem;
+- Specification 06 Platform Services; and
+- Specification 09 Performance.
+
+The Filesystem specification now governs portable Vault-relative paths, managed
+content ownership, staging and compensation, checksums, backup/restore, integrity,
+security, and large-file behavior.
+
+The Platform Services specification defines service ownership, commands, queries,
+events, jobs, failure classification, recovery, observability, security, and the
+boundary between domains, shared services, and the single EIE.
+
+The Performance specification defines named workloads, hardware and dataset
+disclosure, median/p95 reporting, proposed interaction budgets, regression policy,
+and resource constraints. Numerical thresholds remain proposed until measured on
+baseline and lower-tier supported hardware.
+
+The expanded reproducible evidence in
+`Docs/System-Design-Book/evidence/performance-scale-baseline-2026-07-29.md` measured
+an Apple M1 with 8 GB RAM, 50 Workspaces, 10,000 Stories, and a 1 MiB attachment:
+
+| Operation | Median | p95 |
+| --- | ---: | ---: |
+| Cold database initialization and migrations | 32.826 ms | Not sampled |
+| Transactional Evidence save | 0.159 ms | 0.276 ms |
+| FTS5 search | 0.052 ms | 0.061 ms |
+| Workspace core load | 0.142 ms | 0.184 ms |
+| Deterministic analysis and provenance save | 0.110 ms | 0.163 ms |
+| 1 MiB attachment copy | 1.954 ms | 3.436 ms |
+| 1 MiB SHA-256 | 0.915 ms | 1.073 ms |
+| Large-fixture FTS5 search | 0.082 ms | 0.097 ms |
+
+This supports the current SQLite/FTS5/SHA-256 direction at the measured scale.
+Electron cold launch, React route rendering, backup/restore, large-file streaming,
+memory, graph traversal, slower hardware, and external Channel delivery remain
+unmeasured and cannot claim accepted release budgets.
+
+Verification completed with the expanded benchmark, repository typecheck across
+libraries, API, both frontends, and scripts, plus Markdown whitespace validation.
+
+#### Route 03 gate decision
+
+The general platform-definition pause is complete. Route 03 may now advance to an
+RDF v1 dossier and execution-plan review. Implementation remains unauthorized until
+that dossier defines its Evidence identity, provenance, source locators, immutable
+or versioned file behavior, capture compensation, archive/deletion policy,
+performance workloads, and applicable Tier 1–3 conformance evidence.
+
 ## 2B. Proposed Phase III — C³ Canon and Knowledge Intelligence
 
 Status: **Proposed future architecture — not implemented and not yet binding**
@@ -647,10 +701,15 @@ through which users, contracts, domains, and interfaces express that architectur
 | Repository | User-approved source-code repository associated with a Workspace | Analysis is read-only and never executes repository code |
 | Evidence | Provenance-bearing artifact supporting or challenging a claim | May be factual, observational, subjective, or derived; classification is explicit |
 | Knowledge | Reviewed, reusable understanding expressed through source-backed claims | Not a synonym for documents, files, or unreviewed AI output |
-| Story | Structured narrative using Evidence and Knowledge | Produces Outputs without replacing Knowledge truth |
-| Campaign | Communication objective coordinating Stories and Outputs | Does not own or duplicate Story content |
-| Output | Platform-specific deliverable derived from a Story | Owns its own readiness and publication state |
-| Pipeline | Operational workflow through which Outputs progress | Not a generic lifecycle for every entity |
+| Story | Structured narrative using Evidence and Knowledge | Produces Publications without replacing Knowledge truth |
+| Campaign | Communication objective coordinating Stories and Publications | Does not own or duplicate Story or Publication content |
+| Publication | Governed, versioned, channel-neutral content package prepared for distribution | Proposed replacement for Output as the canonical product term |
+| Channel | First-class destination contract through which a Publication may be deployed | Examples include LinkedIn, Website, Newsletter, Internal Wiki, and File Export |
+| Channel Connection | Configured Vault- or Workspace-scoped endpoint for one Channel | Credentials remain in OS-secure storage and never enter events or exports |
+| Publication Variant | Channel-specific adaptation of one Publication version | May diverge editorially without replacing its source Publication |
+| Rendition | Immutable generated artifact such as PDF, Markdown, HTML, DOCX, or JSON | Records generator version, checksum, source watermark, and vault-relative path |
+| Deployment | Durable scheduled or attempted delivery of a Publication version, Variant, or Rendition to a Channel Connection | Owns delivery status, attempts, idempotency, external identity, and errors |
+| Pipeline | Operational projection through which Publications and Deployments progress | Not a generic lifecycle or authoritative aggregate |
 | Domain Event | Durable, typed fact that something occurred | Authoritative input to projections and automation |
 | Activity | User-facing projection derived from domain events | Not an event source of truth |
 | Snapshot | Immutable observation of an entity at a point in time | Includes source and calculation provenance |
@@ -717,6 +776,177 @@ C³ Platform Runtime
 The Platform Runtime coordinates work; domains own truth and lifecycle rules; the
 single Engineering Intelligence Engine derives insight.
 
+### Proposed constitutional amendment — Publications and Channels
+
+Status: **Proposed direction; Canon terminology approved; implementation not
+authorized**
+
+The following vocabulary is non-negotiable for the target architecture:
+
+- **Publication** is the canonical noun for governed distributable content.
+- **Channel** is a first-class Canon destination object.
+- **Deploy** is the primary user action for sending an approved Publication through
+  a Channel.
+- **Export** is a Platform Service action that generates Renditions.
+
+The target model is:
+
+```text
+Story
+  └── produces → Publication
+                    ├── immutable Publication Versions
+                    ├── Channel-specific Publication Variants
+                    ├── generated Renditions
+                    └── durable Deployments
+                              └── target → Channel Connection → Channel
+```
+
+#### Canon definitions
+
+**Publication** is a permanent, Workspace-owned, channel-neutral content package
+derived from a primary Story and optionally associated with Campaigns, supporting
+Evidence, Knowledge, Media, CTA, brand metadata, and SEO metadata. Publication
+edits never overwrite Story content.
+
+**Channel** defines destination semantics and capabilities: supported formats,
+character/media constraints, required metadata, scheduling, preview, delivery,
+update, and retraction support.
+
+**Channel Connection** represents a configured destination such as a specific
+company page, website, newsletter, wiki, or export location. Provider credentials
+MUST remain in operating-system secure storage and MUST NOT appear in SQLite event
+payloads, logs, Intelligence results, backups, or exports.
+
+**Publication Variant** is an editable, channel-specific adaptation of one
+Publication version.
+
+**Rendition** is an immutable generated file with Publication/Variant provenance,
+format, generator version, checksum, source watermark, generation time, and
+vault-relative path. PDF and Markdown are formats delivered through the File Export
+Channel; they are not themselves Channels.
+
+**Deployment** records one planned, scheduled, attempted, completed, failed, or
+cancelled delivery to a Channel Connection. It owns idempotency, validation,
+attempt history, external identifiers, error classification, and destination
+capability state.
+
+#### Separate lifecycles
+
+A Publication does not receive one authoritative `Published` state because
+independent Channel Deployments may have different outcomes.
+
+Proposed Publication lifecycle:
+
+```text
+Draft → Review → Approved → Superseded → Archived
+```
+
+Approved Publication versions are immutable. Revisions create new versions.
+
+Proposed Deployment lifecycle:
+
+```text
+Planned → Validating → Ready → Scheduled → Deploying
+                                      └──→ Succeeded | Failed | Cancelled
+```
+
+Retraction is optional and Channel-dependent:
+
+```text
+RetractionRequested → Retracted
+```
+
+“Rollback” MUST NOT be promised where a destination cannot restore a prior external
+state. The UI MAY derive `Not deployed`, `Scheduled`, `Partially deployed`,
+`Fully deployed`, `Deployment failures`, and `Retracted` summaries from Deployment
+records.
+
+#### Publications route
+
+The future primary route and navigation noun is **Publications**:
+
+```text
+/publications
+```
+
+Mission:
+
+> Govern, validate, schedule, and deploy everything approved to leave a Workspace.
+
+The primary action is **Deploy Publication**. Draft, Review, Approved, Scheduled,
+Deploying, Deployed, Failed, and Archived route sections are filtered projections
+over Publication and Deployment state rather than one universal status enum.
+
+An Exports surface MAY remain as Rendition history or a generated-artifact browser,
+but Export does not own the delivery domain.
+
+#### Service and Intelligence boundaries
+
+Platform Services:
+
+- Publication Service
+- Export Service
+- Channel Adapter Service
+- Deployment/Job Service
+- Validation Service
+
+The single EIE may provide Publication Readiness, Channel Fit, Evidence
+Traceability, Brand Conformance, Schedule Risk, and Deployment Recommendations.
+The EIE advises and explains; it never performs external deployment.
+
+#### Relationships and feedback
+
+- A Publication belongs to exactly one Workspace.
+- A Publication initially has one primary Story and may cite additional Stories,
+  Evidence, and Knowledge.
+- A Story may produce many Publications.
+- A Campaign may coordinate many Publications; Campaign membership does not own
+  Publication content.
+- A Publication may target many Channels through independent Deployments.
+- Deployment results may become Evidence and Campaign measurements.
+
+#### Current Output compatibility
+
+The existing `story_outputs` table and Story Output API/UI remain current
+compatibility behavior. They contain channel- or format-oriented records but do not
+implement Publication identity, versions, Channels, Connections, Variants,
+Renditions, Deployment jobs, attempt history, idempotency, or external identity.
+
+`Output` is therefore deprecated target terminology but remains valid when
+describing the current implementation. It MUST NOT be silently renamed or treated
+as a completed Publication migration.
+
+Required compatibility sequence:
+
+1. amend Specification 01 Domain Model;
+2. define Publication, Channel, Connection, Variant, Rendition, and Deployment
+   persistence and event contracts;
+3. preserve `story_outputs` during a compatibility window;
+4. report existing Outputs and infer Channel/format only when unambiguous;
+5. create provisional Publications or offer user-assisted grouping while
+   preserving original Output identity;
+6. move consumers to Publication contracts; and
+7. remove Output compatibility only after upgrade and recovery evidence exists.
+
+No automatic migration may assume multiple existing Outputs belong to one
+Publication.
+
+#### Implementation gate
+
+Implementation remains deferred until all of the following are accepted:
+
+- change-controlled Domain Model amendment;
+- Platform Services and job specifications;
+- Publication/Deployment event contracts;
+- Channel adapter and credential security model;
+- idempotency, retry, cancellation, and retraction semantics;
+- Output compatibility and recovery migration;
+- RDF v1 route dossier and conformance gates; and
+- performance budgets for validation, generation, queue processing, and deployment.
+
+This amendment changes target terminology and architecture only. It does not change
+the current executable route or authorize external publishing.
+
 ### Proposed C³ Protocol
 
 The future C³ Protocol is a registry of executable cross-module contracts, not a
@@ -746,7 +976,7 @@ One-sentence target:
 Canonical transformation:
 
 ```text
-Source artifact → Evidence → Claim → Knowledge → Story → Output
+Source artifact → Evidence → Claim → Knowledge → Story → Publication
 ```
 
 “Knowledge Asset” is not introduced as a competing domain object. Source files,

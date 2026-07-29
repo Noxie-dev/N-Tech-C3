@@ -202,6 +202,13 @@ search, Workspace load, and deterministic capability execution. See
 [`performance-baseline-2026-07-29.md`](Docs/System-Design-Book/evidence/performance-baseline-2026-07-29.md).
 Figures are baseline evidence, not yet accepted release budgets.
 
+NB3RP Pass 3 also accepts the Filesystem, Platform Services, and Performance
+specifications and adds a 50-Workspace/10,000-Story scale baseline with 1 MiB
+attachment copy/hash measurements. See
+[`performance-scale-baseline-2026-07-29.md`](Docs/System-Design-Book/evidence/performance-scale-baseline-2026-07-29.md).
+Electron launch, UI rendering, backup/restore, large-file, memory, and slower
+hardware budgets remain open.
+
 The default desktop vault is `Documents/N-TechC3-Vault` and contains:
 
 ```text

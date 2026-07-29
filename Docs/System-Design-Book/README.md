@@ -23,12 +23,15 @@ standards, and acceptance evidence.
 | --- | --- | --- |
 | [01 Domain Model](01-domain-model.md) | Accepted | Domain ownership, lifecycle, relationships, invariants |
 | [02 Data Architecture](02-data-architecture.md) | Accepted | Persistence, migrations, authoritative and derived data |
+| [03 Filesystem](03-filesystem.md) | Accepted | Portable Vault paths, managed files, integrity, backup, recovery |
+| [06 Platform Services](06-platform-services.md) | Accepted | Shared service contracts, jobs, failure, security, observability |
 | [08 Event Architecture](08-event-architecture.md) | Accepted | Durable domain events, outbox, consumers, replay |
+| [09 Performance](09-performance.md) | Accepted | Measurement, workloads, proposed budgets, regression policy |
 | [10 Engineering Standards](10-engineering-standards.md) | Accepted | Enforceable implementation and review standards |
 | [11 Engineering Principles](11-engineering-principles.md) | Accepted | Timeless decision filters |
 | [12 Intelligence Engine](12-intelligence-engine.md) | Accepted | Unified EIE, capabilities, provenance, recommendations |
 
-Specifications 03–07 and 09 remain to be completed in later platform-definition
+Specifications 04, 05, and 07 remain to be completed in later platform-definition
 passes. A subsystem governed by a proposed specification cannot be called
 production-ready.
 
