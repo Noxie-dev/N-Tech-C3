@@ -232,5 +232,8 @@ describe('SQLite migrations', () => {
       { flag_key: 'evidence.detail-route', enabled: 1 },
       { flag_key: 'evidence.source-versions', enabled: 1 },
     ]);
+    expect(database.prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'evidence_integrity_jobs'",
+    ).get()).toEqual({ name: 'evidence_integrity_jobs' });
   });
 });

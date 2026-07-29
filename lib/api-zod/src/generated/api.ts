@@ -1816,6 +1816,54 @@ export const UnlinkEvidenceFromStoryResponse = zod.void()
 
 
 /**
+ * @summary Return the latest deterministic Evidence Integrity result
+ */
+export const GetEvidenceIntegrityParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetEvidenceIntegrityResponse = zod.object({
+  "state": zod.enum(['Pending', 'Valid', 'Missing', 'Modified', 'Unverifiable']),
+  "capabilityId": zod.string(),
+  "capabilityVersion": zod.string(),
+  "inputWatermark": zod.string(),
+  "calculatedAt": zod.coerce.date(),
+  "components": zod.array(zod.object({
+  "key": zod.string(),
+  "status": zod.enum(['Pass', 'Warning', 'Fail']),
+  "explanation": zod.string()
+})),
+  "explanation": zod.string(),
+  "evidenceRefs": zod.array(zod.string()),
+  "repairGuidance": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Run a bounded deterministic Evidence Integrity verification
+ */
+export const VerifyEvidenceIntegrityParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const VerifyEvidenceIntegrityResponse = zod.object({
+  "state": zod.enum(['Pending', 'Valid', 'Missing', 'Modified', 'Unverifiable']),
+  "capabilityId": zod.string(),
+  "capabilityVersion": zod.string(),
+  "inputWatermark": zod.string(),
+  "calculatedAt": zod.coerce.date(),
+  "components": zod.array(zod.object({
+  "key": zod.string(),
+  "status": zod.enum(['Pass', 'Warning', 'Fail']),
+  "explanation": zod.string()
+})),
+  "explanation": zod.string(),
+  "evidenceRefs": zod.array(zod.string()),
+  "repairGuidance": zod.array(zod.string())
+})
+
+
+/**
  * @summary List assets
  */
 export const ListAssetsQueryParams = zod.object({

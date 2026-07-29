@@ -1299,6 +1299,37 @@ paths:
         "404": { description: Evidence not found }
         "409": { description: Archived Evidence }
 
+  /evidence/{id}/integrity:
+    get:
+      operationId: getEvidenceIntegrity
+      tags: [evidence]
+      summary: Return the latest deterministic Evidence Integrity result
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+      responses:
+        "200":
+          description: Latest integrity result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvidenceIntegrityResult" }
+        "404": { description: Evidence or integrity result not found }
+
+  /evidence/{id}/verify:
+    post:
+      operationId: verifyEvidenceIntegrity
+      tags: [evidence]
+      summary: Run a bounded deterministic Evidence Integrity verification
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+      responses:
+        "200":
+          description: Verification completed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvidenceIntegrityResult" }
+        "404": { description: Evidence not found }
+        "409": { description: Verification already running }
+
   # Assets
   /assets:
     get:
@@ -2513,6 +2544,41 @@ components:
         linkedAt:
           type: string
           format: date-time
+
+    EvidenceIntegrityState:
+      type: string
+      enum: [Pending, Valid, Missing, Modified, Unverifiable]
+
+    EvidenceIntegrityComponent:
+      type: object
+      required: [key, status, explanation]
+      properties:
+        key: { type: string }
+        status:
+          type: string
+          enum: [Pass, Warning, Fail]
+        explanation: { type: string }
+
+    EvidenceIntegrityResult:
+      type: object
+      required: [state, capabilityId, capabilityVersion, inputWatermark, calculatedAt, components, explanation, evidenceRefs, repairGuidance]
+      properties:
+        state:
+          $ref: "#/components/schemas/EvidenceIntegrityState"
+        capabilityId: { type: string }
+        capabilityVersion: { type: string }
+        inputWatermark: { type: string }
+        calculatedAt: { type: string, format: date-time }
+        components:
+          type: array
+          items: { $ref: "#/components/schemas/EvidenceIntegrityComponent" }
+        explanation: { type: string }
+        evidenceRefs:
+          type: array
+          items: { type: string }
+        repairGuidance:
+          type: array
+          items: { type: string }
 
     EvidenceSource:
       type: object

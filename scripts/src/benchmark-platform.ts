@@ -27,6 +27,7 @@ const samples = async (count: number, work: (index: number) => void | Promise<vo
 
 const workspaceCount = Number(process.env.NTC3_BENCHMARK_WORKSPACES ?? 50);
 const storiesPerWorkspace = Number(process.env.NTC3_BENCHMARK_STORIES_PER_WORKSPACE ?? 200);
+const evidenceCount = Number(process.env.NTC3_BENCHMARK_EVIDENCE ?? 10_000);
 
 for (let index = 0; index < workspaceCount; index += 1) {
   const workspace = database.run(
@@ -39,6 +40,14 @@ for (let index = 0; index < workspaceCount; index += 1) {
       [`Story ${index}-${story}`, 'architecture evidence', 'deterministic intelligence workflow', workspace.lastInsertRowid],
     );
   }
+}
+
+for (let index = 0; index < evidenceCount; index += 1) {
+  database.run(
+    `INSERT INTO evidence (title, type, content, project_id, classification)
+      VALUES (?, 'Benchmark', ?, 1, 'FactualRecord')`,
+    [`Evidence ${index}`, `deterministic integrity fixture ${index}`],
+  );
 }
 
 const save = await samples(100, (index) => {
@@ -81,12 +90,26 @@ const attachmentHash = await samples(50, () => {
 const largeWorkspaceSearch = await samples(100, () => {
   database.all("SELECT entity_id FROM global_search WHERE global_search MATCH 'deterministic' LIMIT 50");
 });
+const evidenceCatalogue = await samples(100, () => {
+  database.all(`SELECT id, title, classification, lifecycle_status, review_status
+    FROM evidence WHERE project_id = 1 AND lifecycle_status = 'Active'
+    ORDER BY created_at DESC LIMIT 50`);
+});
+const evidenceDetail = await samples(100, () => {
+  database.get('SELECT * FROM evidence WHERE id = 1');
+  database.all('SELECT * FROM evidence_sources WHERE evidence_id = 1 ORDER BY version DESC');
+  database.all('SELECT * FROM story_evidence WHERE evidence_id = 1');
+});
+const evidenceIntegrityHash = await samples(50, () => {
+  createHash('sha256').update(readFileSync(attachmentSource)).digest('hex');
+});
 
 const report = {
   measuredAt: new Date().toISOString(),
   fixture: {
     workspaces: workspaceCount,
     stories: workspaceCount * storiesPerWorkspace,
+    evidence: evidenceCount,
     attachmentBytes: 1024 * 1024,
     measuredIterations: 100,
   },
@@ -106,6 +129,9 @@ const report = {
     attachmentCopy,
     attachmentHash,
     largeWorkspaceSearch,
+    evidenceCatalogue,
+    evidenceDetail,
+    evidenceIntegrityHash,
   },
 };
 

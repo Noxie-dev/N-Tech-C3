@@ -35,6 +35,7 @@ import type {
   EvidenceIngestStagedInput,
   EvidenceIngestStartInput,
   EvidenceInput,
+  EvidenceIntegrityResult,
   EvidencePatch,
   EvidenceSource,
   EvidenceSourceLocator,
@@ -4445,6 +4446,154 @@ export const useUnlinkEvidenceFromStory = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getUnlinkEvidenceFromStoryMutationOptions(options));
+    }
+
+export const getGetEvidenceIntegrityUrl = (id: number,) => {
+
+
+
+
+  return `/api/evidence/${id}/integrity`
+}
+
+/**
+ * @summary Return the latest deterministic Evidence Integrity result
+ */
+export const getEvidenceIntegrity = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceIntegrityResult> => {
+
+  return customFetch<EvidenceIntegrityResult>(getGetEvidenceIntegrityUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEvidenceIntegrityQueryKey = (id: number,) => {
+    return [
+    `/api/evidence/${id}/integrity`
+    ] as const;
+    }
+
+
+export const getGetEvidenceIntegrityQueryOptions = <TData = Awaited<ReturnType<typeof getEvidenceIntegrity>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEvidenceIntegrity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEvidenceIntegrityQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEvidenceIntegrity>>> = ({ signal }) => getEvidenceIntegrity(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEvidenceIntegrity>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEvidenceIntegrityQueryResult = NonNullable<Awaited<ReturnType<typeof getEvidenceIntegrity>>>
+export type GetEvidenceIntegrityQueryError = ErrorType<void>
+
+
+/**
+ * @summary Return the latest deterministic Evidence Integrity result
+ */
+
+export function useGetEvidenceIntegrity<TData = Awaited<ReturnType<typeof getEvidenceIntegrity>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEvidenceIntegrity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEvidenceIntegrityQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getVerifyEvidenceIntegrityUrl = (id: number,) => {
+
+
+
+
+  return `/api/evidence/${id}/verify`
+}
+
+/**
+ * @summary Run a bounded deterministic Evidence Integrity verification
+ */
+export const verifyEvidenceIntegrity = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceIntegrityResult> => {
+
+  return customFetch<EvidenceIntegrityResult>(getVerifyEvidenceIntegrityUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getVerifyEvidenceIntegrityMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyEvidenceIntegrity>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof verifyEvidenceIntegrity>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['verifyEvidenceIntegrity'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifyEvidenceIntegrity>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  verifyEvidenceIntegrity(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VerifyEvidenceIntegrityMutationResult = NonNullable<Awaited<ReturnType<typeof verifyEvidenceIntegrity>>>
+
+    export type VerifyEvidenceIntegrityMutationError = ErrorType<void>
+
+    /**
+ * @summary Run a bounded deterministic Evidence Integrity verification
+ */
+export const useVerifyEvidenceIntegrity = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyEvidenceIntegrity>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof verifyEvidenceIntegrity>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getVerifyEvidenceIntegrityMutationOptions(options));
     }
 
 export const getListAssetsUrl = (params?: ListAssetsParams,) => {

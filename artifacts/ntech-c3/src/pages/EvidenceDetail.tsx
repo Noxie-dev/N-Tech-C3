@@ -6,16 +6,18 @@ import {
   useCreateEvidenceSourceLocator,
   useDeleteEvidenceSourceLocator,
   useGetEvidence,
+  useGetEvidenceIntegrity,
   useListEvidenceSourceLocators,
   useListEvidenceSources,
   useListEvidenceStoryLinks,
   useListRecoverableEvidenceIngests,
   useRestoreEvidence,
   useUnlinkEvidenceFromStory,
+  useVerifyEvidenceIntegrity,
 } from '@workspace/api-client-react';
 import type { EvidenceLocatorKind, EvidenceSource } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Archive, FileSearch, FolderOpen, Link2Off, RotateCcw, Trash2 } from 'lucide-react';
+import { ArrowLeft, Archive, FileSearch, FolderOpen, Link2Off, RotateCcw, ShieldCheck, Trash2 } from 'lucide-react';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Select, Spinner, Textarea } from '@/components/shared';
 import { formatShortDate } from '@/lib/utils';
 
@@ -123,9 +125,11 @@ export function EvidenceDetail() {
   const { data: sources = [] } = useListEvidenceSources(evidenceId);
   const { data: links = [], refetch: refetchLinks } = useListEvidenceStoryLinks(evidenceId);
   const { data: ingests = [] } = useListRecoverableEvidenceIngests();
+  const { data: integrity, refetch: refetchIntegrity } = useGetEvidenceIntegrity(evidenceId);
   const archive = useArchiveEvidence();
   const restore = useRestoreEvidence();
   const unlink = useUnlinkEvidenceFromStory();
+  const verify = useVerifyEvidenceIntegrity();
 
   if (isLoading) return <div className="flex min-h-72 items-center justify-center"><Spinner /></div>;
   if (!evidence) return <div role="alert">Evidence not found.</div>;
@@ -175,6 +179,20 @@ export function EvidenceDetail() {
           </section>
         </div>
         <aside className="space-y-6">
+          <Card><CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5" />Evidence Integrity</CardTitle></CardHeader><CardContent className="space-y-3">
+            {integrity ? <>
+              <Badge variant={integrity.state === 'Valid' ? 'success' : integrity.state === 'Modified' || integrity.state === 'Missing' ? 'destructive' : 'warning'}>{integrity.state}</Badge>
+              <p className="text-sm">{integrity.explanation}</p>
+              <ul className="space-y-2 text-xs">{integrity.components.map((component) => <li key={component.key} className="rounded border p-2"><strong>{component.status}</strong> — {component.explanation}</li>)}</ul>
+              {integrity.repairGuidance.length > 0 && <div><h3 className="text-xs font-semibold uppercase">Repair guidance</h3><ul className="list-disc pl-5 text-xs">{integrity.repairGuidance.map((item) => <li key={item}>{item}</li>)}</ul></div>}
+              <p className="text-[10px] text-muted-foreground">{integrity.capabilityId}@{integrity.capabilityVersion} · {formatShortDate(integrity.calculatedAt)}</p>
+            </> : <p className="text-sm text-muted-foreground">No current verification result. Results become stale when authoritative Evidence changes.</p>}
+            <Button variant="outline" disabled={verify.isPending} onClick={async () => {
+              await verify.mutateAsync({ id: evidence.id });
+              await refetchIntegrity();
+            }}>{verify.isPending ? 'Verifying…' : 'Verify Evidence'}</Button>
+            {verify.error && <p role="alert" className="text-xs text-destructive">Verification failed. Inspect the source and try again.</p>}
+          </CardContent></Card>
           <Card><CardHeader><CardTitle>Story relationships</CardTitle></CardHeader><CardContent>
             {links.length === 0 ? <p className="text-sm text-muted-foreground">No linked Stories.</p> : <ul className="space-y-2">{links.map((link) => (
               <li key={link.storyId} className="flex items-center justify-between rounded border p-2 text-sm">

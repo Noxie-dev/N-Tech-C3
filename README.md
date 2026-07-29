@@ -247,7 +247,16 @@ future Pass 3 work.
 Route 03 Pass 3A adds the canonical Evidence inspector and governed explorer
 filters. Source versions, checksums, provenance, precise locators, Story backlinks,
 recovery state, and accessible archive/restore controls are visible from
-`/evidence/:id`. Streamed previews and Evidence Integrity remain future work.
+`/evidence/:id`. Streamed previews remain future work.
+
+Route 03 Pass 3B registers deterministic `evidence-integrity@1.0.0`. Persisted,
+bounded verification checks source presence, containment, SHA-256, provenance,
+ownership, locators, and references; results include reproducible watermarks,
+diagnostics, and repair guidance and are invalidated by authoritative changes.
+The inspector exposes verification and current results. A named 10,000-Evidence
+Apple M1 baseline is recorded in the System Design Book. Final streaming-preview,
+large-file, memory, route-render, and compatibility closure remains future Pass
+3C work.
 
 The default desktop vault is `Documents/N-TechC3-Vault` and contains:
 

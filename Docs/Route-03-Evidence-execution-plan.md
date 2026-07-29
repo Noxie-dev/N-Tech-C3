@@ -453,11 +453,24 @@ Execution evidence:
 
 ### Pass 3B — Integrity and measured evidence
 
+Status: **Implemented and verified 2026-07-29**
+
 - Register `evidence-integrity@1.0.0`.
 - Add verification jobs, invalidation, integrity projections, diagnostics, and
   repair guidance.
 - Run the conformance and performance matrices and record results in the System
   Design Book evidence register.
+
+Execution evidence:
+
+- migration 10 adds persisted bounded verification jobs;
+- `evidence-integrity@1.0.0` deterministically checks ownership, provenance,
+  containment, source presence, SHA-256, locators, and references;
+- results carry watermarks, components, explanations, evidence references, and
+  repair guidance and are invalidated by authoritative mutations;
+- the inspector exposes current/stale state and explicit verification; and
+- `System-Design-Book/evidence/evidence-integrity-conformance-2026-07-29.md`
+  records contract evidence and the 10,000-Evidence measured baseline.
 
 ## Verification and conformance
 

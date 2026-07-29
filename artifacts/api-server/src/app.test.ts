@@ -1,4 +1,5 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, unlinkSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -512,6 +513,20 @@ describe('local API', () => {
     expect(listedLocators.body).toEqual([expect.objectContaining({
       id: locator.body.id, kind: 'TextRange', coordinates: { startLine: 1, endLine: 3 },
     })]);
+    const integrity = await request(app)
+      .post(`/api/evidence/${evidence.body.id}/verify`)
+      .expect(200);
+    expect(integrity.body).toMatchObject({
+      state: 'Unverifiable',
+      capabilityId: 'evidence-integrity',
+      capabilityVersion: '1.0.0',
+      components: expect.arrayContaining([
+        expect.objectContaining({ key: 'workspace', status: 'Pass' }),
+      ]),
+    });
+    await request(app).get(`/api/evidence/${evidence.body.id}/integrity`)
+      .expect(200)
+      .expect(({ body }) => expect(body.inputWatermark).toBe(integrity.body.inputWatermark));
 
     await request(app).post(`/api/evidence/${evidence.body.id}/stories`)
       .send({ storyId: otherStory.body.id }).expect(409);
@@ -537,6 +552,7 @@ describe('local API', () => {
       .send({ kind: 'WholeArtifact', coordinates: {} })
       .expect(409);
     await request(app).delete(`/api/evidence/${evidence.body.id}`).expect(409);
+    await request(app).get(`/api/evidence/${evidence.body.id}/integrity`).expect(404);
     expect(database.get(
       "SELECT count(*) count FROM global_search WHERE global_search MATCH 'replay'",
     )).toEqual({ count: 0 });
@@ -551,5 +567,32 @@ describe('local API', () => {
     await request(app)
       .delete(`/api/evidence/${evidence.body.id}/sources/${sources.body[0].id}/locators/${locator.body.id}`)
       .expect(204);
+  });
+
+  it('detects valid, modified, and missing managed Evidence bytes', async () => {
+    const workspace = await request(app).post('/api/workspaces')
+      .send({ name: 'Integrity verification workspace' }).expect(201);
+    const evidence = await request(app).post('/api/evidence').send({
+      title: 'Integrity fixture', type: 'BuildLog', workspaceId: workspace.body.id,
+    }).expect(201);
+    const relativePath = 'evidence/integrity-fixture.bin';
+    const original = Buffer.from('governed evidence bytes');
+    writeFileSync(path.join(process.env.NTC3_VAULT_PATH!, relativePath), original);
+    database.run(`INSERT INTO evidence_sources (
+      evidence_id, version, source_kind, byte_size, sha256, vault_path,
+      capture_method, producer_metadata
+    ) VALUES (?, 1, 'ManagedFile', ?, ?, ?, 'ApiTest', '{"fixture":true}')`, [
+      evidence.body.id, original.byteLength,
+      createHash('sha256').update(original).digest('hex'), relativePath,
+    ]);
+
+    await request(app).post(`/api/evidence/${evidence.body.id}/verify`).expect(200)
+      .expect(({ body }) => expect(body.state).toBe('Valid'));
+    writeFileSync(path.join(process.env.NTC3_VAULT_PATH!, relativePath), Buffer.from('changed bytes'));
+    await request(app).post(`/api/evidence/${evidence.body.id}/verify`).expect(200)
+      .expect(({ body }) => expect(body.state).toBe('Modified'));
+    unlinkSync(path.join(process.env.NTC3_VAULT_PATH!, relativePath));
+    await request(app).post(`/api/evidence/${evidence.body.id}/verify`).expect(200)
+      .expect(({ body }) => expect(body.state).toBe('Missing'));
   });
 });

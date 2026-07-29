@@ -772,6 +772,24 @@ export const migrations: Migration[] = [
       WHERE flag_key IN ('evidence.source-versions', 'evidence.detail-route');
     `,
   },
+  {
+    version: 10,
+    name: 'evidence_integrity_jobs',
+    sql: `
+      CREATE TABLE evidence_integrity_jobs (
+        id TEXT PRIMARY KEY,
+        evidence_id INTEGER NOT NULL REFERENCES evidence(id) ON DELETE CASCADE,
+        state TEXT NOT NULL CHECK (state IN ('Queued', 'Running', 'Completed', 'Failed', 'Cancelled')),
+        input_watermark TEXT,
+        error_category TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        started_at TEXT,
+        completed_at TEXT
+      );
+      CREATE INDEX evidence_integrity_jobs_subject_idx
+        ON evidence_integrity_jobs(evidence_id, created_at DESC);
+    `,
+  },
 ];
 
 export function runMigrations(database: DatabaseSync): number[] {

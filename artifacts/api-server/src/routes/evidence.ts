@@ -12,6 +12,8 @@ import {
   ListEvidenceStoryLinksParams, ListEvidenceStoryLinksResponse,
   LinkEvidenceToStoryParams, LinkEvidenceToStoryBody, LinkEvidenceToStoryResponse,
   UnlinkEvidenceFromStoryParams,
+  GetEvidenceIntegrityParams, GetEvidenceIntegrityResponse,
+  VerifyEvidenceIntegrityParams, VerifyEvidenceIntegrityResponse,
   ListRecoverableEvidenceIngestsResponse, CreateEvidenceIngestBody, CreateEvidenceIngestResponse,
   RecordEvidenceIngestStagedParams, RecordEvidenceIngestStagedBody,
   RecordEvidenceIngestStagedResponse, CompleteEvidenceIngestMetadataParams,
@@ -25,6 +27,9 @@ import { appendDomainEvent, projectDomainEventsToActivity } from '../lib/events'
 import { guardWorkspaceMutations, workspaceMutationError } from '../lib/workspace-guard';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
+import {
+  invalidateEvidenceIntegrity, latestEvidenceIntegrity, verifyEvidenceIntegrity,
+} from '../lib/evidence-integrity';
 
 const router: IRouter = Router();
 const config = entityConfigs.evidence;
@@ -434,6 +439,7 @@ router.patch('/evidence/:id', (req, res) => {
     updateEntity(config, params.data.id, updateData);
     run('UPDATE evidence SET version = version + 1 WHERE id = ?', [params.data.id]);
     const versioned = getEntity(config, params.data.id)!;
+    invalidateEvidenceIntegrity(params.data.id);
     appendEvidenceEvent(versioned, 'EvidenceMetadataUpdated', 'metadata updated', {
       previousVersion: existing.version, version: versioned.version,
     });
@@ -470,6 +476,7 @@ router.post('/evidence/:id/archive', (req, res) => {
     run(`UPDATE evidence SET lifecycle_status = 'Archived', archived_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
       version = version + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?`, [params.data.id]);
     const archived = getEntity(config, params.data.id)!;
+    invalidateEvidenceIntegrity(params.data.id);
     appendEvidenceEvent(archived, 'EvidenceArchived', 'archived');
     return archived;
   });
@@ -494,6 +501,7 @@ router.post('/evidence/:id/restore', (req, res) => {
     run(`UPDATE evidence SET lifecycle_status = 'Active', archived_at = NULL, version = version + 1,
       updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?`, [params.data.id]);
     const restored = getEntity(config, params.data.id)!;
+    invalidateEvidenceIntegrity(params.data.id);
     appendEvidenceEvent(restored, 'EvidenceRestored', 'restored');
     return restored;
   });
@@ -536,6 +544,7 @@ router.post('/evidence/:id/sources/:sourceId/locators', (req, res) => {
     const result = run(`INSERT INTO evidence_source_locators (source_id, kind, coordinates, label)
       VALUES (?, ?, ?, ?)`, [params.data.sourceId, body.data.kind, JSON.stringify(body.data.coordinates), body.data.label ?? null]);
     const created = get('SELECT * FROM evidence_source_locators WHERE id = ?', [Number(result.lastInsertRowid)])!;
+    invalidateEvidenceIntegrity(params.data.id);
     appendEvidenceEvent(evidence, 'EvidenceSourceLocatorAdded', 'source locator added', {
       sourceId: params.data.sourceId, locatorId: Number(created.id), locatorKind: body.data.kind,
     });
@@ -557,6 +566,7 @@ router.delete('/evidence/:id/sources/:sourceId/locators/:locatorId', (req, res) 
   try {
     transaction(() => {
       run('DELETE FROM evidence_source_locators WHERE id = ?', [params.data.locatorId]);
+      invalidateEvidenceIntegrity(params.data.id);
       appendEvidenceEvent(evidence, 'EvidenceSourceLocatorRemoved', 'source locator removed', {
         sourceId: params.data.sourceId, locatorId: params.data.locatorId,
       });
@@ -619,6 +629,30 @@ router.delete('/evidence/:id/stories/:storyId', (req, res) => {
   });
   projectDomainEventsToActivity();
   res.sendStatus(204);
+});
+
+router.get('/evidence/:id/integrity', (req, res) => {
+  const params = GetEvidenceIntegrityParams.safeParse(req.params);
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  if (!getEntity(config, params.data.id)) return void res.status(404).json({ error: 'Evidence not found' });
+  const result = latestEvidenceIntegrity(params.data.id);
+  if (!result) return void res.status(404).json({ error: 'Evidence has not been verified or the result is stale' });
+  res.json(GetEvidenceIntegrityResponse.parse(result));
+});
+
+router.post('/evidence/:id/verify', async (req, res) => {
+  const params = VerifyEvidenceIntegrityParams.safeParse(req.params);
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  try {
+    const result = await verifyEvidenceIntegrity(params.data.id);
+    if (!result) return void res.status(404).json({ error: 'Evidence not found' });
+    res.json(VerifyEvidenceIntegrityResponse.parse(result));
+  } catch (error) {
+    if (error instanceof Error && error.message === 'VerificationAlreadyRunning') {
+      return void res.status(409).json({ error: 'Evidence verification is already running' });
+    }
+    throw error;
+  }
 });
 
 export default router;

@@ -1002,6 +1002,44 @@ export interface EvidenceStoryLink {
   linkedAt: string;
 }
 
+export type EvidenceIntegrityState = typeof EvidenceIntegrityState[keyof typeof EvidenceIntegrityState];
+
+
+export const EvidenceIntegrityState = {
+  Pending: 'Pending',
+  Valid: 'Valid',
+  Missing: 'Missing',
+  Modified: 'Modified',
+  Unverifiable: 'Unverifiable',
+} as const;
+
+export type EvidenceIntegrityComponentStatus = typeof EvidenceIntegrityComponentStatus[keyof typeof EvidenceIntegrityComponentStatus];
+
+
+export const EvidenceIntegrityComponentStatus = {
+  Pass: 'Pass',
+  Warning: 'Warning',
+  Fail: 'Fail',
+} as const;
+
+export interface EvidenceIntegrityComponent {
+  key: string;
+  status: EvidenceIntegrityComponentStatus;
+  explanation: string;
+}
+
+export interface EvidenceIntegrityResult {
+  state: EvidenceIntegrityState;
+  capabilityId: string;
+  capabilityVersion: string;
+  inputWatermark: string;
+  calculatedAt: string;
+  components: EvidenceIntegrityComponent[];
+  explanation: string;
+  evidenceRefs: string[];
+  repairGuidance: string[];
+}
+
 export type EvidenceSourceProducerMetadata = { [key: string]: unknown };
 
 export interface EvidenceSource {

@@ -908,6 +908,47 @@ production builds, and all 28 Vitest assertions passing. The controlled report i
 Pass 3A does not implement streamed previews, source replacement, Evidence
 Integrity, verification jobs, or final performance/conformance closure.
 
+### Route 03 Pass 3B execution report — deterministic Evidence Integrity
+
+Status: **Implemented and verified**
+
+The existing EIE now registers deterministic `evidence-integrity@1.0.0`.
+Verification checks canonical Workspace ownership, source presence, Vault path
+containment, managed-byte SHA-256, provenance completeness, locator/source
+references, and broken authoritative references. It classifies the result as
+`Valid`, `Missing`, `Modified`, or `Unverifiable`; `Pending` remains the
+pre-verification presentation state.
+
+Every result records the capability/version, SHA-256 input watermark, calculation
+time, component outcomes, explanation, Evidence/source references, and actionable
+repair guidance. Integrity never decides claim truth and never mutates review
+state.
+
+Migration 10 adds persisted bounded verification jobs with Queued, Running,
+Completed, Failed, and Cancelled states. Managed files are hashed through a 1 MiB
+stream. Concurrent verification for one Evidence aggregate is rejected. Metadata,
+lifecycle, and locator mutations invalidate the current derived result.
+
+The Evidence inspector displays the latest current result, component diagnostics,
+repair guidance, algorithm identity, and an explicit Verify action. A stale or
+never-calculated result is clearly separated from authoritative Evidence state.
+
+Integration tests demonstrate Valid managed bytes, Modified bytes, Missing files,
+Unverifiable inline sources, invalidation, source/locator governance, and the
+existing Route 03 lifecycle and recovery boundaries.
+
+A measured Apple M1/8 GB baseline used 50 Workspaces, 10,000 Stories, 10,000
+Evidence rows, and a 1 MiB attachment. Evidence catalogue query p95 was 0.068 ms,
+detail query-set p95 0.056 ms, save p95 0.551 ms, FTS p95 0.059 ms, and 1 MiB
+integrity hash p95 1.025 ms. These figures are hardware-specific evidence, not
+universal promises.
+
+The controlled report is
+`Docs/System-Design-Book/evidence/evidence-integrity-conformance-2026-07-29.md`.
+Final L3 closure remains conditional on Pass 3C streamed previews, 20/100 MiB and
+memory measurements, Electron/React experience evidence, backup/restore coverage,
+and compatibility retirement evidence.
+
 ## 2B. Proposed Phase III — C³ Canon and Knowledge Intelligence
 
 Status: **Proposed future architecture — not implemented and not yet binding**
@@ -1692,11 +1733,10 @@ atomic promotion, and restart reconciliation.
 
 ### Next implementation order
 
-1. Execute Route 03 Pass 3B: deterministic Evidence Integrity, bounded verification
-   jobs, invalidation, diagnostics, performance workloads, and Tier 1–3 evidence.
-2. Execute Route 03 Pass 3C: preview streaming, compatibility-field retirement
+1. Execute Route 03 Pass 3C: preview streaming, compatibility-field retirement
    evidence, full route conformance, and release-readiness closure.
-3. Audit Route 04 prerequisites after Route 03 reaches its L3 governance gate.
+2. Audit Route 04 prerequisites after Route 03 reaches its L3 governance gate.
+3. Begin Route 04 only after the Evidence exit decision is recorded.
 
 ## 8. Contract and data workflow
 
