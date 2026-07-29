@@ -1121,7 +1121,6 @@ export const DeleteCampaignResponse = zod.void()
 export const ListEvidenceQueryParams = zod.object({
   "type": zod.coerce.string().optional(),
   "storyId": zod.coerce.number().nullish(),
-  "projectId": zod.coerce.number().nullish(),
   "workspaceId": zod.coerce.number().nullish(),
   "classification": zod.enum(['FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference']).optional(),
   "lifecycleStatus": zod.enum(['CapturePending', 'Active', 'Archived', 'IngestFailed']).optional(),
@@ -1169,8 +1168,6 @@ export const CreateEvidenceBody = zod.object({
   "notes": zod.string().optional(),
   "content": zod.string().optional(),
   "tags": zod.array(zod.string()).optional(),
-  "storyId": zod.number().nullish(),
-  "projectId": zod.number().nullish().describe('Deprecated compatibility field; canonical creation requires workspaceId.'),
   "workspaceId": zod.number().min(1),
   "repository": zod.string().optional(),
   "classification": zod.enum(['FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference']).optional(),
@@ -1734,6 +1731,17 @@ export const CreateEvidenceSourceLocatorResponse = zod.object({
   "label": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })
+
+
+/**
+ * @summary Stream managed Evidence source bytes with HTTP range support
+ */
+export const StreamEvidenceSourceContentParams = zod.object({
+  "id": zod.coerce.number(),
+  "sourceId": zod.coerce.number()
+})
+
+export const StreamEvidenceSourceContentResponse = zod.unknown()
 
 
 /**

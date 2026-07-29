@@ -4151,6 +4151,88 @@ export const useCreateEvidenceSourceLocator = <TError = ErrorType<void>,
       return useMutation(getCreateEvidenceSourceLocatorMutationOptions(options));
     }
 
+export const getStreamEvidenceSourceContentUrl = (id: number,
+    sourceId: number,) => {
+
+
+
+
+  return `/api/evidence/${id}/sources/${sourceId}/content`
+}
+
+/**
+ * @summary Stream managed Evidence source bytes with HTTP range support
+ */
+export const streamEvidenceSourceContent = async (id: number,
+    sourceId: number, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getStreamEvidenceSourceContentUrl(id,sourceId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getStreamEvidenceSourceContentQueryKey = (id: number,
+    sourceId: number,) => {
+    return [
+    `/api/evidence/${id}/sources/${sourceId}/content`
+    ] as const;
+    }
+
+
+export const getStreamEvidenceSourceContentQueryOptions = <TData = Awaited<ReturnType<typeof streamEvidenceSourceContent>>, TError = ErrorType<void>>(id: number,
+    sourceId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof streamEvidenceSourceContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getStreamEvidenceSourceContentQueryKey(id,sourceId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof streamEvidenceSourceContent>>> = ({ signal }) => streamEvidenceSourceContent(id,sourceId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && sourceId !== null && sourceId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof streamEvidenceSourceContent>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type StreamEvidenceSourceContentQueryResult = NonNullable<Awaited<ReturnType<typeof streamEvidenceSourceContent>>>
+export type StreamEvidenceSourceContentQueryError = ErrorType<void>
+
+
+/**
+ * @summary Stream managed Evidence source bytes with HTTP range support
+ */
+
+export function useStreamEvidenceSourceContent<TData = Awaited<ReturnType<typeof streamEvidenceSourceContent>>, TError = ErrorType<void>>(
+ id: number,
+    sourceId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof streamEvidenceSourceContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getStreamEvidenceSourceContentQueryOptions(id,sourceId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getDeleteEvidenceSourceLocatorUrl = (id: number,
     sourceId: number,
     locatorId: number,) => {

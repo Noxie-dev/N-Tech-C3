@@ -135,6 +135,10 @@ export function EvidenceDetail() {
   if (!evidence) return <div role="alert">Evidence not found.</div>;
   const archived = evidence.lifecycleStatus === 'Archived';
   const relatedIngests = ingests.filter((ingest) => ingest.evidenceId === evidence.id);
+  const previewSource = sources.find((source) => source.sourceKind === 'ManagedFile' && source.mediaType);
+  const previewUrl = previewSource
+    ? `/api/evidence/${evidence.id}/sources/${previewSource.id}/content`
+    : undefined;
 
   const refresh = async () => queryClient.invalidateQueries({ queryKey: getGetEvidenceQueryKey(evidence.id) });
   const toggleArchive = async () => {
@@ -170,6 +174,10 @@ export function EvidenceDetail() {
         <div className="space-y-6">
           <Card><CardHeader><CardTitle>Artifact</CardTitle></CardHeader><CardContent className="space-y-3">
             <p className="whitespace-pre-wrap">{evidence.content || evidence.notes || 'No inline content.'}</p>
+            {previewUrl && previewSource?.mediaType?.startsWith('image/') && <img src={previewUrl} alt={evidence.title} className="max-h-[520px] w-full rounded border object-contain" />}
+            {previewUrl && previewSource?.mediaType === 'application/pdf' && <iframe title={evidence.title} src={previewUrl} className="h-[520px] w-full rounded border" />}
+            {previewUrl && previewSource?.mediaType?.startsWith('video/') && <video src={previewUrl} controls preload="metadata" className="max-h-[520px] w-full rounded border" />}
+            {previewUrl && previewSource?.mediaType?.startsWith('audio/') && <audio src={previewUrl} controls preload="metadata" className="w-full" />}
             {evidence.source && <p className="break-all rounded bg-background p-2 font-mono text-xs">{evidence.source}</p>}
             {evidence.source && window.ntc3Vault && <Button variant="outline" onClick={() => void window.ntc3Vault?.revealFile(evidence.source!)}><FolderOpen className="mr-2 h-4 w-4" />Reveal managed file</Button>}
           </CardContent></Card>

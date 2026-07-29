@@ -945,9 +945,50 @@ universal promises.
 
 The controlled report is
 `Docs/System-Design-Book/evidence/evidence-integrity-conformance-2026-07-29.md`.
-Final L3 closure remains conditional on Pass 3C streamed previews, 20/100 MiB and
-memory measurements, Electron/React experience evidence, backup/restore coverage,
-and compatibility retirement evidence.
+At the Pass 3B checkpoint, final L3 closure remained conditional on Pass 3C
+streamed previews, 20/100 MiB and memory measurements, Electron/React experience
+evidence, backup/restore coverage, and compatibility retirement evidence. The
+following Pass 3C report supersedes that condition.
+
+### Route 03 Pass 3C execution report — streaming and L3 closure
+
+Status: **Implemented, verified, and accepted — L3 Governed**
+
+Managed Evidence content now crosses a canonical bounded HTTP boundary:
+`GET /evidence/{id}/sources/{sourceId}/content`. The endpoint validates Evidence
+and source ownership, permits only managed sources inside the Vault, supports full
+and single-range responses, and rejects invalid ranges. Images, PDFs, audio, and
+video use native browser consumers. Renderer-wide IPC buffering and base64 preview
+URLs have been removed.
+
+Canonical Evidence inputs no longer accept legacy `projectId` or singular
+`storyId`, Story filtering reads the many-to-many relationship table, and every
+canonical Evidence create writes immutable source version 1 transactionally.
+Generated React and Zod clients reflect the revised contract. Dormant physical
+legacy columns remain read-compatible for upgraded Vaults and may be removed only
+through a later approved destructive migration after an observed compatibility
+window.
+
+The named Apple M1/8 GB baseline now includes 20 MiB and 100 MiB streamed
+workloads. The 20 MiB SHA-256 p95 is 18.971 ms and copy p95 is 79.149 ms; the
+100 MiB SHA-256 p95 is 75.924 ms and copy p95 is 312.282 ms. Observed hash-process
+RSS growth was -4.66 MiB and 0.88 MiB respectively, demonstrating that memory does
+not scale with payload size. These are measured baselines, not universal promises.
+
+Portable backup/restore tests round trip the database plus active, archived, and
+staged Evidence bytes, preserve failed-ingest metadata in the database fixture,
+and reject traversal and absolute archive entries. Three browser end-to-end
+workflows pass; the Evidence inspector workflow completes in 1.2 seconds and
+exercises verification presentation. Production React build, typecheck, OpenAPI
+generation, 31 repository assertions, and unpacked Electron macOS arm64 packaging
+pass.
+
+The controlled decision is
+`Docs/System-Design-Book/evidence/route-03-l3-governance-decision-2026-07-29.md`.
+Route 03 is accepted at **L3 Governed** on the declared baseline. Signing,
+notarization, additional hardware certification, and eventual physical removal of
+legacy columns are controlled release/maintenance work and do not reopen the
+Evidence domain decision.
 
 ## 2B. Proposed Phase III — C³ Canon and Knowledge Intelligence
 
@@ -1675,7 +1716,7 @@ Legend: **Implemented**, **Partial**, **Not implemented**.
 | Stories (Route 02)                 | Implemented              | Global/Workspace catalogues, mandatory Workspace ownership, guarded lifecycle, transactional outline, Draft-only Output creation, relationship graph, deterministic health, timeline, versions, optimistic concurrency, and archive/restore                |
 | Story authoring                    | Implemented              | Shared TipTap editor with canonical HTML persistence, word/read-time derivation, version-safe explicit saves, and conflict rejection                                                                                                                       |
 | Campaigns CRUD                     | Implemented              | Core records only; no timeline/tasks/metrics/outputs                                                                                                                                                                                                       |
-| Evidence Vault governed operations | Partial                  | Workspace-owned capture, recoverable file ingestion, immutable source reads, optimistic metadata, typed Story links, archive/restore, previews, and lifecycle-aware search exist; inspector UX, locator authoring, preview streaming, and Integrity remain |
+| Evidence Vault governed operations | Implemented — L3 Governed | Workspace-owned/source-versioned capture, recoverable streamed ingestion, HTTP range previews, locators, optimistic metadata, typed Story links, archive/restore, lifecycle-aware search, inspector UX, and deterministic Integrity are verified          |
 | Knowledge Base CRUD                | Partial                  | TipTap authoring and a stored linked-ID array exist; no rendered wiki graph/backlinks                                                                                                                                                                      |
 | Assets                             | Partial                  | URL/path metadata catalog; no upload, processing, thumbnailing, or local asset storage                                                                                                                                                                     |
 | Templates                          | Partial                  | Core records exist; no template application/export workflow                                                                                                                                                                                                |
@@ -1690,7 +1731,7 @@ Legend: **Implemented**, **Partial**, **Not implemented**.
 | Actionable queue                   | Not implemented          | No route, API, or schema                                                                                                                                                                                                                                   |
 | Export pipeline                    | Partial                  | Desktop exports portable JSON plus human-readable Markdown; HTML/PDF/DOCX exporters remain                                                                                                                                                                 |
 | Version history                    | Partial                  | Story checkpoints and timeline exist; Knowledge and most other entities store only current rows and timestamps                                                                                                                                             |
-| Backup/restore                     | Implemented              | Desktop creates compressed portable vault archives; restore validates paths, preserves a recovery copy, and rolls back on copy failure                                                                                                                     |
+| Backup/restore                     | Implemented              | Desktop creates compressed portable Vault archives; tested restore covers database, active/archived/staged Evidence bytes, failed-ingest metadata, traversal rejection, recovery copy, and rollback                                                        |
 | Repository integration             | Partial                  | Secure desktop folder selection captures branch, commit, package manager, frameworks, dependencies, TODOs, README, readiness, and optional project association                                                                                             |
 | Repository Intelligence Engine     | Partial                  | Deterministic, fingerprinted snapshots become searchable `RepositoryAudit` evidence with per-project history counts and metric diffs; deeper dependency/security analysis remains                                                                          |
 | Workspace health score             | Implemented              | Server calculates and explains recency, evidence, campaign, knowledge, and asset components with insufficient-data handling                                                                                                                                |
@@ -1733,10 +1774,10 @@ atomic promotion, and restart reconciliation.
 
 ### Next implementation order
 
-1. Execute Route 03 Pass 3C: preview streaming, compatibility-field retirement
-   evidence, full route conformance, and release-readiness closure.
-2. Audit Route 04 prerequisites after Route 03 reaches its L3 governance gate.
-3. Begin Route 04 only after the Evidence exit decision is recorded.
+1. Audit Route 04 prerequisites against the now-governed Evidence contracts.
+2. Produce and accept the first Route 04 execution boundary from its RDF dossier.
+3. Execute that Route 04 boundary while treating Route 03 residuals as separately
+   change-controlled release or maintenance work.
 
 ## 8. Contract and data workflow
 

@@ -247,16 +247,24 @@ future Pass 3 work.
 Route 03 Pass 3A adds the canonical Evidence inspector and governed explorer
 filters. Source versions, checksums, provenance, precise locators, Story backlinks,
 recovery state, and accessible archive/restore controls are visible from
-`/evidence/:id`. Streamed previews remain future work.
+`/evidence/:id`. At that checkpoint, streamed previews remained future work.
 
 Route 03 Pass 3B registers deterministic `evidence-integrity@1.0.0`. Persisted,
 bounded verification checks source presence, containment, SHA-256, provenance,
 ownership, locators, and references; results include reproducible watermarks,
 diagnostics, and repair guidance and are invalidated by authoritative changes.
 The inspector exposes verification and current results. A named 10,000-Evidence
-Apple M1 baseline is recorded in the System Design Book. Final streaming-preview,
-large-file, memory, route-render, and compatibility closure remains future Pass
-3C work.
+Apple M1 baseline is recorded in the System Design Book.
+
+Route 03 Pass 3C completes the route at **L3 Governed**. Managed previews use
+Vault-contained HTTP range streams instead of renderer IPC/base64 buffering.
+Canonical writes retire legacy project and singular-story inputs and always create
+source version 1. The named baseline now covers 20 MiB and 100 MiB hash/copy and
+RSS measurements; backup/restore round trips active, archived, staged, and failed
+ingest state; browser workflows, production build/typecheck, and unpacked Electron
+packaging pass. Signed distribution and additional hardware certification remain
+release operations. The final decision is recorded in
+[`route-03-l3-governance-decision-2026-07-29.md`](Docs/System-Design-Book/evidence/route-03-l3-governance-decision-2026-07-29.md).
 
 The default desktop vault is `Documents/N-TechC3-Vault` and contains:
 

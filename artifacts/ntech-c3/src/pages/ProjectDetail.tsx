@@ -29,7 +29,7 @@ export function ProjectDetail() {
   const { data: project, isLoading: projectLoading } = useGetProject(projectId);
   const { data: snapshots = [], isLoading: snapshotsLoading } = useListEvidence({
     type: 'RepositoryAudit',
-    projectId,
+    workspaceId: projectId,
   });
 
   if (projectLoading) return <div className="flex min-h-[50vh] items-center justify-center"><Spinner /></div>;

@@ -18,7 +18,6 @@ interface Window {
       idempotencyKey?: string;
     }): Promise<VaultImportResult>;
     getInfo(): Promise<{ root: string; database: string }>;
-    previewFile(source: string): Promise<{ mimeType: string; dataUrl: string } | null>;
     revealFile(source: string): Promise<boolean>;
     exportVault(): Promise<{ jsonPath: string; markdownPath: string } | null>;
     backupVault(): Promise<{ path: string } | null>;

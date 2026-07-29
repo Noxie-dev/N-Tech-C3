@@ -11,6 +11,7 @@ import {
   promoteEvidenceFile,
   stageEvidenceFile,
 } from './evidence-ingest.mjs';
+import { createVaultBackup, extractVaultBackup } from './vault-backup.mjs';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const applicationRoot = path.resolve(currentDirectory, '..');
@@ -44,15 +45,6 @@ function resolveVaultSource(root, source) {
   const resolved = path.resolve(root, source);
   if (resolved !== root && !resolved.startsWith(`${root}${path.sep}`)) throw new RangeError('Source escapes the vault');
   return resolved;
-}
-
-function mimeTypeForSource(source) {
-  const extension = path.extname(source).toLowerCase();
-  return {
-    '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif',
-    '.webp': 'image/webp', '.svg': 'image/svg+xml', '.pdf': 'application/pdf',
-    '.mp4': 'video/mp4', '.webm': 'video/webm', '.mp3': 'audio/mpeg', '.wav': 'audio/wav',
-  }[extension] ?? 'application/octet-stream';
 }
 
 async function startApi() {
@@ -400,19 +392,6 @@ ipcMain.handle('vault:import-file', async (_event, input) => {
   }
 });
 
-ipcMain.handle('vault:preview', async (_event, source) => {
-  const root = await ensureVault();
-  const sourcePath = resolveVaultSource(root, source);
-  const fileStat = await stat(sourcePath);
-  if (!fileStat.isFile() || fileStat.size > 20 * 1024 * 1024) {
-    throw new RangeError('Preview is limited to files smaller than 20 MB');
-  }
-  const mimeType = mimeTypeForSource(source);
-  if (mimeType === 'application/octet-stream') return null;
-  const bytes = await readFile(sourcePath);
-  return { mimeType, dataUrl: `data:${mimeType};base64,${bytes.toString('base64')}` };
-});
-
 ipcMain.handle('vault:reveal', async (_event, source) => {
   const root = await ensureVault();
   const sourcePath = resolveVaultSource(root, source);
@@ -460,7 +439,7 @@ ipcMain.handle('vault:backup', async () => {
     filters: [{ name: 'Compressed vault archive', extensions: ['tar.gz'] }],
   });
   if (selection.canceled || !selection.filePath) return null;
-  await execFileAsync('tar', ['-czf', selection.filePath, '-C', root, '.'], { timeout: 120000 });
+  await createVaultBackup({ root, destination: selection.filePath, execute: execFileAsync });
   return { path: selection.filePath };
 });
 
@@ -472,14 +451,9 @@ ipcMain.handle('vault:restore', async () => {
   });
   if (selection.canceled || !selection.filePaths[0]) return null;
   const archivePath = selection.filePaths[0];
-  const listing = (await execFileAsync('tar', ['-tzf', archivePath], { timeout: 30000 })).stdout.split('\n').filter(Boolean);
-  if (listing.some((entry) => path.isAbsolute(entry) || entry.split('/').includes('..'))) {
-    throw new Error('Unsafe backup archive');
-  }
   const temporary = await mkdtemp(path.join(app.getPath('temp'), 'ntc3-restore-'));
   try {
-    await execFileAsync('tar', ['-xzf', archivePath, '-C', temporary], { timeout: 120000 });
-    await stat(path.join(temporary, 'database', 'ntc3.sqlite'));
+    await extractVaultBackup({ archive: archivePath, destination: temporary, execute: execFileAsync });
     const root = getVaultRoot();
     const recovery = `${root}.pre-restore-${Date.now()}`;
     await stopApi();

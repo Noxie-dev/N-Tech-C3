@@ -868,11 +868,6 @@ paths:
           in: query
           schema:
             type: ["number", "null"]
-        - name: projectId
-          in: query
-          deprecated: true
-          schema:
-            type: ["number", "null"]
         - name: workspaceId
           in: query
           schema:
@@ -1220,6 +1215,28 @@ paths:
               schema: { $ref: "#/components/schemas/EvidenceSourceLocator" }
         "404": { description: Evidence source not found }
         "409": { description: Archived Evidence }
+
+  /evidence/{id}/sources/{sourceId}/content:
+    get:
+      operationId: streamEvidenceSourceContent
+      tags: [evidence]
+      summary: Stream managed Evidence source bytes with HTTP range support
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+        - { name: sourceId, in: path, required: true, schema: { type: number } }
+      responses:
+        "200":
+          description: Complete source stream
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "206":
+          description: Requested byte range
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "404": { description: Managed source not found }
+        "416": { description: Invalid byte range }
 
   /evidence/{id}/sources/{sourceId}/locators/{locatorId}:
     delete:
@@ -2455,12 +2472,6 @@ components:
           type: array
           items:
             type: string
-        storyId:
-          type: ["number", "null"]
-        projectId:
-          type: ["number", "null"]
-          deprecated: true
-          description: Deprecated compatibility field; canonical creation requires workspaceId.
         workspaceId:
           type: number
           minimum: 1

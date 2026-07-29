@@ -1,4 +1,4 @@
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, createReadStream, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { cpus, platform, release, tmpdir, totalmem } from 'node:os';
 import path from 'node:path';
@@ -11,7 +11,7 @@ const started = performance.now();
 const database = await import('@workspace/db');
 const startupMs = performance.now() - started;
 
-const samples = async (count: number, work: (index: number) => void | Promise<void>) => {
+const samples = async (count: number, work: (index: number) => unknown | Promise<unknown>) => {
   const values: number[] = [];
   for (let index = 0; index < count; index += 1) {
     const before = performance.now();
@@ -23,6 +23,12 @@ const samples = async (count: number, work: (index: number) => void | Promise<vo
     medianMs: Number(values[Math.floor(values.length / 2)].toFixed(3)),
     p95Ms: Number(values[Math.floor(values.length * 0.95)].toFixed(3)),
   };
+};
+
+const streamHash = async (filePath: string) => {
+  const hash = createHash('sha256');
+  for await (const chunk of createReadStream(filePath, { highWaterMark: 1024 * 1024 })) hash.update(chunk);
+  return hash.digest('hex');
 };
 
 const workspaceCount = Number(process.env.NTC3_BENCHMARK_WORKSPACES ?? 50);
@@ -103,6 +109,23 @@ const evidenceDetail = await samples(100, () => {
 const evidenceIntegrityHash = await samples(50, () => {
   createHash('sha256').update(readFileSync(attachmentSource)).digest('hex');
 });
+const largeFiles = [];
+for (const sizeMiB of [20, 100]) {
+  const source = path.join(sourceDirectory, `attachment-${sizeMiB}mib.bin`);
+  writeFileSync(source, Buffer.alloc(sizeMiB * 1024 * 1024, 0x43));
+  const beforeRss = process.memoryUsage().rss;
+  const hash = await samples(sizeMiB === 100 ? 3 : 10, () => streamHash(source));
+  const afterHashRss = process.memoryUsage().rss;
+  const copy = await samples(sizeMiB === 100 ? 2 : 5, (index) => {
+    copyFileSync(source, path.join(evidenceDirectory, `large-${sizeMiB}-${index}.bin`));
+  });
+  largeFiles.push({
+    sizeMiB,
+    hash,
+    copy,
+    rssGrowthMiB: Number(((afterHashRss - beforeRss) / 1024 ** 2).toFixed(2)),
+  });
+}
 
 const report = {
   measuredAt: new Date().toISOString(),
@@ -132,6 +155,7 @@ const report = {
     evidenceCatalogue,
     evidenceDetail,
     evidenceIntegrityHash,
+    largeFiles,
   },
 };
 

@@ -29,7 +29,7 @@ Publishing. Those capabilities may consume the contracts established here.
 | Domain owner        | Evidence                                                                                                                |
 | Mission             | Preserve provenance-bearing engineering artifacts as verifiable, reusable Evidence.                                     |
 | Primary patterns    | Library, explorer, detail inspector, quick capture                                                                      |
-| Current maturity    | L2 Functional for basic capture and retrieval                                                                           |
+| Current maturity    | L3 Governed — accepted 2026-07-29                                                                                        |
 | Target maturity     | L3 Governed after this plan is implemented and verified                                                                 |
 | Authoritative facts | Identity, Workspace ownership, source versions, provenance, classification, metadata, archive state, and explicit links |
 | Derived facts       | Search rank, backlinks, integrity result, link counts, previews, duplicate suggestions, and recommendations             |
@@ -472,6 +472,36 @@ Execution evidence:
 - `System-Design-Book/evidence/evidence-integrity-conformance-2026-07-29.md`
   records contract evidence and the 10,000-Evidence measured baseline.
 
+### Pass 3C — Streaming and L3 closure
+
+Status: **Implemented, verified, and accepted 2026-07-29**
+
+- Deliver managed-file previews through bounded HTTP range streams.
+- Measure 20 MiB and 100 MiB copy/hash workloads and process RSS.
+- Exercise the React inspector through browser end-to-end tests and package the
+  Electron application.
+- Prove portable backup/restore conformance for active, archived, staged, and
+  failed-ingest state.
+- Retire legacy Evidence write/filter compatibility and record the final L3
+  governance decision.
+
+Execution evidence:
+
+- `GET /evidence/{id}/sources/{sourceId}/content` validates source ownership and
+  Vault containment, supports full and single-range responses, and never sends
+  file bytes through renderer IPC or base64;
+- generated clients no longer expose `projectId` or singular `storyId` as
+  canonical Evidence input, Story filtering uses the relationship table, and
+  every canonical create appends source version 1 transactionally;
+- the Apple M1/8 GB baseline measures 20 MiB and 100 MiB streaming hash/copy
+  workloads with bounded RSS growth;
+- backup/restore round trips database and managed/staged bytes and rejects
+  traversal and absolute archive entries;
+- all three browser workflows, 31 repository tests, production build, typecheck,
+  code generation, and unpacked Electron packaging pass; and
+- `System-Design-Book/evidence/route-03-l3-governance-decision-2026-07-29.md`
+  records the complete evidence and Accepted decision.
+
 ## Verification and conformance
 
 ### Tier 1 — Domain and contract
@@ -503,7 +533,9 @@ Execution evidence:
 - Electron launch and React route-render measurements on named baseline and
   lower-tier supported hardware.
 
-Numerical release budgets remain proposed until these workloads are measured.
+The named Apple M1/8 GB measurements are the accepted Route 03 baseline, not
+universal performance promises. Signing, notarization, and certification on
+additional hardware remain product-release operations.
 
 ## Exit criteria
 
@@ -522,5 +554,6 @@ Route 03 reaches L3 Governed only when:
 ## Approval gate
 
 This dossier completed TNB3 Pass 1 and was accepted with ADR-001 on 2026-07-29.
-Pass 3B is the next authorized implementation boundary. Later passes remain
-separately reviewable against the preceding pass evidence.
+Passes 2A–3C are implemented and verified. The final Pass 3C decision accepts
+Route 03 at L3 Governed; further Evidence work requires a new change-controlled
+pass or corrective-work record.

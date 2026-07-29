@@ -897,14 +897,6 @@ export interface EvidenceInput {
   notes?: string;
   content?: string;
   tags?: string[];
-  /** @nullable */
-  storyId?: number | null;
-  /**
-     * Deprecated compatibility field; canonical creation requires workspaceId.
-     * @deprecated
-     * @nullable
-     */
-  projectId?: number | null;
   /** @minimum 1 */
   workspaceId: number;
   repository?: string;
@@ -1520,10 +1512,6 @@ type?: string;
  * @nullable
  */
 storyId?: number | null;
-/**
- * @nullable
- */
-projectId?: number | null;
 /**
  * @nullable
  */

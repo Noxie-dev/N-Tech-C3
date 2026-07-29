@@ -451,16 +451,20 @@ describe('local API', () => {
         idempotencyKey: 'ingest-rollback-proof-1',
         title: 'Invalid linked capture',
         type: 'BuildLog',
-        storyId: 999999,
       })
       .expect(201);
     await request(app)
       .post(`/api/evidence/ingests/${invalid.body.id}/staged`)
       .send({ byteSize: 10, sha256: 'c'.repeat(64) })
       .expect(200);
+    database.run(`CREATE TRIGGER inject_evidence_source_failure
+      BEFORE INSERT ON evidence_sources
+      WHEN NEW.capture_method = 'DesktopFileImport'
+      BEGIN SELECT RAISE(ABORT, 'injected source failure'); END`);
     await request(app)
       .post(`/api/evidence/ingests/${invalid.body.id}/complete`)
       .expect(500);
+    database.run('DROP TRIGGER inject_evidence_source_failure');
     expect(database.get(
       'SELECT state, evidence_id, source_id FROM evidence_ingests WHERE id = ?',
       [invalid.body.id],
@@ -491,9 +495,9 @@ describe('local API', () => {
     await request(app).patch(`/api/evidence/${evidence.body.id}`)
       .send({ expectedVersion: evidence.body.version, notes: 'Stale write' }).expect(409);
 
-    database.run(`INSERT INTO evidence_sources (
-      evidence_id, version, source_kind, inline_content, capture_method, producer_metadata
-    ) VALUES (?, 1, 'InlineText', 'immutable source', 'ApiTest', '{"fixture":true}')`, [evidence.body.id]);
+    database.run(`UPDATE evidence_sources SET source_kind = 'InlineText',
+      inline_content = 'immutable source', capture_method = 'ApiTest',
+      producer_metadata = '{"fixture":true}' WHERE evidence_id = ? AND version = 1`, [evidence.body.id]);
     const sources = await request(app).get(`/api/evidence/${evidence.body.id}/sources`).expect(200);
     expect(sources.body).toEqual([expect.objectContaining({
       evidenceId: evidence.body.id, version: 1, sourceKind: 'InlineText',
@@ -578,13 +582,20 @@ describe('local API', () => {
     const relativePath = 'evidence/integrity-fixture.bin';
     const original = Buffer.from('governed evidence bytes');
     writeFileSync(path.join(process.env.NTC3_VAULT_PATH!, relativePath), original);
-    database.run(`INSERT INTO evidence_sources (
-      evidence_id, version, source_kind, byte_size, sha256, vault_path,
-      capture_method, producer_metadata
-    ) VALUES (?, 1, 'ManagedFile', ?, ?, ?, 'ApiTest', '{"fixture":true}')`, [
-      evidence.body.id, original.byteLength,
-      createHash('sha256').update(original).digest('hex'), relativePath,
+    database.run(`UPDATE evidence_sources SET source_kind = 'ManagedFile',
+      byte_size = ?, sha256 = ?, vault_path = ?, capture_method = 'ApiTest',
+      producer_metadata = '{"fixture":true}' WHERE evidence_id = ? AND version = 1`, [
+      original.byteLength, createHash('sha256').update(original).digest('hex'),
+      relativePath, evidence.body.id,
     ]);
+    const source = database.get('SELECT id FROM evidence_sources WHERE evidence_id = ?', [evidence.body.id])!;
+    await request(app)
+      .get(`/api/evidence/${evidence.body.id}/sources/${source.id}/content`)
+      .set('Range', 'bytes=0-7')
+      .expect(206)
+      .expect('Accept-Ranges', 'bytes')
+      .expect('Content-Range', `bytes 0-7/${original.byteLength}`)
+      .expect(({ body }) => expect(Buffer.from(body).toString()).toBe('governed'));
 
     await request(app).post(`/api/evidence/${evidence.body.id}/verify`).expect(200)
       .expect(({ body }) => expect(body.state).toBe('Valid'));

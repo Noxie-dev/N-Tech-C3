@@ -22,8 +22,6 @@ export function Evidence() {
   const [isDragging, setIsDragging] = useState(false);
   const [importMessage, setImportMessage] = useState('');
   const [selectedEvidence, setSelectedEvidence] = useState<EvidenceRecord | null>(null);
-  const [binaryPreview, setBinaryPreview] = useState<{ mimeType: string; dataUrl: string } | null>(null);
-  const [previewMessage, setPreviewMessage] = useState('');
   const queryClient = useQueryClient();
 
   const { data: evidence, isLoading, refetch } = useListEvidence({
@@ -124,16 +122,6 @@ export function Evidence() {
 
   const openEvidence = async (item: EvidenceRecord) => {
     setSelectedEvidence(item);
-    setBinaryPreview(null);
-    setPreviewMessage('');
-    if (!item.source || !window.ntc3Vault) return;
-    try {
-      const preview = await window.ntc3Vault.previewFile(item.source);
-      setBinaryPreview(preview);
-      if (!preview) setPreviewMessage('This file type has no inline preview.');
-    } catch {
-      setPreviewMessage('Preview unavailable. Large or missing files can still be revealed in the vault.');
-    }
   };
 
   return (
@@ -309,15 +297,6 @@ export function Evidence() {
               <div className="max-h-80 overflow-auto whitespace-pre-wrap rounded border bg-background p-4 font-mono text-sm">
                 {selectedEvidence.content || selectedEvidence.notes || 'No inline preview is available for this artifact.'}
               </div>
-              {binaryPreview?.mimeType.startsWith('image/') && (
-                <img src={binaryPreview.dataUrl} alt={selectedEvidence.title} className="max-h-[420px] w-full rounded border object-contain" />
-              )}
-              {binaryPreview?.mimeType === 'application/pdf' && (
-                <iframe title={selectedEvidence.title} src={binaryPreview.dataUrl} className="h-[420px] w-full rounded border" />
-              )}
-              {binaryPreview?.mimeType.startsWith('video/') && <video src={binaryPreview.dataUrl} controls className="max-h-[420px] w-full rounded border" />}
-              {binaryPreview?.mimeType.startsWith('audio/') && <audio src={binaryPreview.dataUrl} controls className="w-full" />}
-              {previewMessage && <p className="text-xs text-muted-foreground">{previewMessage}</p>}
               {selectedEvidence.source && window.ntc3Vault && (
                 <Button variant="outline" className="gap-2" onClick={() => void window.ntc3Vault?.revealFile(selectedEvidence.source!)}>
                   <FolderOpen className="h-4 w-4" /> Reveal in vault

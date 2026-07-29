@@ -13,7 +13,6 @@ contextBridge.exposeInMainWorld('ntc3Vault', {
       idempotencyKey,
     }),
   getInfo: () => ipcRenderer.invoke('vault:info'),
-  previewFile: (source) => ipcRenderer.invoke('vault:preview', source),
   revealFile: (source) => ipcRenderer.invoke('vault:reveal', source),
   exportVault: () => ipcRenderer.invoke('vault:export'),
   backupVault: () => ipcRenderer.invoke('vault:backup'),

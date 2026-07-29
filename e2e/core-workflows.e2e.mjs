@@ -21,7 +21,7 @@ test('creates a workspace and finds its captured evidence globally', async ({ pa
       title: evidenceTitle,
       type: 'TerminalOutput',
       content: 'playwright-verification-token',
-      projectId: workspaceId,
+      workspaceId,
     },
   });
   expect(response.ok()).toBeTruthy();
@@ -66,4 +66,31 @@ test('authors rich text and imports a file through the evidence UI', async ({ pa
     buffer: Buffer.from('browser file ingestion'),
   });
   await expect(page.getByRole('heading', { name: `browser-artifact-${suffix}.txt`, exact: true })).toBeVisible();
+});
+
+test('loads the governed Evidence inspector and runs deterministic verification', async ({ page }) => {
+  const suffix = Date.now();
+  const workspace = await page.request.post('/api/workspaces', {
+    data: { name: `Inspector Workspace ${suffix}` },
+  });
+  const workspaceRecord = await workspace.json();
+  const evidence = await page.request.post('/api/evidence', {
+    data: {
+      title: `Inspector Evidence ${suffix}`,
+      type: 'TerminalOutput',
+      content: 'deterministic inspector evidence',
+      workspaceId: workspaceRecord.id,
+    },
+  });
+  const evidenceRecord = await evidence.json();
+
+  const started = performance.now();
+  await page.goto(`/evidence/${evidenceRecord.id}`);
+  await expect(page.getByRole('heading', { name: evidenceRecord.title })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sources and provenance' })).toBeVisible();
+  expect(performance.now() - started).toBeLessThan(5000);
+
+  await page.getByRole('button', { name: 'Verify Evidence' }).click();
+  await expect(page.getByText('Unverifiable', { exact: true })).toBeVisible();
+  await expect(page.getByText('evidence-integrity@1.0.0', { exact: false })).toBeVisible();
 });

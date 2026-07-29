@@ -9,6 +9,7 @@ import {
   ListEvidenceSourceLocatorsParams, ListEvidenceSourceLocatorsResponse,
   CreateEvidenceSourceLocatorParams, CreateEvidenceSourceLocatorBody, CreateEvidenceSourceLocatorResponse,
   DeleteEvidenceSourceLocatorParams,
+  StreamEvidenceSourceContentParams,
   ListEvidenceStoryLinksParams, ListEvidenceStoryLinksResponse,
   LinkEvidenceToStoryParams, LinkEvidenceToStoryBody, LinkEvidenceToStoryResponse,
   UnlinkEvidenceFromStoryParams,
@@ -22,11 +23,13 @@ import {
   FailEvidenceIngestBody, FailEvidenceIngestResponse,
 } from '@workspace/api-zod';
 import { createEntity, entityConfigs, getEntity, listEntities, updateEntity } from '../lib/entity-store';
-import { all, get, run, transaction, type Row } from '@workspace/db';
+import { all, get, getVaultInfo, run, transaction, type Row } from '@workspace/db';
 import { appendDomainEvent, projectDomainEventsToActivity } from '../lib/events';
 import { guardWorkspaceMutations, workspaceMutationError } from '../lib/workspace-guard';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
+import { createReadStream } from 'node:fs';
+import { realpath, stat } from 'node:fs/promises';
 import {
   invalidateEvidenceIntegrity, latestEvidenceIntegrity, verifyEvidenceIntegrity,
 } from '../lib/evidence-integrity';
@@ -39,6 +42,16 @@ function safeEvidenceName(name: string) {
   return path.basename(name)
     .replace(/[^a-zA-Z0-9._-]+/g, '-')
     .replace(/\.{2,}/g, '-') || 'evidence.bin';
+}
+
+function sourceMimeType(name: string | null, fallback: string | null) {
+  if (fallback) return fallback;
+  const extension = path.extname(name ?? '').toLowerCase();
+  return ({
+    '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif',
+    '.webp': 'image/webp', '.svg': 'image/svg+xml', '.pdf': 'application/pdf',
+    '.mp4': 'video/mp4', '.webm': 'video/webm', '.mp3': 'audio/mpeg', '.wav': 'audio/wav',
+  } as Record<string, string>)[extension] ?? 'application/octet-stream';
 }
 
 function hydrateIngest(row: Row) {
@@ -148,8 +161,11 @@ router.get('/evidence', (req, res) => {
   const conditions: string[] = [];
   const params: Array<string | number> = [];
   if (query.data.type) { conditions.push('type = ?'); params.push(query.data.type); }
-  if (query.data.storyId != null) { conditions.push('story_id = ?'); params.push(query.data.storyId); }
-  const workspaceId = query.data.workspaceId ?? query.data.projectId;
+  if (query.data.storyId != null) {
+    conditions.push('EXISTS (SELECT 1 FROM story_evidence se WHERE se.evidence_id = evidence.id AND se.story_id = ?)');
+    params.push(query.data.storyId);
+  }
+  const workspaceId = query.data.workspaceId;
   if (workspaceId != null) { conditions.push('project_id = ?'); params.push(workspaceId); }
   if (query.data.classification) { conditions.push('classification = ?'); params.push(query.data.classification); }
   conditions.push('lifecycle_status = ?');
@@ -163,13 +179,25 @@ router.get('/evidence', (req, res) => {
 router.post('/evidence', async (req, res) => {
   const parsed = CreateEvidenceBody.safeParse(req.body);
   if (!parsed.success) return void res.status(400).json({ error: parsed.error.message });
-  if (parsed.data.projectId != null && parsed.data.projectId !== parsed.data.workspaceId) {
-    return void res.status(400).json({ error: 'projectId must match canonical workspaceId when both are supplied' });
-  }
-  const createData = { ...parsed.data, projectId: undefined };
   const row = transaction(() => {
-    const created = createEntity(config, createData);
+    const created = createEntity(config, parsed.data);
     if (!created) throw new Error('Evidence creation failed');
+    const sourceKind = parsed.data.content
+      ? 'InlineText'
+      : parsed.data.source?.startsWith('http://') || parsed.data.source?.startsWith('https://')
+        ? 'ExternalReference'
+        : parsed.data.source ? 'ManagedFile' : 'ExternalReference';
+    run(`INSERT INTO evidence_sources (
+      evidence_id, version, source_kind, vault_path, inline_content, origin_uri,
+      capture_method, producer_metadata
+    ) VALUES (?, 1, ?, ?, ?, ?, 'CanonicalApiCapture', ?)`, [
+      Number(created.id),
+      sourceKind,
+      sourceKind === 'ManagedFile' ? parsed.data.source ?? null : null,
+      sourceKind === 'InlineText' ? parsed.data.content ?? null : null,
+      sourceKind === 'ExternalReference' ? parsed.data.source ?? null : null,
+      JSON.stringify({ contract: 'EvidenceInput', compatibilityFieldsPersisted: true }),
+    ]);
     appendDomainEvent({
       eventType: 'EvidenceCaptured', eventVersion: 1, aggregateType: 'evidence',
       aggregateId: Number(created.id),
@@ -285,7 +313,6 @@ router.post('/evidence/ingests/:ingestId/complete', (req, res) => {
       source: ingest.finalPath,
       notes: capture.data.notes,
       tags: capture.data.tags,
-      storyId: capture.data.storyId,
       workspaceId: ingest.workspaceId,
       repository: capture.data.repository,
       classification: capture.data.classification ?? 'FactualRecord',
@@ -516,6 +543,56 @@ router.get('/evidence/:id/sources', (req, res) => {
   const rows = all('SELECT * FROM evidence_sources WHERE evidence_id = ? ORDER BY version DESC', [params.data.id])
     .map(evidenceSource);
   res.json(ListEvidenceSourcesResponse.parse(rows));
+});
+
+router.get('/evidence/:id/sources/:sourceId/content', async (req, res) => {
+  const params = StreamEvidenceSourceContentParams.safeParse(req.params);
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  const source = get(`SELECT * FROM evidence_sources
+    WHERE id = ? AND evidence_id = ? AND source_kind = 'ManagedFile'`,
+  [params.data.sourceId, params.data.id]);
+  if (!source?.vault_path) return void res.status(404).json({ error: 'Managed Evidence source not found' });
+  const root = path.resolve(getVaultInfo().root);
+  const absolute = path.resolve(root, String(source.vault_path));
+  if (absolute !== root && !absolute.startsWith(`${root}${path.sep}`)) {
+    return void res.status(404).json({ error: 'Managed Evidence source not found' });
+  }
+  let canonicalRoot;
+  let canonicalFile;
+  let file;
+  try {
+    canonicalRoot = await realpath(root);
+    canonicalFile = await realpath(absolute);
+    file = await stat(canonicalFile);
+  } catch {
+    return void res.status(404).json({ error: 'Managed Evidence source file is missing' });
+  }
+  if (canonicalFile !== canonicalRoot && !canonicalFile.startsWith(`${canonicalRoot}${path.sep}`)) {
+    return void res.status(404).json({ error: 'Managed Evidence source not found' });
+  }
+  if (!file.isFile()) return void res.status(404).json({ error: 'Managed Evidence source file is missing' });
+  const total = file.size;
+  const mimeType = sourceMimeType(source.original_name == null ? null : String(source.original_name), source.media_type == null ? null : String(source.media_type));
+  res.setHeader('Accept-Ranges', 'bytes');
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.setHeader('Content-Type', mimeType);
+  const range = req.headers.range;
+  if (!range) {
+    res.setHeader('Content-Length', total);
+    createReadStream(canonicalFile).pipe(res);
+    return;
+  }
+  const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+  if (!match) return void res.status(416).setHeader('Content-Range', `bytes */${total}`).end();
+  const start = match[1] ? Number(match[1]) : Math.max(0, total - Number(match[2] || 0));
+  const end = match[2] && match[1] ? Math.min(Number(match[2]), total - 1) : total - 1;
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end < start || start >= total) {
+    return void res.status(416).setHeader('Content-Range', `bytes */${total}`).end();
+  }
+  res.status(206);
+  res.setHeader('Content-Range', `bytes ${start}-${end}/${total}`);
+  res.setHeader('Content-Length', end - start + 1);
+  createReadStream(canonicalFile, { start, end }).pipe(res);
 });
 
 router.get('/evidence/:id/sources/:sourceId/locators', (req, res) => {

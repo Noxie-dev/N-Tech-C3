@@ -61,6 +61,6 @@ mark, lower-tier hardware, and full backup/restore remain release-closure eviden
 ## Decision
 
 The deterministic Integrity capability and Tier 1–2 contract evidence are
-accepted. Route 03 is functionally governed, but final L3 closure remains
-conditional on the Pass 3C experience/performance evidence listed above and
-compatibility retirement evidence.
+accepted. The former Pass 3C condition is now satisfied and superseded by
+`route-03-l3-governance-decision-2026-07-29.md`, which accepts Route 03 at L3
+Governed.

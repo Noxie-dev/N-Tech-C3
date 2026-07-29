@@ -18,10 +18,6 @@ storyId?: number | null;
 /**
  * @nullable
  */
-projectId?: number | null;
-/**
- * @nullable
- */
 workspaceId?: number | null;
 classification?: EvidenceClassification;
 lifecycleStatus?: EvidenceLifecycleStatus;

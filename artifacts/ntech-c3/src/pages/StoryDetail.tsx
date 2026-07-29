@@ -47,7 +47,7 @@ export function StoryDetail() {
   const { data: links } = useGetStoryLinks(id);
   const { data: outputs = [] } = useGetStoryOutputs(id);
   const { data: timeline = [] } = useGetStoryTimeline(id);
-  const { data: evidence = [] } = useListEvidence({ projectId: story?.workspaceId ?? undefined });
+  const { data: evidence = [] } = useListEvidence({ workspaceId: story?.workspaceId ?? undefined });
   const { data: knowledge = [] } = useListKnowledge();
   const { data: assets = [] } = useListAssets();
   const { data: campaigns = [] } = useListCampaigns({});
