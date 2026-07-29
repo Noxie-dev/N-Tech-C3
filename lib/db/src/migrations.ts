@@ -455,6 +455,247 @@ export const migrations: Migration[] = [
         ON intelligence_results(capability_id, capability_version);
     `,
   },
+  {
+    version: 6,
+    name: 'evidence_contracts_and_legacy_backfill',
+    sql: `
+      ALTER TABLE evidence ADD COLUMN classification TEXT NOT NULL DEFAULT 'FactualRecord'
+        CHECK (classification IN ('FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference'));
+      ALTER TABLE evidence ADD COLUMN lifecycle_status TEXT NOT NULL DEFAULT 'Active'
+        CHECK (lifecycle_status IN ('CapturePending', 'Active', 'Archived', 'IngestFailed'));
+      ALTER TABLE evidence ADD COLUMN review_status TEXT NOT NULL DEFAULT 'Unreviewed'
+        CHECK (review_status IN ('Unreviewed', 'Reviewed', 'Disputed'));
+      ALTER TABLE evidence ADD COLUMN version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0);
+      ALTER TABLE evidence ADD COLUMN archived_at TEXT;
+
+      UPDATE evidence
+      SET classification = CASE
+        WHEN type = 'RepositoryAudit' THEN 'DerivedAnalysis'
+        WHEN type = 'MeetingNotes' THEN 'Testimony'
+        WHEN type = 'Other' THEN 'ExternalReference'
+        ELSE 'FactualRecord'
+      END;
+
+      CREATE TABLE evidence_sources (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        evidence_id INTEGER NOT NULL REFERENCES evidence(id) ON DELETE RESTRICT,
+        version INTEGER NOT NULL CHECK (version > 0),
+        source_kind TEXT NOT NULL
+          CHECK (source_kind IN ('ManagedFile', 'InlineText', 'ExternalReference', 'RepositorySnapshot')),
+        media_type TEXT,
+        original_name TEXT,
+        byte_size INTEGER CHECK (byte_size IS NULL OR byte_size >= 0),
+        sha256 TEXT CHECK (
+          sha256 IS NULL OR (
+            length(sha256) = 64
+            AND sha256 = lower(sha256)
+            AND sha256 NOT GLOB '*[^0-9a-f]*'
+          )
+        ),
+        vault_path TEXT,
+        inline_content TEXT,
+        origin_uri TEXT,
+        repository_id INTEGER,
+        repository_revision TEXT,
+        capture_method TEXT NOT NULL,
+        producer_metadata TEXT NOT NULL DEFAULT '{}'
+          CHECK (json_valid(producer_metadata)),
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        UNIQUE (evidence_id, version),
+        CHECK (vault_path IS NULL OR (
+          vault_path NOT LIKE '/%'
+          AND vault_path NOT LIKE '%..%'
+          AND vault_path NOT LIKE '%\\%'
+        ))
+      );
+
+      CREATE TABLE evidence_ingests (
+        id TEXT PRIMARY KEY,
+        workspace_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE RESTRICT,
+        staged_path TEXT,
+        final_path TEXT,
+        original_name TEXT NOT NULL,
+        media_type TEXT,
+        byte_size INTEGER CHECK (byte_size IS NULL OR byte_size >= 0),
+        sha256 TEXT CHECK (
+          sha256 IS NULL OR (
+            length(sha256) = 64
+            AND sha256 = lower(sha256)
+            AND sha256 NOT GLOB '*[^0-9a-f]*'
+          )
+        ),
+        state TEXT NOT NULL DEFAULT 'Staged'
+          CHECK (state IN ('Staged', 'MetadataCommitted', 'Promoted', 'Completed', 'Compensating', 'Failed')),
+        retry_count INTEGER NOT NULL DEFAULT 0 CHECK (retry_count >= 0),
+        error_category TEXT,
+        evidence_id INTEGER REFERENCES evidence(id) ON DELETE SET NULL,
+        source_id INTEGER REFERENCES evidence_sources(id) ON DELETE SET NULL,
+        idempotency_key TEXT NOT NULL UNIQUE,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        CHECK (staged_path IS NULL OR (
+          staged_path NOT LIKE '/%'
+          AND staged_path NOT LIKE '%..%'
+          AND staged_path NOT LIKE '%\\%'
+        )),
+        CHECK (final_path IS NULL OR (
+          final_path NOT LIKE '/%'
+          AND final_path NOT LIKE '%..%'
+          AND final_path NOT LIKE '%\\%'
+        ))
+      );
+
+      CREATE TABLE evidence_source_locators (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source_id INTEGER NOT NULL REFERENCES evidence_sources(id) ON DELETE CASCADE,
+        locator_version INTEGER NOT NULL DEFAULT 1 CHECK (locator_version > 0),
+        kind TEXT NOT NULL
+          CHECK (kind IN ('WholeArtifact', 'TextRange', 'Page', 'Timestamp', 'ImageRegion', 'RepositoryPath', 'JsonPointer')),
+        coordinates TEXT NOT NULL DEFAULT '{}'
+          CHECK (json_valid(coordinates)),
+        label TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+
+      CREATE TABLE evidence_migration_audit (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        evidence_id INTEGER NOT NULL REFERENCES evidence(id) ON DELETE CASCADE,
+        issue_code TEXT NOT NULL,
+        severity TEXT NOT NULL CHECK (severity IN ('Info', 'Warning', 'ActionRequired')),
+        details TEXT NOT NULL,
+        resolved_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        UNIQUE (evidence_id, issue_code)
+      );
+
+      CREATE TABLE feature_flags (
+        flag_key TEXT PRIMARY KEY,
+        enabled INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0, 1)),
+        description TEXT NOT NULL,
+        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+
+      INSERT INTO feature_flags (flag_key, enabled, description) VALUES
+        ('evidence.canonical-contracts', 1, 'Require canonical Workspace ownership and expose governed Evidence metadata'),
+        ('evidence.source-versions', 0, 'Read and write immutable Evidence source versions through canonical endpoints'),
+        ('evidence.recoverable-ingest', 0, 'Use staged, compensating managed-file ingestion'),
+        ('evidence.detail-route', 0, 'Expose the canonical Evidence inspector route');
+
+      INSERT INTO evidence_sources (
+        evidence_id,
+        version,
+        source_kind,
+        original_name,
+        sha256,
+        vault_path,
+        inline_content,
+        origin_uri,
+        repository_revision,
+        capture_method,
+        producer_metadata,
+        created_at
+      )
+      SELECT
+        id,
+        1,
+        CASE
+          WHEN type = 'RepositoryAudit' THEN 'RepositorySnapshot'
+          WHEN source IS NOT NULL
+            AND (lower(source) LIKE 'http://%' OR lower(source) LIKE 'https://%')
+            THEN 'ExternalReference'
+          WHEN source IS NOT NULL THEN 'ManagedFile'
+          WHEN content IS NOT NULL THEN 'InlineText'
+          ELSE 'ExternalReference'
+        END,
+        CASE
+          WHEN source IS NOT NULL
+            AND lower(source) NOT LIKE 'http://%'
+            AND lower(source) NOT LIKE 'https://%'
+            AND instr(source, '/') = 0
+            THEN source
+          ELSE NULL
+        END,
+        CASE
+          WHEN length(notes) = 73
+            AND substr(notes, 1, 9) = 'SHA-256: '
+            AND lower(substr(notes, 10, 64)) NOT GLOB '*[^0-9a-f]*'
+            THEN lower(substr(notes, 10, 64))
+          ELSE NULL
+        END,
+        CASE
+          WHEN source IS NOT NULL
+            AND lower(source) NOT LIKE 'http://%'
+            AND lower(source) NOT LIKE 'https://%'
+            THEN source
+          ELSE NULL
+        END,
+        content,
+        CASE
+          WHEN source IS NOT NULL
+            AND (lower(source) LIKE 'http://%' OR lower(source) LIKE 'https://%')
+            THEN source
+          ELSE NULL
+        END,
+        CASE WHEN type = 'RepositoryAudit' THEN repository ELSE NULL END,
+        'LegacyMigration',
+        json_object(
+          'legacyType', type,
+          'legacyRepository', repository,
+          'legacySourcePreserved', source IS NOT NULL,
+          'legacyContentPreserved', content IS NOT NULL
+        ),
+        created_at
+      FROM evidence;
+
+      INSERT INTO evidence_migration_audit (evidence_id, issue_code, severity, details)
+        SELECT id, 'UnassignedWorkspace', 'ActionRequired',
+          'Legacy Evidence has no Workspace. User assignment is required; no Workspace was inferred.'
+        FROM evidence WHERE project_id IS NULL;
+
+      INSERT INTO evidence_migration_audit (evidence_id, issue_code, severity, details)
+        SELECT id, 'MissingSource', 'ActionRequired',
+          'Legacy Evidence has neither source nor inline content. A placeholder source version was preserved without inventing provenance.'
+        FROM evidence WHERE source IS NULL AND content IS NULL;
+
+      INSERT INTO evidence_migration_audit (evidence_id, issue_code, severity, details)
+        SELECT id, 'ChecksumUnavailable', 'Warning',
+          'No exact legacy SHA-256 note was available. Integrity remains pending until source verification.'
+        FROM evidence
+        WHERE NOT (
+          coalesce(length(notes), 0) = 73
+          AND substr(notes, 1, 9) = 'SHA-256: '
+          AND lower(substr(notes, 10, 64)) NOT GLOB '*[^0-9a-f]*'
+        );
+
+      INSERT INTO evidence_migration_audit (evidence_id, issue_code, severity, details)
+        SELECT id, 'ChecksumRecovered', 'Info',
+          'An exact legacy SHA-256 note was copied into structured source metadata.'
+        FROM evidence
+        WHERE length(notes) = 73
+          AND substr(notes, 1, 9) = 'SHA-256: '
+          AND lower(substr(notes, 10, 64)) NOT GLOB '*[^0-9a-f]*';
+
+      INSERT OR IGNORE INTO story_evidence (story_id, evidence_id)
+        SELECT story_id, id FROM evidence WHERE story_id IS NOT NULL;
+
+      CREATE INDEX evidence_workspace_lifecycle_idx
+        ON evidence(project_id, lifecycle_status, created_at DESC);
+      CREATE INDEX evidence_classification_review_idx
+        ON evidence(classification, review_status);
+      CREATE INDEX evidence_sources_evidence_version_idx
+        ON evidence_sources(evidence_id, version DESC);
+      CREATE INDEX evidence_sources_sha256_idx
+        ON evidence_sources(sha256) WHERE sha256 IS NOT NULL;
+      CREATE INDEX evidence_sources_vault_path_idx
+        ON evidence_sources(vault_path) WHERE vault_path IS NOT NULL;
+      CREATE INDEX evidence_ingests_state_updated_idx
+        ON evidence_ingests(state, updated_at);
+      CREATE INDEX evidence_locators_source_idx
+        ON evidence_source_locators(source_id, created_at);
+      CREATE INDEX evidence_migration_audit_issue_idx
+        ON evidence_migration_audit(issue_code, severity);
+    `,
+  },
 ];
 
 export function runMigrations(database: DatabaseSync): number[] {

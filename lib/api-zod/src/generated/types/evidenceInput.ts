@@ -5,7 +5,9 @@
  * N-Tech C³ Engineering Intelligence Operating System API
  * OpenAPI spec version: 0.1.0
  */
+import type { EvidenceClassification } from './evidenceClassification';
 import type { EvidenceInputType } from './evidenceInputType';
+import type { EvidenceReviewStatus } from './evidenceReviewStatus';
 
 export interface EvidenceInput {
   /** @minLength 1 */
@@ -17,7 +19,15 @@ export interface EvidenceInput {
   tags?: string[];
   /** @nullable */
   storyId?: number | null;
-  /** @nullable */
+  /**
+     * Deprecated compatibility field; canonical creation requires workspaceId.
+     * @deprecated
+     * @nullable
+     */
   projectId?: number | null;
+  /** @minimum 1 */
+  workspaceId: number;
   repository?: string;
+  classification?: EvidenceClassification;
+  reviewStatus?: EvidenceReviewStatus;
 }

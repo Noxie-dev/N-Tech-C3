@@ -1122,8 +1122,15 @@ export const ListEvidenceQueryParams = zod.object({
   "type": zod.coerce.string().optional(),
   "storyId": zod.coerce.number().nullish(),
   "projectId": zod.coerce.number().nullish(),
+  "workspaceId": zod.coerce.number().nullish(),
+  "classification": zod.enum(['FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference']).optional(),
+  "lifecycleStatus": zod.enum(['CapturePending', 'Active', 'Archived', 'IngestFailed']).optional(),
+  "reviewStatus": zod.enum(['Unreviewed', 'Reviewed', 'Disputed']).optional(),
   "search": zod.coerce.string().optional()
 })
+
+
+
 
 export const ListEvidenceResponseItem = zod.object({
   "id": zod.number(),
@@ -1134,8 +1141,14 @@ export const ListEvidenceResponseItem = zod.object({
   "content": zod.string().nullish(),
   "tags": zod.array(zod.string()).optional(),
   "storyId": zod.number().nullish(),
-  "projectId": zod.number().nullish(),
+  "projectId": zod.number().nullish().describe('Legacy alias retained for one compatibility window. Use workspaceId.'),
+  "workspaceId": zod.number().nullable().describe('Canonical Workspace owner. Null only for reported legacy migration exceptions.'),
   "repository": zod.string().nullish(),
+  "classification": zod.enum(['FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference']),
+  "lifecycleStatus": zod.enum(['CapturePending', 'Active', 'Archived', 'IngestFailed']),
+  "reviewStatus": zod.enum(['Unreviewed', 'Reviewed', 'Disputed']),
+  "version": zod.number().min(1),
+  "archivedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -1148,6 +1161,7 @@ export const ListEvidenceResponse = zod.array(ListEvidenceResponseItem)
 
 
 
+
 export const CreateEvidenceBody = zod.object({
   "title": zod.string().min(1),
   "type": zod.enum(['Screenshot', 'TerminalOutput', 'GitLog', 'Benchmark', 'Diagram', 'MeetingNotes', 'ResearchPDF', 'Image', 'Video', 'VoiceRecording', 'CodeSnippet', 'IssueReport', 'BuildLog', 'RepositoryAudit', 'Other']),
@@ -1156,9 +1170,15 @@ export const CreateEvidenceBody = zod.object({
   "content": zod.string().optional(),
   "tags": zod.array(zod.string()).optional(),
   "storyId": zod.number().nullish(),
-  "projectId": zod.number().nullish(),
-  "repository": zod.string().optional()
+  "projectId": zod.number().nullish().describe('Deprecated compatibility field; canonical creation requires workspaceId.'),
+  "workspaceId": zod.number().min(1),
+  "repository": zod.string().optional(),
+  "classification": zod.enum(['FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference']).optional(),
+  "reviewStatus": zod.enum(['Unreviewed', 'Reviewed', 'Disputed']).optional()
 })
+
+
+
 
 export const CreateEvidenceResponse = zod.object({
   "id": zod.number(),
@@ -1169,8 +1189,14 @@ export const CreateEvidenceResponse = zod.object({
   "content": zod.string().nullish(),
   "tags": zod.array(zod.string()).optional(),
   "storyId": zod.number().nullish(),
-  "projectId": zod.number().nullish(),
+  "projectId": zod.number().nullish().describe('Legacy alias retained for one compatibility window. Use workspaceId.'),
+  "workspaceId": zod.number().nullable().describe('Canonical Workspace owner. Null only for reported legacy migration exceptions.'),
   "repository": zod.string().nullish(),
+  "classification": zod.enum(['FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference']),
+  "lifecycleStatus": zod.enum(['CapturePending', 'Active', 'Archived', 'IngestFailed']),
+  "reviewStatus": zod.enum(['Unreviewed', 'Reviewed', 'Disputed']),
+  "version": zod.number().min(1),
+  "archivedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -1183,6 +1209,9 @@ export const GetEvidenceParams = zod.object({
   "id": zod.coerce.number()
 })
 
+
+
+
 export const GetEvidenceResponse = zod.object({
   "id": zod.number(),
   "title": zod.string(),
@@ -1192,8 +1221,14 @@ export const GetEvidenceResponse = zod.object({
   "content": zod.string().nullish(),
   "tags": zod.array(zod.string()).optional(),
   "storyId": zod.number().nullish(),
-  "projectId": zod.number().nullish(),
+  "projectId": zod.number().nullish().describe('Legacy alias retained for one compatibility window. Use workspaceId.'),
+  "workspaceId": zod.number().nullable().describe('Canonical Workspace owner. Null only for reported legacy migration exceptions.'),
   "repository": zod.string().nullish(),
+  "classification": zod.enum(['FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference']),
+  "lifecycleStatus": zod.enum(['CapturePending', 'Active', 'Archived', 'IngestFailed']),
+  "reviewStatus": zod.enum(['Unreviewed', 'Reviewed', 'Disputed']),
+  "version": zod.number().min(1),
+  "archivedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -1209,6 +1244,7 @@ export const UpdateEvidenceParams = zod.object({
 
 
 
+
 export const UpdateEvidenceBody = zod.object({
   "title": zod.string().min(1).optional(),
   "type": zod.enum(['Screenshot', 'TerminalOutput', 'GitLog', 'Benchmark', 'Diagram', 'MeetingNotes', 'ResearchPDF', 'Image', 'Video', 'VoiceRecording', 'CodeSnippet', 'IssueReport', 'BuildLog', 'RepositoryAudit', 'Other']).optional(),
@@ -1218,8 +1254,14 @@ export const UpdateEvidenceBody = zod.object({
   "tags": zod.array(zod.string()).optional(),
   "storyId": zod.number().nullish(),
   "projectId": zod.number().nullish(),
-  "repository": zod.string().nullish()
+  "workspaceId": zod.number().min(1).optional(),
+  "repository": zod.string().nullish(),
+  "classification": zod.enum(['FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference']).optional(),
+  "reviewStatus": zod.enum(['Unreviewed', 'Reviewed', 'Disputed']).optional()
 })
+
+
+
 
 export const UpdateEvidenceResponse = zod.object({
   "id": zod.number(),
@@ -1230,8 +1272,14 @@ export const UpdateEvidenceResponse = zod.object({
   "content": zod.string().nullish(),
   "tags": zod.array(zod.string()).optional(),
   "storyId": zod.number().nullish(),
-  "projectId": zod.number().nullish(),
+  "projectId": zod.number().nullish().describe('Legacy alias retained for one compatibility window. Use workspaceId.'),
+  "workspaceId": zod.number().nullable().describe('Canonical Workspace owner. Null only for reported legacy migration exceptions.'),
   "repository": zod.string().nullish(),
+  "classification": zod.enum(['FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference']),
+  "lifecycleStatus": zod.enum(['CapturePending', 'Active', 'Archived', 'IngestFailed']),
+  "reviewStatus": zod.enum(['Unreviewed', 'Reviewed', 'Disputed']),
+  "version": zod.number().min(1),
+  "archivedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })

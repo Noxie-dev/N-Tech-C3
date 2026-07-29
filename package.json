@@ -5,6 +5,7 @@
   "scripts": {
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "audit:evidence-migration": "pnpm --filter @workspace/scripts run audit:evidence-migration",
     "benchmark:platform": "pnpm --filter @workspace/scripts run benchmark:platform",
     "desktop": "pnpm --filter @workspace/ntech-c3 run desktop",
     "package:dir": "pnpm --filter @workspace/ntech-c3 run package:dir",

@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "audit:evidence-migration": "tsx ./src/audit-evidence-migration.ts",
     "benchmark:platform": "tsx ./src/benchmark-platform.ts",
     "hello": "tsx ./src/hello.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"

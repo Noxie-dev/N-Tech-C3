@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCreateEvidence, getListEvidenceQueryKey } from '@workspace/api-client-react';
+import { useCreateEvidence, getListEvidenceQueryKey, useListWorkspaces } from '@workspace/api-client-react';
 import { Archive, Command, Paperclip } from 'lucide-react';
 import {
   Button,
@@ -35,10 +35,16 @@ const evidenceTypes = [
 export function QuickCapture({ hideTrigger = false }: { hideTrigger?: boolean }) {
   const queryClient = useQueryClient();
   const createEvidence = useCreateEvidence();
+  const { data: workspaces = [] } = useListWorkspaces();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [type, setType] = useState<(typeof evidenceTypes)[number]>('TerminalOutput');
   const [content, setContent] = useState('');
+  const [workspaceId, setWorkspaceId] = useState<number | undefined>();
+
+  useEffect(() => {
+    if (workspaceId == null && workspaces[0]) setWorkspaceId(workspaces[0].id);
+  }, [workspaceId, workspaces]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -80,9 +86,9 @@ export function QuickCapture({ hideTrigger = false }: { hideTrigger?: boolean })
 
   const capture = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || workspaceId == null) return;
     createEvidence.mutate(
-      { data: { title: title.trim(), type, content } },
+      { data: { title: title.trim(), type, content, workspaceId } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListEvidenceQueryKey() });
@@ -128,6 +134,19 @@ export function QuickCapture({ hideTrigger = false }: { hideTrigger?: boolean })
               />
             </div>
             <div className="space-y-2">
+              <label className="font-mono text-xs uppercase text-muted-foreground">Workspace</label>
+              <Select
+                value={workspaceId ?? ''}
+                onChange={(event) => setWorkspaceId(Number(event.target.value) || undefined)}
+                required
+              >
+                <option value="" disabled>Select a Workspace</option>
+                {workspaces.map((workspace) => (
+                  <option key={workspace.id} value={workspace.id}>{workspace.name}</option>
+                ))}
+              </Select>
+            </div>
+            <div className="space-y-2">
               <label className="font-mono text-xs uppercase text-muted-foreground">Evidence type</label>
               <Select value={type} onChange={(event) => setType(event.target.value as typeof type)}>
                 {evidenceTypes.map((item) => <option key={item}>{item}</option>)}
@@ -153,7 +172,7 @@ export function QuickCapture({ hideTrigger = false }: { hideTrigger?: boolean })
               </span>
               <div className="flex gap-2">
                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={createEvidence.isPending}>
+                <Button type="submit" disabled={createEvidence.isPending || workspaceId == null}>
                   {createEvidence.isPending ? 'Capturing…' : 'Capture evidence'}
                 </Button>
               </div>

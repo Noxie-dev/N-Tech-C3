@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useListEvidence, useCreateEvidence, useUpdateEvidence, useListWorkspaces, useListStories, getListEvidenceQueryKey } from '@workspace/api-client-react';
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button, Input, Select, Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/shared';
@@ -11,6 +11,7 @@ export function Evidence() {
   const initialWorkspaceId = typeof window === 'undefined'
     ? undefined
     : Number(new URLSearchParams(window.location.search).get('workspaceId')) || undefined;
+  const [workspaceId, setWorkspaceId] = useState<number | undefined>(initialWorkspaceId);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -24,12 +25,16 @@ export function Evidence() {
   const { data: evidence, isLoading, refetch } = useListEvidence({
     search: search || undefined,
     type: typeFilter || undefined,
-    projectId: initialWorkspaceId,
+    workspaceId,
   });
   const createEvidence = useCreateEvidence();
   const updateEvidence = useUpdateEvidence();
   const { data: workspaces = [] } = useListWorkspaces();
   const { data: stories = [] } = useListStories();
+
+  useEffect(() => {
+    if (workspaceId == null && workspaces[0]) setWorkspaceId(workspaces[0].id);
+  }, [workspaceId, workspaces]);
 
   const saveLinks = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -38,7 +43,7 @@ export function Evidence() {
     const updated = await updateEvidence.mutateAsync({
       id: selectedEvidence.id,
       data: {
-        projectId: data.get('projectId') ? Number(data.get('projectId')) : null,
+        workspaceId: data.get('projectId') ? Number(data.get('projectId')) : selectedEvidence.workspaceId ?? undefined,
         storyId: data.get('storyId') ? Number(data.get('storyId')) : null,
       },
     });
@@ -53,9 +58,9 @@ export function Evidence() {
     const type = formData.get('type') as EvidenceInput['type'];
     const source = formData.get('source') as string;
 
-    if (!title) return;
+    if (!title || workspaceId == null) return;
 
-    createEvidence.mutate({ data: { title, type, source, projectId: initialWorkspaceId } }, {
+    createEvidence.mutate({ data: { title, type, source, workspaceId } }, {
       onSuccess: () => {
         setIsCreateOpen(false);
         refetch();
@@ -69,6 +74,10 @@ export function Evidence() {
   ];
 
   const handleFiles = async (files: FileList) => {
+    if (workspaceId == null) {
+      setImportMessage('Select a Workspace before importing Evidence.');
+      return;
+    }
     setImportMessage(`Importing ${files.length} file${files.length === 1 ? '' : 's'}…`);
     let imported = 0;
     for (const file of Array.from(files)) {
@@ -87,7 +96,7 @@ export function Evidence() {
             type,
             source: result.source,
             notes: result.checksum ? `SHA-256: ${result.checksum}` : undefined,
-            projectId: initialWorkspaceId,
+            workspaceId,
           },
         });
         imported += 1;
@@ -182,6 +191,17 @@ export function Evidence() {
         >
           <option value="">ALL TYPES</option>
           {evidenceTypes.map(t => <option key={t} value={t}>{t}</option>)}
+        </Select>
+        <Select
+          aria-label="Evidence Workspace"
+          className="w-full sm:w-[220px] font-mono text-sm bg-card"
+          value={workspaceId ?? ''}
+          onChange={(event) => setWorkspaceId(Number(event.target.value) || undefined)}
+        >
+          <option value="" disabled>SELECT WORKSPACE</option>
+          {workspaces.map((workspace) => (
+            <option key={workspace.id} value={workspace.id}>{workspace.name}</option>
+          ))}
         </Select>
         <label className="inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-md border border-border px-4 font-mono text-xs hover:bg-accent">
           <UploadCloud className="h-4 w-4" /> IMPORT FILES

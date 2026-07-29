@@ -49,7 +49,9 @@ export const entityConfigs = {
     fields: {
       title: 'title', type: 'type', source: 'source', notes: 'notes',
       content: 'content', tags: 'tags', storyId: 'story_id',
-      projectId: 'project_id', repository: 'repository',
+      projectId: 'project_id', workspaceId: 'project_id', repository: 'repository',
+      classification: 'classification', lifecycleStatus: 'lifecycle_status',
+      reviewStatus: 'review_status', version: 'version', archivedAt: 'archived_at',
     },
     jsonFields: ['tags'],
   },

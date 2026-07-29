@@ -16,15 +16,17 @@ When sources disagree, use this precedence:
    implementing, measuring, and evolving routes.
 4. `Docs/Route-01-Workspaces-execution-plan.md` and
    `Docs/Route-02-Stories-execution-plan.md` — accepted route-specific decisions.
-5. `wireframe.png` and `branding-brief.png` — binding visual sources for the Home composition and complete brand/design system.
-6. `Docs/NTC3_UI-UX_Spec.md` — reconciled governing UI/UX specification for information architecture, interaction, visual language, accessibility, and screen behavior.
-7. Executable code and configuration — truth for current behavior, but not authority to override approved target visuals.
-8. `lib/api-spec/openapi.yaml` — truth for HTTP contracts.
-9. `lib/db/src/migrations.ts` and `lib/db/src/index.ts` — truth for SQLite migrations, initialization, and vault access.
-10. `Docs/NTC3_Feature` — active, explicitly requested feature outcomes.
-11. `Docs/NTC3_spec-doc.txt` — refined long-term EIOS product direction.
-12. `Docs/NTC3.txt` — original v0.1 ECOS scope and architecture proposal.
-13. `README.md` — operator guide; update it when commands, prerequisites, routes, or architecture change.
+5. `Docs/Route-03-Evidence-execution-plan.md` — accepted Route 03 RDF v1 dossier
+   and staged execution authority.
+6. `wireframe.png` and `branding-brief.png` — binding visual sources for the Home composition and complete brand/design system.
+7. `Docs/NTC3_UI-UX_Spec.md` — reconciled governing UI/UX specification for information architecture, interaction, visual language, accessibility, and screen behavior.
+8. Executable code and configuration — truth for current behavior, but not authority to override approved target visuals.
+9. `lib/api-spec/openapi.yaml` — truth for HTTP contracts.
+10. `lib/db/src/migrations.ts` and `lib/db/src/index.ts` — truth for SQLite migrations, initialization, and vault access.
+11. `Docs/NTC3_Feature` — active, explicitly requested feature outcomes.
+12. `Docs/NTC3_spec-doc.txt` — refined long-term EIOS product direction.
+13. `Docs/NTC3.txt` — original v0.1 ECOS scope and architecture proposal.
+14. `README.md` — operator guide; update it when commands, prerequisites, routes, or architecture change.
 
 The documentation is strategic, not a claim that every described feature exists. A feature is implemented only when it is present in executable code and its required data/API path exists.
 
@@ -683,6 +685,104 @@ that dossier defines its Evidence identity, provenance, source locators, immutab
 or versioned file behavior, capture compensation, archive/deletion policy,
 performance workloads, and applicable Tier 1–3 conformance evidence.
 
+### TNB3 Pass 1 execution report — Route 03 Evidence dossier
+
+Status: **Completed and Accepted**
+
+`Docs/Route-03-Evidence-execution-plan.md` now supplies the required RDF v1
+dossier and staged execution plan. It audits the current API, SQLite, Electron IPC,
+UI, event, search, and test paths and resolves the target boundaries:
+
+- Evidence is a Workspace-owned, provenance-bearing artifact that supports,
+  challenges, or contextualizes a claim;
+- classification, review, lifecycle, integrity, indexing, and relationship facts
+  are independent dimensions rather than one overloaded status;
+- imported payloads are immutable source versions with structured SHA-256,
+  provenance, and validated source locators;
+- managed-file capture uses a persisted, idempotent staging/promotion saga with
+  compensation and restart reconciliation;
+- archive/restore replaces normal hard deletion;
+- canonical contracts use `workspaceId` while preserving `projectId`, singular
+  `storyId`, and legacy source columns during a measured compatibility window;
+- durable events and rebuildable projections cover capture, metadata, links,
+  archive, restore, verification, search, and Activity; and
+- deterministic `evidence-integrity@1.0.0` verifies source presence, containment,
+  checksum, provenance, locators, and broken references without deciding whether a
+  claim is true.
+
+The dossier defines Tier 1 domain/contract, Tier 2 platform-integration, and Tier 3
+experience/performance evidence. It also records a required amendment to
+Specification 01: Evidence is not restricted to an objectively factual artifact;
+factual records, observations, testimony, derived analysis, and external
+references are allowed when classification and provenance are explicit.
+
+No Route 03 production code changed in this pass.
+
+#### Acceptance amendment — 2026-07-29
+
+The Route 03 dossier is Accepted. ADR-001 records the constitutional decision, and
+Specification 01 now defines Evidence as a provenance-bearing artifact that
+supports, challenges, or contextualizes a claim. Classification is explicit;
+source payloads are immutable or versioned; lifecycle, review, integrity, index,
+and relationship state remain separate; and archive/restore is the normal removal
+workflow.
+
+This acceptance authorizes Pass 2A as the next implementation boundary: canonical
+OpenAPI contracts, the ordered compatibility migration, legacy audit reporting,
+and feature flags. It does not claim those changes are implemented.
+
+### Route 03 Pass 2A execution report — contracts and schema
+
+Status: **Implemented and verified**
+
+Ordered SQLite migration 6, `evidence_contracts_and_legacy_backfill`, establishes
+the governed Evidence persistence foundation without rewriting prior migrations:
+
+- Evidence now stores explicit classification, lifecycle, review, optimistic
+  version, and archive metadata;
+- `evidence_sources` stores immutable source-version identity, structured SHA-256,
+  managed path, inline/external/repository provenance, and producer metadata;
+- `evidence_ingests` defines the persisted Pass 2B saga states without enabling
+  file ingestion;
+- `evidence_source_locators` defines versioned Whole Artifact, text, page,
+  timestamp, image-region, repository-path, and JSON-pointer locators;
+- `evidence_migration_audit` records ownership, missing-source, and checksum
+  compatibility findings; and
+- database-backed rollout flags enable canonical contracts while leaving source
+  writes, recoverable ingestion, and the detail route disabled.
+
+Legacy backfill preserves `source`, `content`, `notes`, `story_id`, physical
+`project_id`, existing vault paths, and Story links. It creates one conservative
+source version per legacy row, infers only bounded source kind/classification
+facts, recovers SHA-256 only from an exact legacy checksum note, and reports
+unassigned or ambiguous rows rather than inventing provenance or Workspace
+ownership.
+
+The canonical OpenAPI Evidence create contract now requires `workspaceId`.
+`projectId` remains a deprecated compatibility alias for reads and updates.
+Classification, lifecycle, review, source, ingest, locator, migration-audit, and
+feature-flag schemas are generated into the React client and Zod libraries.
+Evidence list filters accept canonical Workspace and governed-state dimensions.
+
+Quick Capture, manual/file Evidence capture, and repository snapshot capture now
+select or require a Workspace. The API rejects unassigned creation and mismatched
+simultaneous `workspaceId`/`projectId` values. Existing current-state source fields
+remain operational while the source-version write flag is disabled.
+
+The executable `pnpm audit:evidence-migration` command reports selected-Vault
+Evidence/source counts, unresolved migration findings, and rollout flags. The
+controlled migration report is recorded at
+`Docs/System-Design-Book/evidence/evidence-migration-audit-2026-07-29.md`.
+
+Pass 2A does not implement staged file transfer, promotion, compensation,
+reconciliation, archive/restore, locator endpoints, source-version endpoints, or
+Evidence Integrity. Those remain gated to Passes 2B, 2C, and 3B.
+
+Verification completed with OpenAPI regeneration, repository typecheck, production
+builds, the executable audit reporter on a disposable Vault, Markdown whitespace
+validation, and all 17 Vitest assertions passing across migration, API integration,
+and capture utility suites.
+
 ## 2B. Proposed Phase III — C³ Canon and Knowledge Intelligence
 
 Status: **Proposed future architecture — not implemented and not yet binding**
@@ -946,6 +1046,120 @@ Implementation remains deferred until all of the following are accepted:
 
 This amendment changes target terminology and architecture only. It does not change
 the current executable route or authorize external publishing.
+
+### Accepted future route — Publishing Calendar and AFI™
+
+Status: **Accepted target architecture; not implemented**
+
+The Home action **See Scheduled Content** launches the canonical future route:
+
+```text
+Home → See Scheduled Content → /calendar → Publishing Calendar
+```
+
+The **Adaptive Floating Interface (AFI™)** is non-negotiable and Accepted as the
+primary interaction and navigation system inside `/calendar`. The route is a
+minimal-chrome operational canvas for coordinating scheduled Publication
+Deployments, Campaign milestones, Publication review deadlines, and later
+explicitly modelled productivity objects.
+
+AFI is an experience adapter and never owns authoritative business state. It
+invokes the same validated domain commands available to tests, the Command Menu,
+keyboard operation, drag interactions, and future plugins.
+
+#### Scheduling ownership correction
+
+The Calendar does not own schedule facts, and scheduling MUST NOT be placed on one
+generic Output or directly on a Publication:
+
+| Fact | Authoritative owner |
+| --- | --- |
+| Publication content and versions | Publication |
+| Destination-specific adaptation | Publication Variant |
+| Generated file | Rendition |
+| Destination capabilities | Channel |
+| Configured destination | Channel Connection |
+| Planned delivery time, timezone, attempts, and outcome | Deployment |
+| Campaign milestones | Campaign |
+| Calendar range, conflict, readiness, and overdue views | Rebuildable projection |
+| AFI sensitivity, ranking, and calibration | Local interaction settings |
+
+One Publication may have independent Deployments to several Channels at different
+times. `ScheduleDeployment`, `RescheduleDeployment`, and
+`UnscheduleDeployment` are therefore the canonical scheduling commands. Campaign
+milestone changes remain Campaign commands. Channels are first-class and cannot be
+reduced to format strings or AFI menu categories.
+
+Existing Story Outputs may appear in a compatibility view until the approved
+Publication migration is complete. They MUST be labelled as legacy current-state
+objects and MUST NOT define the permanent Calendar schedule model.
+
+#### AFI interaction contract
+
+The directional grammar remains stable:
+
+- left: operations;
+- right: context and productivity;
+- up: views; and
+- down: temporal navigation.
+
+AFI MAY adapt command ordering, sensitivity, transition speed, default view, and
+contextual visibility using local, explainable frequency, recency, and context
+signals. It MUST NOT silently change directional meanings, domain facts,
+lifecycle rules, schedule dates, publication state, confirmation requirements, or
+provider permissions.
+
+Unrecognised gestures perform no command. Ambiguous consequential gestures require
+explicit selection. No swipe alone may publish, delete, archive, unschedule, or
+perform another irreversible action. Failed writes restore the prior projection,
+preserve the authoritative state, and explain retry or recovery. Learning,
+sensitivity, and ranking MUST be inspectable, resettable, freezable, and locally
+stored.
+
+#### Owner-operated RDF amendment
+
+Because the current product is single-user and owner-operated, universal first-use
+familiarity and conventional toolbar discoverability are not route acceptance
+requirements. Owner-measured mastery, speed, reliability, and satisfaction are
+valid acceptance evidence.
+
+This exception does not waive deterministic command access, semantic labels,
+visible keyboard focus, reduced-motion handling, testability, recoverability, or
+data safety. Every authoritative command MUST remain invokable through AFI click
+selection, keyboard operation, or the Command Menu. No essential mutation may
+exist only behind an unreliable gesture.
+
+#### Scope and sequencing
+
+AFI prototyping MAY begin in `artifacts/mockup-sandbox` without domain writes.
+Authoritative scheduling MUST wait for accepted Publication, Deployment, Channel,
+Connection, lifecycle, event, idempotency, concurrency, and compatibility
+contracts.
+
+Execution order:
+
+1. create and accept the Calendar RDF dossier plus UI/UX amendment;
+2. prototype conventional controls, static AFI, and adaptive AFI without writes;
+3. measure mouse and trackpad calibration on named owner hardware;
+4. complete Publication and Deployment foundations;
+5. connect safe Calendar queries and projections;
+6. connect validated schedule and Campaign commands;
+7. introduce deterministic, local, explainable AFI adaptation; and
+8. consider touch, Tasks, focus blocks, Pomodoro, time tracking, Linda, The Butler,
+   natural-language commands, and AI recommendations only after their owning
+   contracts are accepted.
+
+Initial prototype targets include at least 95% gesture recognition after
+calibration, under 1% accidental command activation, zero accidental schedule
+mutations, immediate failed-gesture recovery, and faster common-command access than
+the conventional baseline. These remain proposed measurement targets until trials
+name hardware, input device, sample size, reduced-motion setting, and comparison
+mode.
+
+The route remains unimplemented: there is currently no `/calendar` route, Calendar
+API, schedule schema, Deployment aggregate, or AFI component in the production
+application. This section records accepted future architecture and does not
+authorize external deployment.
 
 ### Proposed C³ Protocol
 
@@ -1306,7 +1520,7 @@ Legend: **Implemented**, **Partial**, **Not implemented**.
 | Quick capture | Implemented | Global button, Cmd/Ctrl+K, and paste-to-TerminalOutput flow |
 | Evidence file drop | Implemented | Electron IPC copies files into the vault and records checksum/source metadata |
 | Global search | Implemented | Migration-backed FTS5 index, automatic triggers, ranked API/UI, and entity/project/status/date filters |
-| Calendar/timeline | Not implemented | No route, API, or schema |
+| Publishing Calendar/AFI | Not implemented | `/calendar`, Deployment scheduling, Calendar projections, and AFI remain future work; AFI is Accepted as the primary route interaction architecture |
 | Actionable queue | Not implemented | No route, API, or schema |
 | Export pipeline | Partial | Desktop exports portable JSON plus human-readable Markdown; HTML/PDF/DOCX exporters remain |
 | Version history | Partial | Story checkpoints and timeline exist; Knowledge and most other entities store only current rows and timestamps |
@@ -1351,15 +1565,12 @@ Current state: implemented. Terminal paste uses `content`; dropped files are cop
 
 ### Next implementation order
 
-1. Close the highest-risk invariant gaps: transitive archived-Workspace guards,
-   mandatory Story ownership, legal lifecycle transitions, safe Output creation,
-   and atomic outline replacement.
-2. Extend the durable-event and Intelligence contracts across Story and Evidence
-   mutations, including Story Health, while retiring lossy Activity writes.
-3. Accept the Filesystem, Platform Services, and Performance specifications and
-   run larger UI, Electron-startup, attachment, and vault-scale benchmarks.
-4. Reassess the Route 03 gate against recorded evidence, then begin Evidence Vault
-   implementation when its governing specifications are accepted.
+1. Execute Route 03 Pass 2B: streaming staged ingestion, checksum metadata, atomic
+   promotion, compensation, and restart reconciliation.
+2. Execute Route 03 Pass 2C: domain API, optimistic concurrency, archive/restore,
+   typed relationships, durable events, and replay-safe projections.
+3. Execute Route 03 Pass 3A: Evidence explorer/inspector migration, provenance,
+   recovery feedback, locators, and accessible archive/restore experience.
 
 ## 8. Contract and data workflow
 

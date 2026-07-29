@@ -31,6 +31,10 @@ export function Projects() {
   };
 
   const handleRepositoryScan = async (projectId?: number) => {
+    if (projectId == null) {
+      setScanStatus('Choose a Workspace before capturing a repository snapshot.');
+      return;
+    }
     if (!window.ntc3Vault) {
       setScanStatus('Repository scanning is available in the desktop app.');
       return;
@@ -66,7 +70,7 @@ export function Projects() {
         data: {
           title: `Repository Snapshot — ${snapshot.name}`,
           type: 'RepositoryAudit',
-          projectId,
+          workspaceId: projectId,
           repository: snapshot.name,
           content: `${snapshot.content}${comparison}`,
           notes: `NTC3_REPOSITORY_SNAPSHOT ${JSON.stringify({

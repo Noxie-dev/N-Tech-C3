@@ -107,4 +107,78 @@ describe('SQLite migrations', () => {
     expect(database.prepare('PRAGMA table_info(activity)').all())
       .toEqual(expect.arrayContaining([expect.objectContaining({ name: 'source_event_id' })]));
   });
+
+  it('backfills legacy Evidence conservatively and records migration exceptions', () => {
+    const database = new DatabaseSync(':memory:');
+    database.exec('PRAGMA foreign_keys = ON');
+    migrations.slice(0, 5).forEach((migration) => database.exec(migration.sql));
+
+    const workspace = database.prepare(
+      "INSERT INTO projects (name, slug) VALUES ('Evidence Workspace', 'evidence-workspace')",
+    ).run();
+    const story = database.prepare(
+      "INSERT INTO stories (title, project_id) VALUES ('Evidence Story', ?)",
+    ).run(workspace.lastInsertRowid);
+    const checksum = 'a'.repeat(64);
+    const managed = database.prepare(`
+      INSERT INTO evidence (title, type, source, notes, story_id, project_id)
+      VALUES ('Managed proof', 'Screenshot', 'evidence/proof.png', ?, ?, ?)
+    `).run(`SHA-256: ${checksum}`, story.lastInsertRowid, workspace.lastInsertRowid);
+    const unassigned = database.prepare(`
+      INSERT INTO evidence (title, type, content)
+      VALUES ('Unassigned notes', 'MeetingNotes', 'A witnessed observation')
+    `).run();
+    const missing = database.prepare(`
+      INSERT INTO evidence (title, type)
+      VALUES ('Unknown legacy evidence', 'Other')
+    `).run();
+
+    database.exec(migrations[5].sql);
+
+    expect(database.prepare(`
+      SELECT classification, lifecycle_status, review_status, version
+      FROM evidence WHERE id = ?
+    `).get(unassigned.lastInsertRowid)).toEqual({
+      classification: 'Testimony',
+      lifecycle_status: 'Active',
+      review_status: 'Unreviewed',
+      version: 1,
+    });
+    expect(database.prepare(`
+      SELECT source_kind, sha256, vault_path, capture_method
+      FROM evidence_sources WHERE evidence_id = ?
+    `).get(managed.lastInsertRowid)).toEqual({
+      source_kind: 'ManagedFile',
+      sha256: checksum,
+      vault_path: 'evidence/proof.png',
+      capture_method: 'LegacyMigration',
+    });
+    expect(database.prepare(`
+      SELECT source_kind, inline_content
+      FROM evidence_sources WHERE evidence_id = ?
+    `).get(unassigned.lastInsertRowid)).toEqual({
+      source_kind: 'InlineText',
+      inline_content: 'A witnessed observation',
+    });
+    expect(database.prepare(`
+      SELECT issue_code, severity FROM evidence_migration_audit
+      WHERE evidence_id = ? ORDER BY issue_code
+    `).all(missing.lastInsertRowid)).toEqual([
+      { issue_code: 'ChecksumUnavailable', severity: 'Warning' },
+      { issue_code: 'MissingSource', severity: 'ActionRequired' },
+      { issue_code: 'UnassignedWorkspace', severity: 'ActionRequired' },
+    ]);
+    expect(database.prepare(
+      'SELECT story_id, evidence_id FROM story_evidence WHERE story_id = ? AND evidence_id = ?',
+    ).get(story.lastInsertRowid, managed.lastInsertRowid)).toEqual({
+      story_id: story.lastInsertRowid,
+      evidence_id: managed.lastInsertRowid,
+    });
+    expect(database.prepare(
+      "SELECT enabled FROM feature_flags WHERE flag_key = 'evidence.canonical-contracts'",
+    ).get()).toEqual({ enabled: 1 });
+    expect(database.prepare(
+      "SELECT enabled FROM feature_flags WHERE flag_key = 'evidence.recoverable-ingest'",
+    ).get()).toEqual({ enabled: 0 });
+  });
 });

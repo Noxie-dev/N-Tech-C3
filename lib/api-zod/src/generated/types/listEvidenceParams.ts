@@ -5,6 +5,9 @@
  * N-Tech C³ Engineering Intelligence Operating System API
  * OpenAPI spec version: 0.1.0
  */
+import type { EvidenceClassification } from './evidenceClassification';
+import type { EvidenceLifecycleStatus } from './evidenceLifecycleStatus';
+import type { EvidenceReviewStatus } from './evidenceReviewStatus';
 
 export type ListEvidenceParams = {
 type?: string;
@@ -16,5 +19,12 @@ storyId?: number | null;
  * @nullable
  */
 projectId?: number | null;
+/**
+ * @nullable
+ */
+workspaceId?: number | null;
+classification?: EvidenceClassification;
+lifecycleStatus?: EvidenceLifecycleStatus;
+reviewStatus?: EvidenceReviewStatus;
 search?: string;
 };

@@ -138,7 +138,7 @@ describe('local API', () => {
 
     const evidence = await request(app)
       .post('/api/evidence')
-      .send({ title: 'Architecture trace', type: 'Diagram', projectId: workspace.body.id })
+      .send({ title: 'Architecture trace', type: 'Diagram', workspaceId: workspace.body.id })
       .expect(201);
     await request(app)
       .post(`/api/stories/${story.body.id}/links`)
@@ -227,7 +227,7 @@ describe('local API', () => {
       .send({
         title: 'Blocked child',
         type: 'TerminalOutput',
-        projectId: workspace.body.id,
+        workspaceId: workspace.body.id,
       })
       .expect(409);
     await request(app)
@@ -237,12 +237,17 @@ describe('local API', () => {
   });
 
   it('captures terminal evidence content', async () => {
+    const workspace = await request(app)
+      .post('/api/workspaces')
+      .send({ name: 'Evidence capture workspace' })
+      .expect(201);
     const response = await request(app)
       .post('/api/evidence')
       .send({
         title: 'Build output',
         type: 'TerminalOutput',
         content: 'pnpm run build\\nDone',
+        workspaceId: workspace.body.id,
       })
       .expect(201);
 
@@ -250,6 +255,11 @@ describe('local API', () => {
       title: 'Build output',
       type: 'TerminalOutput',
       content: 'pnpm run build\\nDone',
+      workspaceId: workspace.body.id,
+      classification: 'FactualRecord',
+      lifecycleStatus: 'Active',
+      reviewStatus: 'Unreviewed',
+      version: 1,
     });
     expect(database.get(
       'SELECT event_type FROM domain_events WHERE aggregate_type = ? AND aggregate_id = ?',
@@ -282,15 +292,20 @@ describe('local API', () => {
         title: 'Scoped telemetry record',
         type: 'Benchmark',
         content: 'unique-filter-token',
-        projectId: project.body.id,
+        workspaceId: project.body.id,
       })
+      .expect(201);
+    const otherProject = await request(app)
+      .post('/api/projects')
+      .send({ name: 'Other filtered project' })
       .expect(201);
     await request(app)
       .post('/api/evidence')
       .send({
-        title: 'Unscoped telemetry record',
+        title: 'Other scoped telemetry record',
         type: 'Benchmark',
         content: 'unique-filter-token',
+        workspaceId: otherProject.body.id,
       })
       .expect(201);
 
@@ -301,5 +316,17 @@ describe('local API', () => {
 
     expect(search.body).toHaveLength(1);
     expect(search.body[0].title).toBe('Scoped telemetry record');
+  });
+
+  it('requires canonical Workspace ownership for new Evidence', async () => {
+    const response = await request(app)
+      .post('/api/evidence')
+      .send({
+        title: 'Unassigned Evidence',
+        type: 'Observation',
+      })
+      .expect(400);
+
+    expect(response.body.error).toContain('workspaceId');
   });
 });

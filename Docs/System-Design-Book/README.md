@@ -47,6 +47,10 @@ production-ready.
 
 Silent architecture drift is prohibited.
 
+Accepted amendments are indexed in
+[`decisions/README.md`](decisions/README.md). ADR-001 establishes the canonical
+Evidence definition and state separation required by Route 03.
+
 ## Evidence
 
 Claims of conformance or performance require artifacts under `evidence/` or links

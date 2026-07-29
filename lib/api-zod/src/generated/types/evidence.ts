@@ -5,6 +5,9 @@
  * N-Tech C³ Engineering Intelligence Operating System API
  * OpenAPI spec version: 0.1.0
  */
+import type { EvidenceClassification } from './evidenceClassification';
+import type { EvidenceLifecycleStatus } from './evidenceLifecycleStatus';
+import type { EvidenceReviewStatus } from './evidenceReviewStatus';
 import type { EvidenceType } from './evidenceType';
 
 export interface Evidence {
@@ -20,10 +23,26 @@ export interface Evidence {
   tags?: string[];
   /** @nullable */
   storyId?: number | null;
-  /** @nullable */
+  /**
+     * Legacy alias retained for one compatibility window. Use workspaceId.
+     * @deprecated
+     * @nullable
+     */
   projectId?: number | null;
+  /**
+     * Canonical Workspace owner. Null only for reported legacy migration exceptions.
+     * @nullable
+     */
+  workspaceId: number | null;
   /** @nullable */
   repository?: string | null;
+  classification: EvidenceClassification;
+  lifecycleStatus: EvidenceLifecycleStatus;
+  reviewStatus: EvidenceReviewStatus;
+  /** @minimum 1 */
+  version: number;
+  /** @nullable */
+  archivedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

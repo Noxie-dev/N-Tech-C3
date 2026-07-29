@@ -745,6 +745,71 @@ export interface CampaignPatch {
   durationWeeks?: number | null;
 }
 
+export type EvidenceClassification = typeof EvidenceClassification[keyof typeof EvidenceClassification];
+
+
+export const EvidenceClassification = {
+  FactualRecord: 'FactualRecord',
+  Observation: 'Observation',
+  Testimony: 'Testimony',
+  DerivedAnalysis: 'DerivedAnalysis',
+  ExternalReference: 'ExternalReference',
+} as const;
+
+export type EvidenceLifecycleStatus = typeof EvidenceLifecycleStatus[keyof typeof EvidenceLifecycleStatus];
+
+
+export const EvidenceLifecycleStatus = {
+  CapturePending: 'CapturePending',
+  Active: 'Active',
+  Archived: 'Archived',
+  IngestFailed: 'IngestFailed',
+} as const;
+
+export type EvidenceReviewStatus = typeof EvidenceReviewStatus[keyof typeof EvidenceReviewStatus];
+
+
+export const EvidenceReviewStatus = {
+  Unreviewed: 'Unreviewed',
+  Reviewed: 'Reviewed',
+  Disputed: 'Disputed',
+} as const;
+
+export type EvidenceSourceKind = typeof EvidenceSourceKind[keyof typeof EvidenceSourceKind];
+
+
+export const EvidenceSourceKind = {
+  ManagedFile: 'ManagedFile',
+  InlineText: 'InlineText',
+  ExternalReference: 'ExternalReference',
+  RepositorySnapshot: 'RepositorySnapshot',
+} as const;
+
+export type EvidenceIngestState = typeof EvidenceIngestState[keyof typeof EvidenceIngestState];
+
+
+export const EvidenceIngestState = {
+  Staged: 'Staged',
+  MetadataCommitted: 'MetadataCommitted',
+  Promoted: 'Promoted',
+  Completed: 'Completed',
+  Compensating: 'Compensating',
+  Failed: 'Failed',
+} as const;
+
+export type EvidenceLocatorKind = typeof EvidenceLocatorKind[keyof typeof EvidenceLocatorKind];
+
+
+export const EvidenceLocatorKind = {
+  WholeArtifact: 'WholeArtifact',
+  TextRange: 'TextRange',
+  Page: 'Page',
+  Timestamp: 'Timestamp',
+  ImageRegion: 'ImageRegion',
+  RepositoryPath: 'RepositoryPath',
+  JsonPointer: 'JsonPointer',
+} as const;
+
 export type EvidenceType = typeof EvidenceType[keyof typeof EvidenceType];
 
 
@@ -779,10 +844,26 @@ export interface Evidence {
   tags?: string[];
   /** @nullable */
   storyId?: number | null;
-  /** @nullable */
+  /**
+     * Legacy alias retained for one compatibility window. Use workspaceId.
+     * @deprecated
+     * @nullable
+     */
   projectId?: number | null;
+  /**
+     * Canonical Workspace owner. Null only for reported legacy migration exceptions.
+     * @nullable
+     */
+  workspaceId: number | null;
   /** @nullable */
   repository?: string | null;
+  classification: EvidenceClassification;
+  lifecycleStatus: EvidenceLifecycleStatus;
+  reviewStatus: EvidenceReviewStatus;
+  /** @minimum 1 */
+  version: number;
+  /** @nullable */
+  archivedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -818,9 +899,17 @@ export interface EvidenceInput {
   tags?: string[];
   /** @nullable */
   storyId?: number | null;
-  /** @nullable */
+  /**
+     * Deprecated compatibility field; canonical creation requires workspaceId.
+     * @deprecated
+     * @nullable
+     */
   projectId?: number | null;
+  /** @minimum 1 */
+  workspaceId: number;
   repository?: string;
+  classification?: EvidenceClassification;
+  reviewStatus?: EvidenceReviewStatus;
 }
 
 export type EvidencePatchType = typeof EvidencePatchType[keyof typeof EvidencePatchType];
@@ -857,10 +946,129 @@ export interface EvidencePatch {
   tags?: string[];
   /** @nullable */
   storyId?: number | null;
-  /** @nullable */
+  /**
+     * @deprecated
+     * @nullable
+     */
   projectId?: number | null;
+  /** @minimum 1 */
+  workspaceId?: number;
   /** @nullable */
   repository?: string | null;
+  classification?: EvidenceClassification;
+  reviewStatus?: EvidenceReviewStatus;
+}
+
+export type EvidenceSourceProducerMetadata = { [key: string]: unknown };
+
+export interface EvidenceSource {
+  id: number;
+  evidenceId: number;
+  /** @minimum 1 */
+  version: number;
+  sourceKind: EvidenceSourceKind;
+  /** @nullable */
+  mediaType?: string | null;
+  /** @nullable */
+  originalName?: string | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  byteSize?: number | null;
+  /**
+     * @nullable
+     * @pattern ^[0-9a-f]{64}$
+     */
+  sha256?: string | null;
+  /** @nullable */
+  vaultPath?: string | null;
+  /** @nullable */
+  inlineContent?: string | null;
+  /** @nullable */
+  originUri?: string | null;
+  /** @nullable */
+  repositoryId?: number | null;
+  /** @nullable */
+  repositoryRevision?: string | null;
+  captureMethod: string;
+  producerMetadata: EvidenceSourceProducerMetadata;
+  createdAt: string;
+}
+
+export type EvidenceSourceLocatorCoordinates = { [key: string]: unknown };
+
+export interface EvidenceSourceLocator {
+  id: number;
+  sourceId: number;
+  /** @minimum 1 */
+  locatorVersion: number;
+  kind: EvidenceLocatorKind;
+  coordinates: EvidenceSourceLocatorCoordinates;
+  /** @nullable */
+  label?: string | null;
+  createdAt: string;
+}
+
+export interface EvidenceIngest {
+  id: string;
+  workspaceId: number;
+  /** @nullable */
+  stagedPath?: string | null;
+  /** @nullable */
+  finalPath?: string | null;
+  originalName: string;
+  /** @nullable */
+  mediaType?: string | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  byteSize?: number | null;
+  /**
+     * @nullable
+     * @pattern ^[0-9a-f]{64}$
+     */
+  sha256?: string | null;
+  state: EvidenceIngestState;
+  /** @minimum 0 */
+  retryCount: number;
+  /** @nullable */
+  errorCategory?: string | null;
+  /** @nullable */
+  evidenceId?: number | null;
+  /** @nullable */
+  sourceId?: number | null;
+  idempotencyKey: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type EvidenceMigrationAuditEntrySeverity = typeof EvidenceMigrationAuditEntrySeverity[keyof typeof EvidenceMigrationAuditEntrySeverity];
+
+
+export const EvidenceMigrationAuditEntrySeverity = {
+  Info: 'Info',
+  Warning: 'Warning',
+  ActionRequired: 'ActionRequired',
+} as const;
+
+export interface EvidenceMigrationAuditEntry {
+  id: number;
+  evidenceId: number;
+  issueCode: string;
+  severity: EvidenceMigrationAuditEntrySeverity;
+  details: string;
+  /** @nullable */
+  resolvedAt?: string | null;
+  createdAt: string;
+}
+
+export interface FeatureFlag {
+  key: string;
+  enabled: boolean;
+  description: string;
+  updatedAt: string;
 }
 
 export type AssetType = typeof AssetType[keyof typeof AssetType];
@@ -1168,6 +1376,13 @@ storyId?: number | null;
  * @nullable
  */
 projectId?: number | null;
+/**
+ * @nullable
+ */
+workspaceId?: number | null;
+classification?: EvidenceClassification;
+lifecycleStatus?: EvidenceLifecycleStatus;
+reviewStatus?: EvidenceReviewStatus;
 search?: string;
 };
 

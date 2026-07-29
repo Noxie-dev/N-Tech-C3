@@ -209,6 +209,24 @@ attachment copy/hash measurements. See
 Electron launch, UI rendering, backup/restore, large-file, memory, and slower
 hardware budgets remain open.
 
+TNB3 Pass 1 is complete and accepted:
+[`Route-03-Evidence-execution-plan.md`](Docs/Route-03-Evidence-execution-plan.md)
+contains the Route Discovery Framework dossier, domain and locator contracts,
+recoverable staged-ingest design, migration strategy, API/events, deterministic
+integrity boundary, experience scope, and Tier 1–3 verification plan.
+[`ADR-001`](Docs/System-Design-Book/decisions/ADR-001-evidence-domain-definition.md)
+records the accepted Evidence definition and Domain Model amendment. This is not
+an implementation claim by itself.
+
+Route 03 Pass 2A is implemented. Migration 6 adds governed Evidence metadata plus
+source-version, ingest-state, locator, legacy-audit, and rollout-flag tables.
+Canonical creation requires `workspaceId`; generated OpenAPI React/Zod contracts
+cover Evidence classification, lifecycle, review, sources, locators, and ingests.
+Legacy rows are conservatively backfilled without discarding existing fields or
+guessing missing ownership. Run `pnpm audit:evidence-migration` against a selected
+Vault to report unresolved upgrade findings. Recoverable file ingestion and source
+write endpoints remain disabled pending Pass 2B.
+
 The default desktop vault is `Documents/N-TechC3-Vault` and contains:
 
 ```text

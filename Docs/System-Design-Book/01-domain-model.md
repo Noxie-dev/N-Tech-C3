@@ -55,11 +55,21 @@ Vault
 
 ### Evidence
 
-- Is an immutable-or-versioned factual artifact with provenance and integrity
-  metadata.
-- Belongs to one Workspace in new flows and MAY link to many Stories.
+- Is a provenance-bearing artifact that supports, challenges, or contextualizes a
+  claim.
+- MUST classify its epistemic nature as `FactualRecord`, `Observation`,
+  `Testimony`, `DerivedAnalysis`, or `ExternalReference`.
+- Belongs to exactly one Workspace in new flows and MAY link to many Stories and,
+  through accepted future contracts, Knowledge, Publications, and other domains.
+- Source payloads are immutable or replaced through a new source version.
 - Binary content is linked, not copied per relationship.
 - Evidence provenance MUST survive title, tag, and relationship changes.
+- Lifecycle, review, integrity, index state, and relationship state are independent
+  dimensions.
+- Lifecycle and review are authoritative domain facts; integrity is a versioned
+  EIE result; indexing, backlinks, and link counts are rebuildable projections.
+- Archive/restore is the normal removal workflow. Permanent deletion MUST NOT be a
+  normal product action.
 
 ### Knowledge
 
@@ -110,6 +120,7 @@ silently mutate authoritative domain facts.
 - SQLite foreign-key migration tests.
 - API lifecycle and cross-Workspace conflict tests.
 - Route 01 and Route 02 invariant audit.
+- Accepted Route 03 RDF v1 dossier and ADR-001.
 
 ## Open questions
 
@@ -120,3 +131,7 @@ silently mutate authoritative domain facts.
 ## Amendment history
 
 - 2026-07-29: Initial accepted platform domain model.
+- 2026-07-29: ADR-001 broadened Evidence beyond objectively factual artifacts,
+  required explicit classification and Workspace ownership, separated lifecycle,
+  review, integrity, indexing, and relationship state, and adopted archive-first
+  removal.

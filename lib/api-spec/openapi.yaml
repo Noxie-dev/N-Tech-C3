@@ -870,8 +870,25 @@ paths:
             type: ["number", "null"]
         - name: projectId
           in: query
+          deprecated: true
           schema:
             type: ["number", "null"]
+        - name: workspaceId
+          in: query
+          schema:
+            type: ["number", "null"]
+        - name: classification
+          in: query
+          schema:
+            $ref: "#/components/schemas/EvidenceClassification"
+        - name: lifecycleStatus
+          in: query
+          schema:
+            $ref: "#/components/schemas/EvidenceLifecycleStatus"
+        - name: reviewStatus
+          in: query
+          schema:
+            $ref: "#/components/schemas/EvidenceReviewStatus"
         - name: search
           in: query
           schema:
@@ -1994,9 +2011,33 @@ components:
           type: ["number", "null"]
 
     # Evidence
+    EvidenceClassification:
+      type: string
+      enum: [FactualRecord, Observation, Testimony, DerivedAnalysis, ExternalReference]
+
+    EvidenceLifecycleStatus:
+      type: string
+      enum: [CapturePending, Active, Archived, IngestFailed]
+
+    EvidenceReviewStatus:
+      type: string
+      enum: [Unreviewed, Reviewed, Disputed]
+
+    EvidenceSourceKind:
+      type: string
+      enum: [ManagedFile, InlineText, ExternalReference, RepositorySnapshot]
+
+    EvidenceIngestState:
+      type: string
+      enum: [Staged, MetadataCommitted, Promoted, Completed, Compensating, Failed]
+
+    EvidenceLocatorKind:
+      type: string
+      enum: [WholeArtifact, TextRange, Page, Timestamp, ImageRegion, RepositoryPath, JsonPointer]
+
     Evidence:
       type: object
-      required: [id, title, type, createdAt, updatedAt]
+      required: [id, title, type, workspaceId, classification, lifecycleStatus, reviewStatus, version, createdAt, updatedAt]
       properties:
         id:
           type: number
@@ -2019,8 +2060,25 @@ components:
           type: ["number", "null"]
         projectId:
           type: ["number", "null"]
+          deprecated: true
+          description: Legacy alias retained for one compatibility window. Use workspaceId.
+        workspaceId:
+          type: ["number", "null"]
+          description: Canonical Workspace owner. Null only for reported legacy migration exceptions.
         repository:
           type: ["string", "null"]
+        classification:
+          $ref: "#/components/schemas/EvidenceClassification"
+        lifecycleStatus:
+          $ref: "#/components/schemas/EvidenceLifecycleStatus"
+        reviewStatus:
+          $ref: "#/components/schemas/EvidenceReviewStatus"
+        version:
+          type: number
+          minimum: 1
+        archivedAt:
+          type: ["string", "null"]
+          format: date-time
         createdAt:
           type: string
           format: date-time
@@ -2030,7 +2088,7 @@ components:
 
     EvidenceInput:
       type: object
-      required: [title, type]
+      required: [title, type, workspaceId]
       properties:
         title:
           type: string
@@ -2052,8 +2110,17 @@ components:
           type: ["number", "null"]
         projectId:
           type: ["number", "null"]
+          deprecated: true
+          description: Deprecated compatibility field; canonical creation requires workspaceId.
+        workspaceId:
+          type: number
+          minimum: 1
         repository:
           type: string
+        classification:
+          $ref: "#/components/schemas/EvidenceClassification"
+        reviewStatus:
+          $ref: "#/components/schemas/EvidenceReviewStatus"
 
     EvidencePatch:
       type: object
@@ -2078,8 +2145,158 @@ components:
           type: ["number", "null"]
         projectId:
           type: ["number", "null"]
+          deprecated: true
+        workspaceId:
+          type: number
+          minimum: 1
         repository:
           type: ["string", "null"]
+        classification:
+          $ref: "#/components/schemas/EvidenceClassification"
+        reviewStatus:
+          $ref: "#/components/schemas/EvidenceReviewStatus"
+
+    EvidenceSource:
+      type: object
+      required: [id, evidenceId, version, sourceKind, captureMethod, producerMetadata, createdAt]
+      properties:
+        id:
+          type: number
+        evidenceId:
+          type: number
+        version:
+          type: number
+          minimum: 1
+        sourceKind:
+          $ref: "#/components/schemas/EvidenceSourceKind"
+        mediaType:
+          type: ["string", "null"]
+        originalName:
+          type: ["string", "null"]
+        byteSize:
+          type: ["integer", "null"]
+          minimum: 0
+        sha256:
+          type: ["string", "null"]
+          pattern: "^[0-9a-f]{64}$"
+        vaultPath:
+          type: ["string", "null"]
+        inlineContent:
+          type: ["string", "null"]
+        originUri:
+          type: ["string", "null"]
+        repositoryId:
+          type: ["number", "null"]
+        repositoryRevision:
+          type: ["string", "null"]
+        captureMethod:
+          type: string
+        producerMetadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+
+    EvidenceSourceLocator:
+      type: object
+      required: [id, sourceId, locatorVersion, kind, coordinates, createdAt]
+      properties:
+        id:
+          type: number
+        sourceId:
+          type: number
+        locatorVersion:
+          type: number
+          minimum: 1
+        kind:
+          $ref: "#/components/schemas/EvidenceLocatorKind"
+        coordinates:
+          type: object
+          additionalProperties: true
+        label:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    EvidenceIngest:
+      type: object
+      required: [id, workspaceId, originalName, state, retryCount, idempotencyKey, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        workspaceId:
+          type: number
+        stagedPath:
+          type: ["string", "null"]
+        finalPath:
+          type: ["string", "null"]
+        originalName:
+          type: string
+        mediaType:
+          type: ["string", "null"]
+        byteSize:
+          type: ["integer", "null"]
+          minimum: 0
+        sha256:
+          type: ["string", "null"]
+          pattern: "^[0-9a-f]{64}$"
+        state:
+          $ref: "#/components/schemas/EvidenceIngestState"
+        retryCount:
+          type: number
+          minimum: 0
+        errorCategory:
+          type: ["string", "null"]
+        evidenceId:
+          type: ["number", "null"]
+        sourceId:
+          type: ["number", "null"]
+        idempotencyKey:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EvidenceMigrationAuditEntry:
+      type: object
+      required: [id, evidenceId, issueCode, severity, details, createdAt]
+      properties:
+        id:
+          type: number
+        evidenceId:
+          type: number
+        issueCode:
+          type: string
+        severity:
+          type: string
+          enum: [Info, Warning, ActionRequired]
+        details:
+          type: string
+        resolvedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    FeatureFlag:
+      type: object
+      required: [key, enabled, description, updatedAt]
+      properties:
+        key:
+          type: string
+        enabled:
+          type: boolean
+        description:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
 
     # Assets
     Asset:
