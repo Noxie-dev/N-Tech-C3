@@ -934,29 +934,72 @@ export const EvidencePatchType = {
 } as const;
 
 export interface EvidencePatch {
+  /** @minimum 1 */
+  expectedVersion: number;
   /** @minLength 1 */
   title?: string;
   type?: EvidencePatchType;
   /** @nullable */
-  source?: string | null;
+  notes?: string | null;
+  tags?: string[];
+  classification?: EvidenceClassification;
+  reviewStatus?: EvidenceReviewStatus;
+}
+
+export interface EvidenceVersionCommand {
+  /** @minimum 1 */
+  expectedVersion: number;
+}
+
+export type EvidenceStoryLinkInputRole = typeof EvidenceStoryLinkInputRole[keyof typeof EvidenceStoryLinkInputRole];
+
+
+export const EvidenceStoryLinkInputRole = {
+  Supporting: 'Supporting',
+  Contradicting: 'Contradicting',
+  Context: 'Context',
+  Primary: 'Primary',
+} as const;
+
+export interface EvidenceStoryLinkInput {
+  /** @minimum 1 */
+  storyId: number;
+  role?: EvidenceStoryLinkInputRole;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  relevance?: number;
+  /** @nullable */
+  notes?: string | null;
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  sourceLocatorId?: number | null;
+}
+
+export type EvidenceStoryLinkRole = typeof EvidenceStoryLinkRole[keyof typeof EvidenceStoryLinkRole];
+
+
+export const EvidenceStoryLinkRole = {
+  Supporting: 'Supporting',
+  Contradicting: 'Contradicting',
+  Context: 'Context',
+  Primary: 'Primary',
+} as const;
+
+export interface EvidenceStoryLink {
+  evidenceId: number;
+  storyId: number;
+  storyTitle: string;
+  role: EvidenceStoryLinkRole;
+  relevance: number;
   /** @nullable */
   notes?: string | null;
   /** @nullable */
-  content?: string | null;
-  tags?: string[];
-  /** @nullable */
-  storyId?: number | null;
-  /**
-     * @deprecated
-     * @nullable
-     */
-  projectId?: number | null;
-  /** @minimum 1 */
-  workspaceId?: number;
-  /** @nullable */
-  repository?: string | null;
-  classification?: EvidenceClassification;
-  reviewStatus?: EvidenceReviewStatus;
+  sourceLocatorId?: number | null;
+  linkedAt: string;
 }
 
 export type EvidenceSourceProducerMetadata = { [key: string]: unknown };

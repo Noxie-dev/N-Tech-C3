@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useListEvidence, useCreateEvidence, useUpdateEvidence, useListWorkspaces, useListStories, getListEvidenceQueryKey } from '@workspace/api-client-react';
+import { useListEvidence, useCreateEvidence, useLinkEvidenceToStory, useListWorkspaces, useListStories, getListEvidenceQueryKey } from '@workspace/api-client-react';
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button, Input, Select, Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/shared';
 import { Archive, FolderOpen, Plus, Search, Terminal, UploadCloud } from 'lucide-react';
 import { formatShortDate } from '@/lib/utils';
@@ -28,7 +28,7 @@ export function Evidence() {
     workspaceId,
   });
   const createEvidence = useCreateEvidence();
-  const updateEvidence = useUpdateEvidence();
+  const linkEvidence = useLinkEvidenceToStory();
   const { data: workspaces = [] } = useListWorkspaces();
   const { data: stories = [] } = useListStories();
 
@@ -40,14 +40,16 @@ export function Evidence() {
     event.preventDefault();
     if (!selectedEvidence) return;
     const data = new FormData(event.currentTarget);
-    const updated = await updateEvidence.mutateAsync({
+    const storyId = Number(data.get('storyId'));
+    if (!storyId) return;
+    await linkEvidence.mutateAsync({
       id: selectedEvidence.id,
       data: {
-        workspaceId: data.get('projectId') ? Number(data.get('projectId')) : selectedEvidence.workspaceId ?? undefined,
-        storyId: data.get('storyId') ? Number(data.get('storyId')) : null,
+        storyId,
+        role: 'Supporting',
+        relevance: 100,
       },
     });
-    setSelectedEvidence(updated);
     await refetch();
   };
 
@@ -302,25 +304,19 @@ export function Evidence() {
               )}
               <form onSubmit={saveLinks} className="space-y-4 border-t pt-4">
                 <h3 className="font-mono text-sm font-semibold uppercase">Graph links</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className="space-y-2 text-xs font-mono uppercase text-muted-foreground">
-                    Project
-                    <Select name="projectId" defaultValue={selectedEvidence.projectId ?? ''}>
-                      <option value="">Unlinked</option>
-                      {workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}
-                    </Select>
-                  </label>
+                <div className="grid gap-4">
                   <label className="space-y-2 text-xs font-mono uppercase text-muted-foreground">
                     Story
                     <Select name="storyId" defaultValue={selectedEvidence.storyId ?? ''}>
-                      <option value="">Unlinked</option>
-                      {stories.map((story) => <option key={story.id} value={story.id}>{story.title}</option>)}
+                      <option value="">Select a Story</option>
+                      {stories.filter((story) => story.workspaceId === selectedEvidence.workspaceId)
+                        .map((story) => <option key={story.id} value={story.id}>{story.title}</option>)}
                     </Select>
                   </label>
                 </div>
                 <div className="flex justify-end">
-                  <Button type="submit" disabled={updateEvidence.isPending}>
-                    {updateEvidence.isPending ? 'Saving…' : 'Save links'}
+                  <Button type="submit" disabled={linkEvidence.isPending}>
+                    {linkEvidence.isPending ? 'Saving…' : 'Add Story link'}
                   </Button>
                 </div>
               </form>

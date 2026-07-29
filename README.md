@@ -18,8 +18,9 @@ loopback-only Express API through generated OpenAPI clients.
   Story studio, ordered outlines, TipTap HTML authoring, many-to-many links,
   independently tracked Outputs, deterministic health, timeline/version
   checkpoints, optimistic concurrency, and archive/restore.
-- **Evidence Vault:** structured/manual capture, two-click quick capture, desktop
-  file ingestion, SHA-256 recording, previews, repository audits, and linking.
+- **Evidence Vault:** Workspace-owned capture, recoverable streamed file ingestion,
+  immutable source provenance, version-safe metadata, typed Story links,
+  archive/restore, lifecycle-aware search, previews, and repository audits.
 - **Knowledge:** searchable pages with TipTap authoring and stored page links.
 - **Campaigns, Assets, and Templates:** core CRUD/catalog workflows.
 - **Global Search:** trigger-maintained SQLite FTS5 index across the core domains.
@@ -32,22 +33,22 @@ and executable code mark them as implemented.
 
 ## Route map
 
-| Route | Purpose |
-| --- | --- |
-| `/dashboard` | Cross-workspace home, activity, metrics, and launch actions |
-| `/workspaces` | Canonical Workspace picker and management |
-| `/workspaces/:id` | Workspace-scoped overview and health |
-| `/workspaces/:id/settings` | Workspace identity and DNA settings |
-| `/stories` | Global Story catalogue |
-| `/workspaces/:workspaceId/stories` | Workspace-scoped Story catalogue |
-| `/stories/:id` | Story studio, graph, Outputs, health, and timeline |
-| `/evidence` | Evidence capture and vault |
-| `/knowledge`, `/knowledge/:id` | Knowledge catalogue and authoring |
-| `/campaigns`, `/campaigns/:id` | Campaign catalogue and detail |
-| `/assets` | Asset catalogue |
-| `/templates` | Template catalogue |
-| `/search` | Global full-text search |
-| `/settings` | Desktop vault and application operations |
+| Route                              | Purpose                                                     |
+| ---------------------------------- | ----------------------------------------------------------- |
+| `/dashboard`                       | Cross-workspace home, activity, metrics, and launch actions |
+| `/workspaces`                      | Canonical Workspace picker and management                   |
+| `/workspaces/:id`                  | Workspace-scoped overview and health                        |
+| `/workspaces/:id/settings`         | Workspace identity and DNA settings                         |
+| `/stories`                         | Global Story catalogue                                      |
+| `/workspaces/:workspaceId/stories` | Workspace-scoped Story catalogue                            |
+| `/stories/:id`                     | Story studio, graph, Outputs, health, and timeline          |
+| `/evidence`                        | Evidence capture and vault                                  |
+| `/knowledge`, `/knowledge/:id`     | Knowledge catalogue and authoring                           |
+| `/campaigns`, `/campaigns/:id`     | Campaign catalogue and detail                               |
+| `/assets`                          | Asset catalogue                                             |
+| `/templates`                       | Template catalogue                                          |
+| `/search`                          | Global full-text search                                     |
+| `/settings`                        | Desktop vault and application operations                    |
 
 Old `/projects` browser links redirect to Workspaces. The physical `projects` SQLite
 table and deprecated `/api/projects` endpoints remain temporarily for backward
@@ -80,17 +81,17 @@ Routes and UI components are adapters. They do not own business rules. Intellige
 capabilities may analyze, score, suggest relationships, and recommend actions, but
 may not silently redefine authoritative domain facts.
 
-| Area | Technology |
-| --- | --- |
-| Workspace | pnpm workspaces |
-| Language | TypeScript 5.9 |
-| UI | React 19, Tailwind CSS 4, Radix, Lucide, TipTap |
-| Routing/data | Wouter, TanStack Query |
-| API | Express 5 |
-| Contract/codegen | OpenAPI 3.1, Orval, generated Zod |
-| Persistence | Node built-in SQLite driver in WAL mode |
-| Desktop | Electron with isolated preload IPC |
-| Tests | Vitest, Supertest, Playwright |
+| Area             | Technology                                      |
+| ---------------- | ----------------------------------------------- |
+| Workspace        | pnpm workspaces                                 |
+| Language         | TypeScript 5.9                                  |
+| UI               | React 19, Tailwind CSS 4, Radix, Lucide, TipTap |
+| Routing/data     | Wouter, TanStack Query                          |
+| API              | Express 5                                       |
+| Contract/codegen | OpenAPI 3.1, Orval, generated Zod               |
+| Persistence      | Node built-in SQLite driver in WAL mode         |
+| Desktop          | Electron with isolated preload IPC              |
+| Tests            | Vitest, Supertest, Playwright                   |
 
 ## Engineering Constitution
 
@@ -231,8 +232,16 @@ streaming. Desktop imports stage and hash files, commit structured source
 provenance, atomically promote managed bytes, and activate Evidence through an
 idempotent persisted saga. Startup reconciliation resumes either side of the
 rename boundary or records a visible failure; partial pre-metadata writes are
-compensated. The recoverable-ingest rollout flag is enabled. Preview streaming,
-archive/restore, and governed source/locator reads remain later work.
+compensated. The recoverable-ingest rollout flag is enabled. Preview streaming and
+locator authoring remain later work.
+
+Route 03 Pass 2C implements governed Evidence operations. Metadata changes use
+optimistic versions; archive/restore replaces permanent deletion; immutable source
+versions are readable; and typed, same-Workspace Story links emit durable events.
+Activity remains replay-safe through its persisted event checkpoint, while the
+rebuildable search projection excludes archived Evidence. The full Evidence
+inspector, locator authoring, preview streaming, and Evidence Integrity remain
+future Pass 3 work.
 
 The default desktop vault is `Documents/N-TechC3-Vault` and contains:
 
@@ -297,11 +306,11 @@ The Vite configuration proxies `/api` to the configured API port. Use a disposab
 
 ### Environment variables
 
-| Variable | Purpose | Default |
-| --- | --- | --- |
-| `PORT` | API or Vite port | Required for standalone development |
-| `BASE_PATH` | Frontend deployment base | `/` |
-| `NTC3_VAULT_PATH` | Override local vault root | Desktop Documents vault |
+| Variable          | Purpose                   | Default                             |
+| ----------------- | ------------------------- | ----------------------------------- |
+| `PORT`            | API or Vite port          | Required for standalone development |
+| `BASE_PATH`       | Frontend deployment base  | `/`                                 |
+| `NTC3_VAULT_PATH` | Override local vault root | Desktop Documents vault             |
 
 ## Verify the repository
 

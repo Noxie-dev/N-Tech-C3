@@ -227,14 +227,23 @@ router.post('/stories/:id/links', (req, res) => {
     [params.data.id, body.data.entityId, body.data.relationshipType ?? 'Related', body.data.notes ?? null]);
   } else {
     const link = storyLinkConfig[body.data.entityType];
-    const target = get(`SELECT id, ${link.workspace} workspace_id FROM ${link.target} WHERE id = ?`, [body.data.entityId]);
+    const evidenceFields = body.data.entityType === 'evidence' ? ', title, lifecycle_status' : '';
+    const target = get(`SELECT id, ${link.workspace} workspace_id${evidenceFields} FROM ${link.target} WHERE id = ?`, [body.data.entityId]);
     if (!target) return void res.status(404).json({ error: 'Linked entity not found' });
     if (target.workspace_id != null && story.project_id != null && target.workspace_id !== story.project_id) {
       return void res.status(409).json({ error: 'Linked entities must belong to the Story Workspace' });
     }
     if (body.data.entityType === 'evidence') {
+      if (target.lifecycle_status !== 'Active') {
+        return void res.status(409).json({ error: 'Only active Evidence can be linked' });
+      }
       run('INSERT OR REPLACE INTO story_evidence (story_id, evidence_id, notes) VALUES (?, ?, ?)',
         [params.data.id, body.data.entityId, body.data.notes ?? null]);
+      appendDomainEvent({
+        eventType: 'EvidenceLinkedToStory', eventVersion: 1, aggregateType: 'evidence',
+        aggregateId: body.data.entityId,
+        payload: { entityTitle: String(target.title), action: `linked to Story ${params.data.id}`, storyId: params.data.id },
+      });
     } else if (body.data.entityType === 'knowledge') {
       run('INSERT OR REPLACE INTO story_knowledge (story_id, knowledge_id, relationship_type, notes) VALUES (?, ?, ?, ?)',
         [params.data.id, body.data.entityId, body.data.relationshipType ?? 'Reference', body.data.notes ?? null]);
@@ -247,6 +256,7 @@ router.post('/stories/:id/links', (req, res) => {
     }
   }
   storyEvent(params.data.id, 'entity_linked', body.data);
+  projectDomainEventsToActivity();
   res.sendStatus(201);
 });
 
@@ -257,9 +267,23 @@ router.delete('/stories/:id/links/:entityType/:entityId', (req, res) => {
     run('DELETE FROM story_relations WHERE source_story_id = ? AND target_story_id = ?', [params.data.id, params.data.entityId]);
   } else {
     const link = storyLinkConfig[params.data.entityType];
+    const evidence = params.data.entityType === 'evidence'
+      ? get('SELECT id, title, lifecycle_status FROM evidence WHERE id = ?', [params.data.entityId])
+      : undefined;
+    if (evidence && evidence.lifecycle_status !== 'Active') {
+      return void res.status(409).json({ error: 'Only active Evidence can be unlinked' });
+    }
     run(`DELETE FROM ${link.table} WHERE story_id = ? AND ${link.id} = ?`, [params.data.id, params.data.entityId]);
+    if (evidence) {
+      appendDomainEvent({
+        eventType: 'EvidenceUnlinkedFromStory', eventVersion: 1, aggregateType: 'evidence',
+        aggregateId: params.data.entityId,
+        payload: { entityTitle: String(evidence.title), action: `unlinked from Story ${params.data.id}`, storyId: params.data.id },
+      });
+    }
   }
   storyEvent(params.data.id, 'entity_unlinked', { entityType: params.data.entityType, entityId: params.data.entityId });
+  projectDomainEventsToActivity();
   res.sendStatus(204);
 });
 

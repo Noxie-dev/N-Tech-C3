@@ -1069,7 +1069,7 @@ paths:
     patch:
       operationId: updateEvidence
       tags: [evidence]
-      summary: Update an evidence item
+      summary: Optimistically update mutable Evidence metadata
       parameters:
         - name: id
           in: path
@@ -1091,10 +1091,13 @@ paths:
                 $ref: "#/components/schemas/Evidence"
         "404":
           description: Not found
+        "409":
+          description: Version conflict or archived Evidence
     delete:
       operationId: deleteEvidence
       tags: [evidence]
-      summary: Delete an evidence item
+      deprecated: true
+      summary: Permanent Evidence deletion is disabled; archive it instead
       parameters:
         - name: id
           in: path
@@ -1102,10 +1105,147 @@ paths:
           schema:
             type: number
       responses:
-        "204":
-          description: Deleted
+        "409":
+          description: Permanent deletion disabled
         "404":
           description: Not found
+
+  /evidence/{id}/archive:
+    post:
+      operationId: archiveEvidence
+      tags: [evidence]
+      summary: Archive active Evidence without destroying provenance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: number }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvidenceVersionCommand"
+      responses:
+        "200":
+          description: Archived Evidence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evidence"
+        "404": { description: Not found }
+        "409": { description: Version or lifecycle conflict }
+
+  /evidence/{id}/restore:
+    post:
+      operationId: restoreEvidence
+      tags: [evidence]
+      summary: Restore archived Evidence
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: number }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvidenceVersionCommand"
+      responses:
+        "200":
+          description: Restored Evidence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evidence"
+        "404": { description: Not found }
+        "409": { description: Version or lifecycle conflict }
+
+  /evidence/{id}/sources:
+    get:
+      operationId: listEvidenceSources
+      tags: [evidence]
+      summary: List immutable source versions for Evidence
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: number }
+      responses:
+        "200":
+          description: Ordered source versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EvidenceSource"
+        "404": { description: Not found }
+
+  /evidence/{id}/stories:
+    get:
+      operationId: listEvidenceStoryLinks
+      tags: [evidence]
+      summary: List typed Story relationships for Evidence
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: number }
+      responses:
+        "200":
+          description: Evidence Story links
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EvidenceStoryLink"
+        "404": { description: Not found }
+    post:
+      operationId: linkEvidenceToStory
+      tags: [evidence]
+      summary: Link active Evidence to a Story in the same Workspace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: number }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvidenceStoryLinkInput"
+      responses:
+        "201":
+          description: Link created or updated idempotently
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceStoryLink"
+        "404": { description: "Evidence, Story, or locator not found" }
+        "409": { description: Archived entity or cross-Workspace link }
+
+  /evidence/{id}/stories/{storyId}:
+    delete:
+      operationId: unlinkEvidenceFromStory
+      tags: [evidence]
+      summary: Remove a typed Story relationship from active Evidence
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: number }
+        - name: storyId
+          in: path
+          required: true
+          schema: { type: number }
+      responses:
+        "204": { description: Link removed idempotently }
+        "404": { description: Evidence not found }
+        "409": { description: Archived Evidence }
 
   # Assets
   /assets:
@@ -2250,37 +2390,77 @@ components:
 
     EvidencePatch:
       type: object
+      required: [expectedVersion]
       properties:
+        expectedVersion:
+          type: number
+          minimum: 1
         title:
           type: string
           minLength: 1
         type:
           type: string
           enum: [Screenshot, TerminalOutput, GitLog, Benchmark, Diagram, MeetingNotes, ResearchPDF, Image, Video, VoiceRecording, CodeSnippet, IssueReport, BuildLog, RepositoryAudit, Other]
-        source:
-          type: ["string", "null"]
         notes:
-          type: ["string", "null"]
-        content:
           type: ["string", "null"]
         tags:
           type: array
           items:
             type: string
-        storyId:
-          type: ["number", "null"]
-        projectId:
-          type: ["number", "null"]
-          deprecated: true
-        workspaceId:
-          type: number
-          minimum: 1
-        repository:
-          type: ["string", "null"]
         classification:
           $ref: "#/components/schemas/EvidenceClassification"
         reviewStatus:
           $ref: "#/components/schemas/EvidenceReviewStatus"
+
+    EvidenceVersionCommand:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion:
+          type: number
+          minimum: 1
+
+    EvidenceStoryLinkInput:
+      type: object
+      required: [storyId]
+      properties:
+        storyId:
+          type: number
+          minimum: 1
+        role:
+          type: string
+          enum: [Supporting, Contradicting, Context, Primary]
+          default: Supporting
+        relevance:
+          type: number
+          minimum: 0
+          maximum: 100
+          default: 100
+        notes:
+          type: ["string", "null"]
+        sourceLocatorId:
+          type: ["number", "null"]
+          minimum: 1
+
+    EvidenceStoryLink:
+      type: object
+      required: [evidenceId, storyId, storyTitle, role, relevance, linkedAt]
+      properties:
+        evidenceId: { type: number }
+        storyId: { type: number }
+        storyTitle: { type: string }
+        role:
+          type: string
+          enum: [Supporting, Contradicting, Context, Primary]
+        relevance:
+          type: number
+        notes:
+          type: ["string", "null"]
+        sourceLocatorId:
+          type: ["number", "null"]
+        linkedAt:
+          type: string
+          format: date-time
 
     EvidenceSource:
       type: object

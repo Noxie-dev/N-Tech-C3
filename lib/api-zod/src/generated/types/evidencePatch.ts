@@ -10,27 +10,14 @@ import type { EvidencePatchType } from './evidencePatchType';
 import type { EvidenceReviewStatus } from './evidenceReviewStatus';
 
 export interface EvidencePatch {
+  /** @minimum 1 */
+  expectedVersion: number;
   /** @minLength 1 */
   title?: string;
   type?: EvidencePatchType;
   /** @nullable */
-  source?: string | null;
-  /** @nullable */
   notes?: string | null;
-  /** @nullable */
-  content?: string | null;
   tags?: string[];
-  /** @nullable */
-  storyId?: number | null;
-  /**
-     * @deprecated
-     * @nullable
-     */
-  projectId?: number | null;
-  /** @minimum 1 */
-  workspaceId?: number;
-  /** @nullable */
-  repository?: string | null;
   classification?: EvidenceClassification;
   reviewStatus?: EvidenceReviewStatus;
 }

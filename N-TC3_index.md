@@ -250,12 +250,12 @@ is persisted; only meaningful domain facts qualify.
 Performance is a product feature with measurable budgets. Initial targets to
 validate on supported hardware are:
 
-| Operation | Initial target |
-| --- | ---: |
-| Desktop cold start | under 2 seconds |
-| Search response | under 50 ms |
-| Local save transaction | under 25 ms |
-| Workspace overview load | under 100 ms |
+| Operation               |  Initial target |
+| ----------------------- | --------------: |
+| Desktop cold start      | under 2 seconds |
+| Search response         |     under 50 ms |
+| Local save transaction  |     under 25 ms |
+| Workspace overview load |    under 100 ms |
 
 The accepted specification must also budget memory, repository scans, exports,
 background tasks, animation responsiveness, large vaults, and degradation behavior.
@@ -548,13 +548,13 @@ The reproducible benchmark at
 Apple M1 with 8 GB RAM, Node.js v24.18.0, 10 Workspaces, 1,000 Stories, and 100
 iterations:
 
-| Operation | Median | p95 |
-| --- | ---: | ---: |
+| Operation                                   |    Median |         p95 |
+| ------------------------------------------- | --------: | ----------: |
 | Cold database initialization and migrations | 21.875 ms | Not sampled |
-| Transactional Evidence save | 0.142 ms | 0.241 ms |
-| FTS5 search | 0.045 ms | 0.059 ms |
-| Workspace core load | 0.098 ms | 0.114 ms |
-| Deterministic analysis and provenance save | 0.107 ms | 0.150 ms |
+| Transactional Evidence save                 |  0.142 ms |    0.241 ms |
+| FTS5 search                                 |  0.045 ms |    0.059 ms |
+| Workspace core load                         |  0.098 ms |    0.114 ms |
+| Deterministic analysis and provenance save  |  0.107 ms |    0.150 ms |
 
 These are accepted baseline measurements but remain insufficient to establish
 release budgets. UI rendering, Electron launch, file-copy workloads,
@@ -658,16 +658,16 @@ The expanded reproducible evidence in
 `Docs/System-Design-Book/evidence/performance-scale-baseline-2026-07-29.md` measured
 an Apple M1 with 8 GB RAM, 50 Workspaces, 10,000 Stories, and a 1 MiB attachment:
 
-| Operation | Median | p95 |
-| --- | ---: | ---: |
+| Operation                                   |    Median |         p95 |
+| ------------------------------------------- | --------: | ----------: |
 | Cold database initialization and migrations | 32.826 ms | Not sampled |
-| Transactional Evidence save | 0.159 ms | 0.276 ms |
-| FTS5 search | 0.052 ms | 0.061 ms |
-| Workspace core load | 0.142 ms | 0.184 ms |
-| Deterministic analysis and provenance save | 0.110 ms | 0.163 ms |
-| 1 MiB attachment copy | 1.954 ms | 3.436 ms |
-| 1 MiB SHA-256 | 0.915 ms | 1.073 ms |
-| Large-fixture FTS5 search | 0.082 ms | 0.097 ms |
+| Transactional Evidence save                 |  0.159 ms |    0.276 ms |
+| FTS5 search                                 |  0.052 ms |    0.061 ms |
+| Workspace core load                         |  0.142 ms |    0.184 ms |
+| Deterministic analysis and provenance save  |  0.110 ms |    0.163 ms |
+| 1 MiB attachment copy                       |  1.954 ms |    3.436 ms |
+| 1 MiB SHA-256                               |  0.915 ms |    1.073 ms |
+| Large-fixture FTS5 search                   |  0.082 ms |    0.097 ms |
 
 This supports the current SQLite/FTS5/SHA-256 direction at the measured scale.
 Electron cold launch, React route rendering, backup/restore, large-file streaming,
@@ -830,6 +830,49 @@ Pass 2B does not change the separately bounded data-URL preview path, implement
 source/locator read endpoints, or add Evidence archive/restore and optimistic
 metadata commands. Those remain Pass 2C/3A work.
 
+### Route 03 Pass 2C execution report — governed domain operations
+
+Status: **Implemented and verified**
+
+Ordered migration 8, `governed_evidence_operations`, extends canonical
+Evidence-to-Story relationships with typed role, relevance, optional notes, and
+optional source locator. It also replaces the Evidence FTS triggers with a
+lifecycle-aware, rebuildable projection: active Evidence is searchable, archive
+removes it transactionally, and restore indexes it again.
+
+Canonical Evidence metadata updates now require `expectedVersion`, increment the
+aggregate version, and reject stale writers with `409`. The patch contract permits
+metadata and review changes but cannot mutate immutable source payloads, Workspace
+ownership, or the deprecated singular Story field. Archived Evidence is read-only
+until restored.
+
+Archive and restore are explicit, reversible, version-guarded commands.
+Normal-flow hard deletion is deprecated and returns `409`; no new
+`EvidenceDeleted` events are produced. Source versions have a canonical ordered
+read endpoint. Story relationships have Evidence-owned list, link, and unlink
+contracts that reject cross-Workspace links and archived aggregates. The legacy
+Story-side adapter now applies the same Evidence invariant and event policy.
+
+Metadata, review, link, unlink, archive, and restore operations append durable
+Evidence events in the same transaction as authoritative changes. The existing
+Activity consumer processes them through its persisted replay checkpoint and
+`source_event_id` uniqueness, while search remains a derived SQLite projection
+that migration 8 can rebuild from authoritative rows.
+
+The Evidence screen no longer edits Workspace ownership or the deprecated
+singular `storyId`; it invokes the generated typed Story-link command and limits
+choices to the owning Workspace. Full relationship management, source provenance,
+locator authoring, and archive/restore experience remain part of Pass 3A.
+
+Verification completed with OpenAPI validation and React/Zod regeneration,
+repository typecheck, migration/search assertions, and all 27 Vitest assertions
+passing. The controlled report is
+`Docs/System-Design-Book/evidence/evidence-governed-operations-2026-07-29.md`.
+
+Pass 2C does not implement arbitrary source-version writes, locator authoring,
+preview streaming, the Evidence inspector route, or Evidence Integrity. These
+remain Passes 3A and 3B.
+
 ## 2B. Proposed Phase III — C³ Canon and Knowledge Intelligence
 
 Status: **Proposed future architecture — not implemented and not yet binding**
@@ -841,28 +884,28 @@ through which users, contracts, domains, and interfaces express that architectur
 
 ### Proposed ubiquitous language
 
-| Term | Canonical meaning | Important boundary |
-| --- | --- | --- |
-| Vault | Highest local container for an isolated engineering ecosystem | Not a synonym for a Workspace, database, or collection |
-| Workspace | Operating context for one focused initiative | New business content is Workspace-scoped by default |
-| Repository | User-approved source-code repository associated with a Workspace | Analysis is read-only and never executes repository code |
-| Evidence | Provenance-bearing artifact supporting or challenging a claim | May be factual, observational, subjective, or derived; classification is explicit |
-| Knowledge | Reviewed, reusable understanding expressed through source-backed claims | Not a synonym for documents, files, or unreviewed AI output |
-| Story | Structured narrative using Evidence and Knowledge | Produces Publications without replacing Knowledge truth |
-| Campaign | Communication objective coordinating Stories and Publications | Does not own or duplicate Story or Publication content |
-| Publication | Governed, versioned, channel-neutral content package prepared for distribution | Proposed replacement for Output as the canonical product term |
-| Channel | First-class destination contract through which a Publication may be deployed | Examples include LinkedIn, Website, Newsletter, Internal Wiki, and File Export |
-| Channel Connection | Configured Vault- or Workspace-scoped endpoint for one Channel | Credentials remain in OS-secure storage and never enter events or exports |
-| Publication Variant | Channel-specific adaptation of one Publication version | May diverge editorially without replacing its source Publication |
-| Rendition | Immutable generated artifact such as PDF, Markdown, HTML, DOCX, or JSON | Records generator version, checksum, source watermark, and vault-relative path |
-| Deployment | Durable scheduled or attempted delivery of a Publication version, Variant, or Rendition to a Channel Connection | Owns delivery status, attempts, idempotency, external identity, and errors |
-| Pipeline | Operational projection through which Publications and Deployments progress | Not a generic lifecycle or authoritative aggregate |
-| Domain Event | Durable, typed fact that something occurred | Authoritative input to projections and automation |
-| Activity | User-facing projection derived from domain events | Not an event source of truth |
-| Snapshot | Immutable observation of an entity at a point in time | Includes source and calculation provenance |
-| Health | Explainable derived assessment defined by an eligible domain | Not automatically applicable to every object |
-| DNA | Structured identity profile defined only for domains that require it | Not universal metadata inherited by every row |
-| Intelligence | Versioned, derived insight produced by an EIE capability | Never silently mutates authoritative domain facts |
+| Term                | Canonical meaning                                                                                               | Important boundary                                                                |
+| ------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Vault               | Highest local container for an isolated engineering ecosystem                                                   | Not a synonym for a Workspace, database, or collection                            |
+| Workspace           | Operating context for one focused initiative                                                                    | New business content is Workspace-scoped by default                               |
+| Repository          | User-approved source-code repository associated with a Workspace                                                | Analysis is read-only and never executes repository code                          |
+| Evidence            | Provenance-bearing artifact supporting or challenging a claim                                                   | May be factual, observational, subjective, or derived; classification is explicit |
+| Knowledge           | Reviewed, reusable understanding expressed through source-backed claims                                         | Not a synonym for documents, files, or unreviewed AI output                       |
+| Story               | Structured narrative using Evidence and Knowledge                                                               | Produces Publications without replacing Knowledge truth                           |
+| Campaign            | Communication objective coordinating Stories and Publications                                                   | Does not own or duplicate Story or Publication content                            |
+| Publication         | Governed, versioned, channel-neutral content package prepared for distribution                                  | Proposed replacement for Output as the canonical product term                     |
+| Channel             | First-class destination contract through which a Publication may be deployed                                    | Examples include LinkedIn, Website, Newsletter, Internal Wiki, and File Export    |
+| Channel Connection  | Configured Vault- or Workspace-scoped endpoint for one Channel                                                  | Credentials remain in OS-secure storage and never enter events or exports         |
+| Publication Variant | Channel-specific adaptation of one Publication version                                                          | May diverge editorially without replacing its source Publication                  |
+| Rendition           | Immutable generated artifact such as PDF, Markdown, HTML, DOCX, or JSON                                         | Records generator version, checksum, source watermark, and vault-relative path    |
+| Deployment          | Durable scheduled or attempted delivery of a Publication version, Variant, or Rendition to a Channel Connection | Owns delivery status, attempts, idempotency, external identity, and errors        |
+| Pipeline            | Operational projection through which Publications and Deployments progress                                      | Not a generic lifecycle or authoritative aggregate                                |
+| Domain Event        | Durable, typed fact that something occurred                                                                     | Authoritative input to projections and automation                                 |
+| Activity            | User-facing projection derived from domain events                                                               | Not an event source of truth                                                      |
+| Snapshot            | Immutable observation of an entity at a point in time                                                           | Includes source and calculation provenance                                        |
+| Health              | Explainable derived assessment defined by an eligible domain                                                    | Not automatically applicable to every object                                      |
+| DNA                 | Structured identity profile defined only for domains that require it                                            | Not universal metadata inherited by every row                                     |
+| Intelligence        | Versioned, derived insight produced by an EIE capability                                                        | Never silently mutates authoritative domain facts                                 |
 
 Legacy physical names such as `projects` and `project_id` remain documented
 compatibility debt. They do not create product-language synonyms for Workspace.
@@ -1119,17 +1162,17 @@ keyboard operation, drag interactions, and future plugins.
 The Calendar does not own schedule facts, and scheduling MUST NOT be placed on one
 generic Output or directly on a Publication:
 
-| Fact | Authoritative owner |
-| --- | --- |
-| Publication content and versions | Publication |
-| Destination-specific adaptation | Publication Variant |
-| Generated file | Rendition |
-| Destination capabilities | Channel |
-| Configured destination | Channel Connection |
-| Planned delivery time, timezone, attempts, and outcome | Deployment |
-| Campaign milestones | Campaign |
-| Calendar range, conflict, readiness, and overdue views | Rebuildable projection |
-| AFI sensitivity, ranking, and calibration | Local interaction settings |
+| Fact                                                   | Authoritative owner        |
+| ------------------------------------------------------ | -------------------------- |
+| Publication content and versions                       | Publication                |
+| Destination-specific adaptation                        | Publication Variant        |
+| Generated file                                         | Rendition                  |
+| Destination capabilities                               | Channel                    |
+| Configured destination                                 | Channel Connection         |
+| Planned delivery time, timezone, attempts, and outcome | Deployment                 |
+| Campaign milestones                                    | Campaign                   |
+| Calendar range, conflict, readiness, and overdue views | Rebuildable projection     |
+| AFI sensitivity, ranking, and calibration              | Local interaction settings |
 
 One Publication may have independent Deployments to several Channels at different
 times. `ScheduleDeployment`, `RescheduleDeployment`, and
@@ -1292,15 +1335,15 @@ route requirements.
 
 These remain capabilities of the single EIE:
 
-| Capability | Future purpose |
-| --- | --- |
-| Knowledge Query | Answer scoped questions with claim-level citations or abstain |
-| Freshness | Detect when supporting Evidence or repositories have changed |
-| Coverage and gaps | Identify missing or weakly documented areas using explicit rules |
-| Contradiction detection | Surface conflicting claims for human review |
-| Duplicate detection | Suggest overlapping pages without automatically merging them |
-| Relationship discovery | Suggest typed connections for approval |
-| Recommendations | Suggest related Knowledge, Evidence, Stories, and review actions |
+| Capability              | Future purpose                                                   |
+| ----------------------- | ---------------------------------------------------------------- |
+| Knowledge Query         | Answer scoped questions with claim-level citations or abstain    |
+| Freshness               | Detect when supporting Evidence or repositories have changed     |
+| Coverage and gaps       | Identify missing or weakly documented areas using explicit rules |
+| Contradiction detection | Surface conflicting claims for human review                      |
+| Duplicate detection     | Suggest overlapping pages without automatically merging them     |
+| Relationship discovery  | Suggest typed connections for approval                           |
+| Recommendations         | Suggest related Knowledge, Evidence, Stories, and review actions |
 
 The Knowledge Query experience is information-first, not a general chatbot. Every
 answer identifies whether it is directly stated, deterministically derived,
@@ -1435,20 +1478,20 @@ SQLite WAL database + filesystem vault
 
 ### Implemented stack
 
-| Layer | Current choice |
-| --- | --- |
-| Workspace | pnpm workspaces |
-| Language | TypeScript 5.9 |
-| Frontend | React 19, Vite 7, Wouter, TanStack Query |
-| UI | Tailwind CSS 4, Radix primitives, Lucide, Framer Motion |
-| API | Express 5 |
-| Contract | OpenAPI 3 + Orval code generation |
-| Validation | Generated Zod schemas |
-| Desktop | Electron with isolated preload IPC |
-| Database | SQLite via `node:sqlite`, WAL mode |
-| File storage | Portable vault under the user's Documents directory |
-| Logging | Pino / pino-http |
-| API bundle | esbuild, ESM output |
+| Layer        | Current choice                                          |
+| ------------ | ------------------------------------------------------- |
+| Workspace    | pnpm workspaces                                         |
+| Language     | TypeScript 5.9                                          |
+| Frontend     | React 19, Vite 7, Wouter, TanStack Query                |
+| UI           | Tailwind CSS 4, Radix primitives, Lucide, Framer Motion |
+| API          | Express 5                                               |
+| Contract     | OpenAPI 3 + Orval code generation                       |
+| Validation   | Generated Zod schemas                                   |
+| Desktop      | Electron with isolated preload IPC                      |
+| Database     | SQLite via `node:sqlite`, WAL mode                      |
+| File storage | Portable vault under the user's Documents directory     |
+| Logging      | Pino / pino-http                                        |
+| API bundle   | esbuild, ESM output                                     |
 
 ### V1 architecture decision
 
@@ -1456,46 +1499,46 @@ V1 is committed to Electron + SQLite + filesystem vault. The local Express servi
 
 ## 4. Repository map
 
-| Path | Responsibility | Editing rule |
-| --- | --- | --- |
-| `artifacts/ntech-c3/` | Primary React application | Product UI and page behavior live here |
-| `artifacts/api-server/` | Express API | Routes must validate through generated Zod schemas |
-| `artifacts/mockup-sandbox/` | Separate UI/mockup sandbox | Not the production app |
-| `lib/api-spec/openapi.yaml` | Canonical API contract | Change this before generated clients/schemas |
-| `lib/api-client-react/` | Browser API client and generated hooks | Do not hand-edit generated files |
-| `lib/api-zod/` | Generated API validation schemas | Do not hand-edit generated files |
-| `lib/db/src/index.ts` | SQLite DDL, initialization, and vault access | Current persistence truth |
-| `scripts/` | Workspace utility scripts/hooks | Keep operational scripts small and documented |
-| `Docs/` | Product context, refinement, active feature briefs | Aspirational unless confirmed by code |
-| `Docs/NTC3_UI-UX_Spec.md` | Governing UI/UX contract reconciled to approved visuals | Implement against it; obtain approval only for listed open decisions or visual deviations |
-| `wireframe.png` | Approved Home/landing screen | Reproduce composition and hierarchy exactly |
-| `branding-brief.png` | Approved N-Tech C³ brand guide | Use its identity, tokens, typography, voice, components, motion, and visual language |
-| `README.md` | Short runbook and architecture summary | Keep aligned with this index |
-| `pnpm-workspace.yaml` | Workspace catalog and supply-chain policy | Do not disable `minimumReleaseAge` |
+| Path                        | Responsibility                                          | Editing rule                                                                              |
+| --------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `artifacts/ntech-c3/`       | Primary React application                               | Product UI and page behavior live here                                                    |
+| `artifacts/api-server/`     | Express API                                             | Routes must validate through generated Zod schemas                                        |
+| `artifacts/mockup-sandbox/` | Separate UI/mockup sandbox                              | Not the production app                                                                    |
+| `lib/api-spec/openapi.yaml` | Canonical API contract                                  | Change this before generated clients/schemas                                              |
+| `lib/api-client-react/`     | Browser API client and generated hooks                  | Do not hand-edit generated files                                                          |
+| `lib/api-zod/`              | Generated API validation schemas                        | Do not hand-edit generated files                                                          |
+| `lib/db/src/index.ts`       | SQLite DDL, initialization, and vault access            | Current persistence truth                                                                 |
+| `scripts/`                  | Workspace utility scripts/hooks                         | Keep operational scripts small and documented                                             |
+| `Docs/`                     | Product context, refinement, active feature briefs      | Aspirational unless confirmed by code                                                     |
+| `Docs/NTC3_UI-UX_Spec.md`   | Governing UI/UX contract reconciled to approved visuals | Implement against it; obtain approval only for listed open decisions or visual deviations |
+| `wireframe.png`             | Approved Home/landing screen                            | Reproduce composition and hierarchy exactly                                               |
+| `branding-brief.png`        | Approved N-Tech C³ brand guide                          | Use its identity, tokens, typography, voice, components, motion, and visual language      |
+| `README.md`                 | Short runbook and architecture summary                  | Keep aligned with this index                                                              |
+| `pnpm-workspace.yaml`       | Workspace catalog and supply-chain policy               | Do not disable `minimumReleaseAge`                                                        |
 
 ## 5. Implemented product surface
 
 ### Frontend routes
 
-| Route | Module | Current capability |
-| --- | --- | --- |
-| `/dashboard` | Home | Approved branded landing composition with hero, Get Started actions, workspaces, activity, real metrics/focus, tips, and shortcuts |
-| `/search` | Global Search | Ranked FTS5 search across canonical entity types, including Workspaces |
-| `/workspaces` | Workspace picker | Search/filter, create, open, favorite, pin, duplicate, archive/restore, and manifest export |
-| `/workspaces/:id` | Workspace overview | Scoped metrics, health breakdown, recent activity, current work, quick actions, and archive/corruption states |
-| `/workspaces/:id/settings` | Workspace settings | Edit identity, current goal, repositories, tags, and initial Workspace DNA fields |
-| `/stories` | Global Story catalogue | Workspace/status/type/search filters and Workspace-required creation |
-| `/workspaces/:workspaceId/stories` | Scoped Story catalogue | Stories belonging to one Workspace |
-| `/stories/:id` | Story studio | Overview, ordered outline, TipTap editor, Evidence, Assets, References, Outputs, Timeline, health inspector, lifecycle, version-safe save, and archive/restore |
-| `/campaigns` | Campaigns | List and create |
-| `/campaigns/:id` | Campaign detail | Read, edit core fields, delete |
-| `/evidence` | Evidence Vault | List, type/search filter, manual metadata capture |
-| `/knowledge` | Knowledge Base | List/search and create |
-| `/knowledge/:id` | Knowledge detail | Read and explicitly save TipTap HTML content; permanent delete remains compatibility debt |
-| `/assets` | Assets | List/filter and create URL/path metadata |
-| `/templates` | Templates | List/filter and create |
-| `/projects`, `/projects/:id` | Compatibility | Redirect old browser links to canonical Workspace routes |
-| `/settings` | Settings | Presentational settings screen; no durable settings model |
+| Route                              | Module                 | Current capability                                                                                                                                             |
+| ---------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/dashboard`                       | Home                   | Approved branded landing composition with hero, Get Started actions, workspaces, activity, real metrics/focus, tips, and shortcuts                             |
+| `/search`                          | Global Search          | Ranked FTS5 search across canonical entity types, including Workspaces                                                                                         |
+| `/workspaces`                      | Workspace picker       | Search/filter, create, open, favorite, pin, duplicate, archive/restore, and manifest export                                                                    |
+| `/workspaces/:id`                  | Workspace overview     | Scoped metrics, health breakdown, recent activity, current work, quick actions, and archive/corruption states                                                  |
+| `/workspaces/:id/settings`         | Workspace settings     | Edit identity, current goal, repositories, tags, and initial Workspace DNA fields                                                                              |
+| `/stories`                         | Global Story catalogue | Workspace/status/type/search filters and Workspace-required creation                                                                                           |
+| `/workspaces/:workspaceId/stories` | Scoped Story catalogue | Stories belonging to one Workspace                                                                                                                             |
+| `/stories/:id`                     | Story studio           | Overview, ordered outline, TipTap editor, Evidence, Assets, References, Outputs, Timeline, health inspector, lifecycle, version-safe save, and archive/restore |
+| `/campaigns`                       | Campaigns              | List and create                                                                                                                                                |
+| `/campaigns/:id`                   | Campaign detail        | Read, edit core fields, delete                                                                                                                                 |
+| `/evidence`                        | Evidence Vault         | Workspace-scoped capture, type/search filter, recoverable import, preview, typed Story linking, and governed archive/restore API                               |
+| `/knowledge`                       | Knowledge Base         | List/search and create                                                                                                                                         |
+| `/knowledge/:id`                   | Knowledge detail       | Read and explicitly save TipTap HTML content; permanent delete remains compatibility debt                                                                      |
+| `/assets`                          | Assets                 | List/filter and create URL/path metadata                                                                                                                       |
+| `/templates`                       | Templates              | List/filter and create                                                                                                                                         |
+| `/projects`, `/projects/:id`       | Compatibility          | Redirect old browser links to canonical Workspace routes                                                                                                       |
+| `/settings`                        | Settings               | Presentational settings screen; no durable settings model                                                                                                      |
 
 ### API surface
 
@@ -1550,39 +1593,39 @@ story/evidence/asset/campaign relationships and automatic backlinks are not impl
 
 Legend: **Implemented**, **Partial**, **Not implemented**.
 
-| Capability | Status | Evidence/current limitation |
-| --- | --- | --- |
-| Home landing | Partial | Approved wireframe composition, brand hero, six Get Started cards, workspaces, activity, live metrics/focus, and bottom strip exist; Calendar/Exports routes and production logo exports remain |
-| Stories (Route 02) | Implemented | Global/Workspace catalogues, mandatory Workspace ownership, guarded lifecycle, transactional outline, Draft-only Output creation, relationship graph, deterministic health, timeline, versions, optimistic concurrency, and archive/restore |
-| Story authoring | Implemented | Shared TipTap editor with canonical HTML persistence, word/read-time derivation, version-safe explicit saves, and conflict rejection |
-| Campaigns CRUD | Implemented | Core records only; no timeline/tasks/metrics/outputs |
-| Evidence Vault CRUD | Partial | Metadata, paste/file capture, SHA-256 recording, text/image/PDF/audio/video preview, safe vault reveal, filtering, and story/project linking exist; large/unsupported files remain reveal-only |
-| Knowledge Base CRUD | Partial | TipTap authoring and a stored linked-ID array exist; no rendered wiki graph/backlinks |
-| Assets | Partial | URL/path metadata catalog; no upload, processing, thumbnailing, or local asset storage |
-| Templates | Partial | Core records exist; no template application/export workflow |
-| Workspaces (Route 01) | Implemented | Canonical picker, overview and settings routes; filtered list, initial DNA, scoped metrics/activity, health components, duplicate, archive/restore, integrity, manifest export, and old `/projects` redirects |
-| Legacy Projects | Deprecated compatibility | Physical table and API remain temporarily to preserve existing vaults and integrations |
-| Activity feed | Partial | Workspace creation projects a durable event through an idempotent consumer; remaining legacy writes are still direct and lossy |
-| Rich text editor | Implemented | Shared Story/Knowledge TipTap component stores HTML |
-| Quick capture | Implemented | Global button, Cmd/Ctrl+K, and paste-to-TerminalOutput flow |
-| Evidence file drop | Implemented | Electron IPC copies files into the vault and records checksum/source metadata |
-| Global search | Implemented | Migration-backed FTS5 index, automatic triggers, ranked API/UI, and entity/project/status/date filters |
-| Publishing Calendar/AFI | Not implemented | `/calendar`, Deployment scheduling, Calendar projections, and AFI remain future work; AFI is Accepted as the primary route interaction architecture |
-| Actionable queue | Not implemented | No route, API, or schema |
-| Export pipeline | Partial | Desktop exports portable JSON plus human-readable Markdown; HTML/PDF/DOCX exporters remain |
-| Version history | Partial | Story checkpoints and timeline exist; Knowledge and most other entities store only current rows and timestamps |
-| Backup/restore | Implemented | Desktop creates compressed portable vault archives; restore validates paths, preserves a recovery copy, and rolls back on copy failure |
-| Repository integration | Partial | Secure desktop folder selection captures branch, commit, package manager, frameworks, dependencies, TODOs, README, readiness, and optional project association |
-| Repository Intelligence Engine | Partial | Deterministic, fingerprinted snapshots become searchable `RepositoryAudit` evidence with per-project history counts and metric diffs; deeper dependency/security analysis remains |
-| Workspace health score | Implemented | Server calculates and explains recency, evidence, campaign, knowledge, and asset components with insufficient-data handling |
-| Story health score | Implemented | Deterministic weighted outline, Evidence, Knowledge, Asset, metadata, readability, and Output components with blockers |
-| Evidence/knowledge health scores | Not implemented | Workspace and Story health exist; standalone Evidence/Knowledge engines remain |
-| Local vault/filesystem | Implemented | SQLite database and documented vault directories initialize locally |
-| Electron desktop shell | Implemented | Main/preload lifecycle, local API launch, static UI serving, secure file IPC |
-| Branded application shell | Partial | Approved palette/typography, preserved checkered background, top bar, wireframe navigation, Quick Capture panel, and local SVG mark exist; compact/mobile drawer and final exported brand artwork remain |
-| Plugin manager | Not implemented | Architectural direction only |
-| AI provider adapter | Not implemented | Future architecture only |
-| Authentication/multi-user | Intentionally excluded | v0.1 non-goal |
+| Capability                         | Status                   | Evidence/current limitation                                                                                                                                                                                                                                |
+| ---------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Home landing                       | Partial                  | Approved wireframe composition, brand hero, six Get Started cards, workspaces, activity, live metrics/focus, and bottom strip exist; Calendar/Exports routes and production logo exports remain                                                            |
+| Stories (Route 02)                 | Implemented              | Global/Workspace catalogues, mandatory Workspace ownership, guarded lifecycle, transactional outline, Draft-only Output creation, relationship graph, deterministic health, timeline, versions, optimistic concurrency, and archive/restore                |
+| Story authoring                    | Implemented              | Shared TipTap editor with canonical HTML persistence, word/read-time derivation, version-safe explicit saves, and conflict rejection                                                                                                                       |
+| Campaigns CRUD                     | Implemented              | Core records only; no timeline/tasks/metrics/outputs                                                                                                                                                                                                       |
+| Evidence Vault governed operations | Partial                  | Workspace-owned capture, recoverable file ingestion, immutable source reads, optimistic metadata, typed Story links, archive/restore, previews, and lifecycle-aware search exist; inspector UX, locator authoring, preview streaming, and Integrity remain |
+| Knowledge Base CRUD                | Partial                  | TipTap authoring and a stored linked-ID array exist; no rendered wiki graph/backlinks                                                                                                                                                                      |
+| Assets                             | Partial                  | URL/path metadata catalog; no upload, processing, thumbnailing, or local asset storage                                                                                                                                                                     |
+| Templates                          | Partial                  | Core records exist; no template application/export workflow                                                                                                                                                                                                |
+| Workspaces (Route 01)              | Implemented              | Canonical picker, overview and settings routes; filtered list, initial DNA, scoped metrics/activity, health components, duplicate, archive/restore, integrity, manifest export, and old `/projects` redirects                                              |
+| Legacy Projects                    | Deprecated compatibility | Physical table and API remain temporarily to preserve existing vaults and integrations                                                                                                                                                                     |
+| Activity feed                      | Partial                  | Workspace creation projects a durable event through an idempotent consumer; remaining legacy writes are still direct and lossy                                                                                                                             |
+| Rich text editor                   | Implemented              | Shared Story/Knowledge TipTap component stores HTML                                                                                                                                                                                                        |
+| Quick capture                      | Implemented              | Global button, Cmd/Ctrl+K, and paste-to-TerminalOutput flow                                                                                                                                                                                                |
+| Evidence file drop                 | Implemented              | Electron streams trusted paths through staged SHA-256 capture, atomic promotion, persisted recovery, and structured source provenance                                                                                                                      |
+| Global search                      | Implemented              | Migration-backed FTS5 index, automatic triggers, ranked API/UI, and entity/project/status/date filters                                                                                                                                                     |
+| Publishing Calendar/AFI            | Not implemented          | `/calendar`, Deployment scheduling, Calendar projections, and AFI remain future work; AFI is Accepted as the primary route interaction architecture                                                                                                        |
+| Actionable queue                   | Not implemented          | No route, API, or schema                                                                                                                                                                                                                                   |
+| Export pipeline                    | Partial                  | Desktop exports portable JSON plus human-readable Markdown; HTML/PDF/DOCX exporters remain                                                                                                                                                                 |
+| Version history                    | Partial                  | Story checkpoints and timeline exist; Knowledge and most other entities store only current rows and timestamps                                                                                                                                             |
+| Backup/restore                     | Implemented              | Desktop creates compressed portable vault archives; restore validates paths, preserves a recovery copy, and rolls back on copy failure                                                                                                                     |
+| Repository integration             | Partial                  | Secure desktop folder selection captures branch, commit, package manager, frameworks, dependencies, TODOs, README, readiness, and optional project association                                                                                             |
+| Repository Intelligence Engine     | Partial                  | Deterministic, fingerprinted snapshots become searchable `RepositoryAudit` evidence with per-project history counts and metric diffs; deeper dependency/security analysis remains                                                                          |
+| Workspace health score             | Implemented              | Server calculates and explains recency, evidence, campaign, knowledge, and asset components with insufficient-data handling                                                                                                                                |
+| Story health score                 | Implemented              | Deterministic weighted outline, Evidence, Knowledge, Asset, metadata, readability, and Output components with blockers                                                                                                                                     |
+| Evidence/knowledge health scores   | Not implemented          | Workspace and Story health exist; standalone Evidence/Knowledge engines remain                                                                                                                                                                             |
+| Local vault/filesystem             | Implemented              | SQLite database and documented vault directories initialize locally                                                                                                                                                                                        |
+| Electron desktop shell             | Implemented              | Main/preload lifecycle, local API launch, static UI serving, secure file IPC                                                                                                                                                                               |
+| Branded application shell          | Partial                  | Approved palette/typography, preserved checkered background, top bar, wireframe navigation, Quick Capture panel, and local SVG mark exist; compact/mobile drawer and final exported brand artwork remain                                                   |
+| Plugin manager                     | Not implemented          | Architectural direction only                                                                                                                                                                                                                               |
+| AI provider adapter                | Not implemented          | Future architecture only                                                                                                                                                                                                                                   |
+| Authentication/multi-user          | Intentionally excluded   | v0.1 non-goal                                                                                                                                                                                                                                              |
 
 ## 7. Active feature briefs
 
@@ -1608,16 +1651,18 @@ Required outcome:
 - Drag a file onto the Evidence page to start capture.
 - Complete capture in no more than two clicks.
 
-Current state: implemented. Terminal paste uses `content`; dropped files are copied through isolated Electron IPC into `evidence/`, and the evidence record receives a vault-relative `source` plus SHA-256 checksum note.
+Current state: implemented. Terminal paste uses `content`; dropped files use
+isolated Electron IPC, bounded staging, structured SHA-256/source provenance,
+atomic promotion, and restart reconciliation.
 
 ### Next implementation order
 
-1. Execute Route 03 Pass 2C: domain API, optimistic concurrency, archive/restore,
-   typed relationships, durable events, and replay-safe projections.
-2. Execute Route 03 Pass 3A: Evidence explorer/inspector migration, provenance,
+1. Execute Route 03 Pass 3A: Evidence explorer/inspector migration, provenance,
    recovery feedback, locators, and accessible archive/restore experience.
-3. Execute Route 03 Pass 3B: deterministic Evidence Integrity, bounded verification
+2. Execute Route 03 Pass 3B: deterministic Evidence Integrity, bounded verification
    jobs, invalidation, diagnostics, performance workloads, and Tier 1–3 evidence.
+3. Execute Route 03 Pass 3C: preview streaming, compatibility-field retirement
+   evidence, full route conformance, and release-readiness closure.
 
 ## 8. Contract and data workflow
 
@@ -1648,11 +1693,11 @@ The existing repo documents an Orval/Zod compatibility constraint: API numeric i
 
 ### Required environment
 
-| Variable | Used by | Requirement |
-| --- | --- | --- |
-| `PORT` | API and Vite config | Positive numeric port; required |
-| `BASE_PATH` | frontend Vite config | Optional; defaults to `/` |
-| `NTC3_VAULT_PATH` | local database/API | Optional development/test vault override |
+| Variable          | Used by              | Requirement                              |
+| ----------------- | -------------------- | ---------------------------------------- |
+| `PORT`            | API and Vite config  | Positive numeric port; required          |
+| `BASE_PATH`       | frontend Vite config | Optional; defaults to `/`                |
+| `NTC3_VAULT_PATH` | local database/API   | Optional development/test vault override |
 
 The frontend and API cannot use the same port when run as separate processes.
 

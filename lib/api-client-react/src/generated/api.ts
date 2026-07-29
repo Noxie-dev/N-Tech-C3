@@ -36,6 +36,10 @@ import type {
   EvidenceIngestStartInput,
   EvidenceInput,
   EvidencePatch,
+  EvidenceSource,
+  EvidenceStoryLink,
+  EvidenceStoryLinkInput,
+  EvidenceVersionCommand,
   GlobalSearchParams,
   HealthStatus,
   KnowledgeInput,
@@ -3631,7 +3635,7 @@ export const getUpdateEvidenceUrl = (id: number,) => {
 }
 
 /**
- * @summary Update an evidence item
+ * @summary Optimistically update mutable Evidence metadata
  */
 export const updateEvidence = async (id: number,
     evidencePatch: EvidencePatch, options?: Parameters<typeof customFetch>[1]): Promise<Evidence> => {
@@ -3681,7 +3685,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateEvidenceMutationError = ErrorType<void>
 
     /**
- * @summary Update an evidence item
+ * @summary Optimistically update mutable Evidence metadata
  */
 export const useUpdateEvidence = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEvidence>>, TError,{id: number;data: BodyType<EvidencePatch>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -3703,11 +3707,12 @@ export const getDeleteEvidenceUrl = (id: number,) => {
 }
 
 /**
- * @summary Delete an evidence item
+ * @deprecated
+ * @summary Permanent Evidence deletion is disabled; archive it instead
  */
-export const deleteEvidence = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const deleteEvidence = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<unknown> => {
 
-  return customFetch<void>(getDeleteEvidenceUrl(id),
+  return customFetch<unknown>(getDeleteEvidenceUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -3752,7 +3757,8 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteEvidenceMutationError = ErrorType<void>
 
     /**
- * @summary Delete an evidence item
+ * @deprecated
+ * @summary Permanent Evidence deletion is disabled; archive it instead
  */
 export const useDeleteEvidence = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteEvidence>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -3763,6 +3769,449 @@ export const useDeleteEvidence = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getDeleteEvidenceMutationOptions(options));
+    }
+
+export const getArchiveEvidenceUrl = (id: number,) => {
+
+
+
+
+  return `/api/evidence/${id}/archive`
+}
+
+/**
+ * @summary Archive active Evidence without destroying provenance
+ */
+export const archiveEvidence = async (id: number,
+    evidenceVersionCommand: EvidenceVersionCommand, options?: Parameters<typeof customFetch>[1]): Promise<Evidence> => {
+
+  return customFetch<Evidence>(getArchiveEvidenceUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(evidenceVersionCommand)
+  }
+);}
+
+
+
+
+
+export const getArchiveEvidenceMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archiveEvidence>>, TError,{id: number;data: BodyType<EvidenceVersionCommand>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof archiveEvidence>>, TError,{id: number;data: BodyType<EvidenceVersionCommand>}, TContext> => {
+
+const mutationKey = ['archiveEvidence'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof archiveEvidence>>, {id: number;data: BodyType<EvidenceVersionCommand>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  archiveEvidence(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ArchiveEvidenceMutationResult = NonNullable<Awaited<ReturnType<typeof archiveEvidence>>>
+    export type ArchiveEvidenceMutationBody = BodyType<EvidenceVersionCommand>
+    export type ArchiveEvidenceMutationError = ErrorType<void>
+
+    /**
+ * @summary Archive active Evidence without destroying provenance
+ */
+export const useArchiveEvidence = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archiveEvidence>>, TError,{id: number;data: BodyType<EvidenceVersionCommand>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof archiveEvidence>>,
+        TError,
+        {id: number;data: BodyType<EvidenceVersionCommand>},
+        TContext
+      > => {
+      return useMutation(getArchiveEvidenceMutationOptions(options));
+    }
+
+export const getRestoreEvidenceUrl = (id: number,) => {
+
+
+
+
+  return `/api/evidence/${id}/restore`
+}
+
+/**
+ * @summary Restore archived Evidence
+ */
+export const restoreEvidence = async (id: number,
+    evidenceVersionCommand: EvidenceVersionCommand, options?: Parameters<typeof customFetch>[1]): Promise<Evidence> => {
+
+  return customFetch<Evidence>(getRestoreEvidenceUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(evidenceVersionCommand)
+  }
+);}
+
+
+
+
+
+export const getRestoreEvidenceMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreEvidence>>, TError,{id: number;data: BodyType<EvidenceVersionCommand>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof restoreEvidence>>, TError,{id: number;data: BodyType<EvidenceVersionCommand>}, TContext> => {
+
+const mutationKey = ['restoreEvidence'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restoreEvidence>>, {id: number;data: BodyType<EvidenceVersionCommand>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  restoreEvidence(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestoreEvidenceMutationResult = NonNullable<Awaited<ReturnType<typeof restoreEvidence>>>
+    export type RestoreEvidenceMutationBody = BodyType<EvidenceVersionCommand>
+    export type RestoreEvidenceMutationError = ErrorType<void>
+
+    /**
+ * @summary Restore archived Evidence
+ */
+export const useRestoreEvidence = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreEvidence>>, TError,{id: number;data: BodyType<EvidenceVersionCommand>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof restoreEvidence>>,
+        TError,
+        {id: number;data: BodyType<EvidenceVersionCommand>},
+        TContext
+      > => {
+      return useMutation(getRestoreEvidenceMutationOptions(options));
+    }
+
+export const getListEvidenceSourcesUrl = (id: number,) => {
+
+
+
+
+  return `/api/evidence/${id}/sources`
+}
+
+/**
+ * @summary List immutable source versions for Evidence
+ */
+export const listEvidenceSources = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceSource[]> => {
+
+  return customFetch<EvidenceSource[]>(getListEvidenceSourcesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListEvidenceSourcesQueryKey = (id: number,) => {
+    return [
+    `/api/evidence/${id}/sources`
+    ] as const;
+    }
+
+
+export const getListEvidenceSourcesQueryOptions = <TData = Awaited<ReturnType<typeof listEvidenceSources>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listEvidenceSources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListEvidenceSourcesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listEvidenceSources>>> = ({ signal }) => listEvidenceSources(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listEvidenceSources>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListEvidenceSourcesQueryResult = NonNullable<Awaited<ReturnType<typeof listEvidenceSources>>>
+export type ListEvidenceSourcesQueryError = ErrorType<void>
+
+
+/**
+ * @summary List immutable source versions for Evidence
+ */
+
+export function useListEvidenceSources<TData = Awaited<ReturnType<typeof listEvidenceSources>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listEvidenceSources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListEvidenceSourcesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListEvidenceStoryLinksUrl = (id: number,) => {
+
+
+
+
+  return `/api/evidence/${id}/stories`
+}
+
+/**
+ * @summary List typed Story relationships for Evidence
+ */
+export const listEvidenceStoryLinks = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceStoryLink[]> => {
+
+  return customFetch<EvidenceStoryLink[]>(getListEvidenceStoryLinksUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListEvidenceStoryLinksQueryKey = (id: number,) => {
+    return [
+    `/api/evidence/${id}/stories`
+    ] as const;
+    }
+
+
+export const getListEvidenceStoryLinksQueryOptions = <TData = Awaited<ReturnType<typeof listEvidenceStoryLinks>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listEvidenceStoryLinks>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListEvidenceStoryLinksQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listEvidenceStoryLinks>>> = ({ signal }) => listEvidenceStoryLinks(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listEvidenceStoryLinks>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListEvidenceStoryLinksQueryResult = NonNullable<Awaited<ReturnType<typeof listEvidenceStoryLinks>>>
+export type ListEvidenceStoryLinksQueryError = ErrorType<void>
+
+
+/**
+ * @summary List typed Story relationships for Evidence
+ */
+
+export function useListEvidenceStoryLinks<TData = Awaited<ReturnType<typeof listEvidenceStoryLinks>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listEvidenceStoryLinks>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListEvidenceStoryLinksQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getLinkEvidenceToStoryUrl = (id: number,) => {
+
+
+
+
+  return `/api/evidence/${id}/stories`
+}
+
+/**
+ * @summary Link active Evidence to a Story in the same Workspace
+ */
+export const linkEvidenceToStory = async (id: number,
+    evidenceStoryLinkInput: EvidenceStoryLinkInput, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceStoryLink> => {
+
+  return customFetch<EvidenceStoryLink>(getLinkEvidenceToStoryUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(evidenceStoryLinkInput)
+  }
+);}
+
+
+
+
+
+export const getLinkEvidenceToStoryMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof linkEvidenceToStory>>, TError,{id: number;data: BodyType<EvidenceStoryLinkInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof linkEvidenceToStory>>, TError,{id: number;data: BodyType<EvidenceStoryLinkInput>}, TContext> => {
+
+const mutationKey = ['linkEvidenceToStory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof linkEvidenceToStory>>, {id: number;data: BodyType<EvidenceStoryLinkInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  linkEvidenceToStory(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LinkEvidenceToStoryMutationResult = NonNullable<Awaited<ReturnType<typeof linkEvidenceToStory>>>
+    export type LinkEvidenceToStoryMutationBody = BodyType<EvidenceStoryLinkInput>
+    export type LinkEvidenceToStoryMutationError = ErrorType<void>
+
+    /**
+ * @summary Link active Evidence to a Story in the same Workspace
+ */
+export const useLinkEvidenceToStory = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof linkEvidenceToStory>>, TError,{id: number;data: BodyType<EvidenceStoryLinkInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof linkEvidenceToStory>>,
+        TError,
+        {id: number;data: BodyType<EvidenceStoryLinkInput>},
+        TContext
+      > => {
+      return useMutation(getLinkEvidenceToStoryMutationOptions(options));
+    }
+
+export const getUnlinkEvidenceFromStoryUrl = (id: number,
+    storyId: number,) => {
+
+
+
+
+  return `/api/evidence/${id}/stories/${storyId}`
+}
+
+/**
+ * @summary Remove a typed Story relationship from active Evidence
+ */
+export const unlinkEvidenceFromStory = async (id: number,
+    storyId: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getUnlinkEvidenceFromStoryUrl(id,storyId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getUnlinkEvidenceFromStoryMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unlinkEvidenceFromStory>>, TError,{id: number;storyId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unlinkEvidenceFromStory>>, TError,{id: number;storyId: number}, TContext> => {
+
+const mutationKey = ['unlinkEvidenceFromStory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unlinkEvidenceFromStory>>, {id: number;storyId: number}> = (props) => {
+          const {id,storyId} = props ?? {};
+
+          return  unlinkEvidenceFromStory(id,storyId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnlinkEvidenceFromStoryMutationResult = NonNullable<Awaited<ReturnType<typeof unlinkEvidenceFromStory>>>
+
+    export type UnlinkEvidenceFromStoryMutationError = ErrorType<void>
+
+    /**
+ * @summary Remove a typed Story relationship from active Evidence
+ */
+export const useUnlinkEvidenceFromStory = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unlinkEvidenceFromStory>>, TError,{id: number;storyId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unlinkEvidenceFromStory>>,
+        TError,
+        {id: number;storyId: number},
+        TContext
+      > => {
+      return useMutation(getUnlinkEvidenceFromStoryMutationOptions(options));
     }
 
 export const getListAssetsUrl = (params?: ListAssetsParams,) => {

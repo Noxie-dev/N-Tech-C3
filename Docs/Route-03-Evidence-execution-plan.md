@@ -22,18 +22,18 @@ Publishing. Those capabilities may consume the contracts established here.
 
 ### Route DNA
 
-| Field | Decision |
-| --- | --- |
-| Route ID | `evidence` |
-| Canonical routes | `/evidence`, `/evidence/:evidenceId` |
-| Domain owner | Evidence |
-| Mission | Preserve provenance-bearing engineering artifacts as verifiable, reusable Evidence. |
-| Primary patterns | Library, explorer, detail inspector, quick capture |
-| Current maturity | L2 Functional for basic capture and retrieval |
-| Target maturity | L3 Governed after this plan is implemented and verified |
+| Field               | Decision                                                                                                                |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Route ID            | `evidence`                                                                                                              |
+| Canonical routes    | `/evidence`, `/evidence/:evidenceId`                                                                                    |
+| Domain owner        | Evidence                                                                                                                |
+| Mission             | Preserve provenance-bearing engineering artifacts as verifiable, reusable Evidence.                                     |
+| Primary patterns    | Library, explorer, detail inspector, quick capture                                                                      |
+| Current maturity    | L2 Functional for basic capture and retrieval                                                                           |
+| Target maturity     | L3 Governed after this plan is implemented and verified                                                                 |
 | Authoritative facts | Identity, Workspace ownership, source versions, provenance, classification, metadata, archive state, and explicit links |
-| Derived facts | Search rank, backlinks, integrity result, link counts, previews, duplicate suggestions, and recommendations |
-| Required services | Vault, database, durable events, search, jobs, relationships, and EIE execution |
+| Derived facts       | Search rank, backlinks, integrity result, link counts, previews, duplicate suggestions, and recommendations             |
+| Required services   | Vault, database, durable events, search, jobs, relationships, and EIE execution                                         |
 
 The route is justified because Evidence has its own identity, immutable source
 material, provenance, integrity, lifecycle, relationships, indexing, and recovery
@@ -133,12 +133,12 @@ and recorded in
 Do not model `Indexed`, `Linked`, or `Referenced` as lifecycle states: each is a
 rebuildable or relational fact and may occur concurrently.
 
-| Dimension | Values |
-| --- | --- |
-| Lifecycle | `CapturePending`, `Active`, `Archived`, `IngestFailed` |
+| Dimension      | Values                                                                              |
+| -------------- | ----------------------------------------------------------------------------------- |
+| Lifecycle      | `CapturePending`, `Active`, `Archived`, `IngestFailed`                              |
 | Classification | `FactualRecord`, `Observation`, `Testimony`, `DerivedAnalysis`, `ExternalReference` |
-| Review | `Unreviewed`, `Reviewed`, `Disputed` |
-| Integrity | `Pending`, `Valid`, `Missing`, `Modified`, `Unverifiable` |
+| Review         | `Unreviewed`, `Reviewed`, `Disputed`                                                |
+| Integrity      | `Pending`, `Valid`, `Missing`, `Modified`, `Unverifiable`                           |
 
 Only lifecycle, classification, and review are authoritative Evidence facts.
 Integrity is a versioned EIE result. Search/index status and link/reference counts
@@ -174,15 +174,15 @@ URLs, commands, logs, and events must not contain credentials or secrets.
 
 A locator identifies a precise portion of one source version. Version 1 supports:
 
-| Kind | Required coordinates |
-| --- | --- |
-| `WholeArtifact` | None |
-| `TextRange` | Start/end line or character offsets |
-| `Page` | Positive page number; optional rectangle |
-| `Timestamp` | Start/end milliseconds |
-| `ImageRegion` | Normalized `x`, `y`, `width`, `height` |
+| Kind             | Required coordinates                                      |
+| ---------------- | --------------------------------------------------------- |
+| `WholeArtifact`  | None                                                      |
+| `TextRange`      | Start/end line or character offsets                       |
+| `Page`           | Positive page number; optional rectangle                  |
+| `Timestamp`      | Start/end milliseconds                                    |
+| `ImageRegion`    | Normalized `x`, `y`, `width`, `height`                    |
 | `RepositoryPath` | Relative path and immutable revision; optional line range |
-| `JsonPointer` | RFC 6901 pointer |
+| `JsonPointer`    | RFC 6901 pointer                                          |
 
 Locators are validated against source kind and bounds when those bounds are known.
 Future claim citations reference `sourceVersionId + locator`; they do not point at
@@ -262,23 +262,23 @@ materialize as renderer `ArrayBuffer` values. Preview remains bounded and derive
 
 ## Canonical API
 
-| Method | Route | Purpose |
-| --- | --- | --- |
-| `GET` | `/evidence` | Cursor-paginated catalogue with Workspace, lifecycle, classification, review, integrity, type, tag, link, and text filters |
-| `POST` | `/evidence` | Create inline text or external-reference Evidence in a required Workspace |
-| `POST` | `/evidence/ingests` | Start or register a managed-file capture |
-| `POST` | `/evidence/ingests/{ingestId}/complete` | Idempotently coordinate metadata commit and promotion |
-| `GET` | `/evidence/{evidenceId}` | Return aggregate metadata and derived summaries |
-| `PATCH` | `/evidence/{evidenceId}` | Update mutable metadata with expected version |
-| `GET` | `/evidence/{evidenceId}/sources` | List immutable source versions |
-| `POST` | `/evidence/{evidenceId}/sources` | Add a replacement source version through the capture workflow |
-| `GET/POST` | `/evidence/{evidenceId}/locators` | List/create validated locators |
-| `GET/POST/DELETE` | `/evidence/{evidenceId}/stories` | Manage typed Story links |
-| `GET` | `/evidence/{evidenceId}/integrity` | Return the latest provenance-bearing integrity result |
-| `POST` | `/evidence/{evidenceId}/verify` | Queue a bounded integrity verification |
-| `POST` | `/evidence/{evidenceId}/archive` | Archive without deleting sources or relationships |
-| `POST` | `/evidence/{evidenceId}/restore` | Restore archived Evidence |
-| `GET` | `/evidence/{evidenceId}/timeline` | Return relevant durable domain events |
+| Method            | Route                                   | Purpose                                                                                                                    |
+| ----------------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `GET`             | `/evidence`                             | Cursor-paginated catalogue with Workspace, lifecycle, classification, review, integrity, type, tag, link, and text filters |
+| `POST`            | `/evidence`                             | Create inline text or external-reference Evidence in a required Workspace                                                  |
+| `POST`            | `/evidence/ingests`                     | Start or register a managed-file capture                                                                                   |
+| `POST`            | `/evidence/ingests/{ingestId}/complete` | Idempotently coordinate metadata commit and promotion                                                                      |
+| `GET`             | `/evidence/{evidenceId}`                | Return aggregate metadata and derived summaries                                                                            |
+| `PATCH`           | `/evidence/{evidenceId}`                | Update mutable metadata with expected version                                                                              |
+| `GET`             | `/evidence/{evidenceId}/sources`        | List immutable source versions                                                                                             |
+| `POST`            | `/evidence/{evidenceId}/sources`        | Add a replacement source version through the capture workflow                                                              |
+| `GET/POST`        | `/evidence/{evidenceId}/locators`       | List/create validated locators                                                                                             |
+| `GET/POST/DELETE` | `/evidence/{evidenceId}/stories`        | Manage typed Story links                                                                                                   |
+| `GET`             | `/evidence/{evidenceId}/integrity`      | Return the latest provenance-bearing integrity result                                                                      |
+| `POST`            | `/evidence/{evidenceId}/verify`         | Queue a bounded integrity verification                                                                                     |
+| `POST`            | `/evidence/{evidenceId}/archive`        | Archive without deleting sources or relationships                                                                          |
+| `POST`            | `/evidence/{evidenceId}/restore`        | Restore archived Evidence                                                                                                  |
+| `GET`             | `/evidence/{evidenceId}/timeline`       | Return relevant durable domain events                                                                                      |
 
 Canonical requests use `workspaceId`; `projectId` and singular `storyId` are
 deprecated compatibility fields. Existing CRUD remains for one compatibility
@@ -413,9 +413,24 @@ Execution evidence:
 
 ### Pass 2C — Domain API, events, and relationships
 
+Status: **Implemented and verified 2026-07-29**
+
 - Implement canonical commands, optimistic concurrency, archive/restore, link
   commands, events, and replay-safe projections.
 - Disable normal-flow hard deletion and enforce archived-Workspace behavior.
+
+Execution evidence:
+
+- migration 8 adds typed Story relationship metadata and lifecycle-aware,
+  rebuildable Evidence search triggers;
+- metadata/archive/restore commands enforce aggregate versions and archived
+  read-only behavior;
+- immutable sources and typed Story relationships have canonical read/command
+  endpoints;
+- hard deletion is deprecated and disabled while durable Evidence lifecycle and
+  relationship events project idempotently to Activity; and
+- `System-Design-Book/evidence/evidence-governed-operations-2026-07-29.md`
+  records compatibility decisions and verification.
 
 ### Pass 3A — Explorer and inspector
 
@@ -481,5 +496,5 @@ Route 03 reaches L3 Governed only when:
 ## Approval gate
 
 This dossier completed TNB3 Pass 1 and was accepted with ADR-001 on 2026-07-29.
-Pass 2A is the next authorized implementation boundary. Later passes remain
+Pass 3A is the next authorized implementation boundary. Later passes remain
 separately reviewable against the preceding pass evidence.

@@ -1517,7 +1517,7 @@ export const GetEvidenceResponse = zod.object({
 
 
 /**
- * @summary Update an evidence item
+ * @summary Optimistically update mutable Evidence metadata
  */
 export const UpdateEvidenceParams = zod.object({
   "id": zod.coerce.number()
@@ -1528,16 +1528,11 @@ export const UpdateEvidenceParams = zod.object({
 
 
 export const UpdateEvidenceBody = zod.object({
+  "expectedVersion": zod.number().min(1),
   "title": zod.string().min(1).optional(),
   "type": zod.enum(['Screenshot', 'TerminalOutput', 'GitLog', 'Benchmark', 'Diagram', 'MeetingNotes', 'ResearchPDF', 'Image', 'Video', 'VoiceRecording', 'CodeSnippet', 'IssueReport', 'BuildLog', 'RepositoryAudit', 'Other']).optional(),
-  "source": zod.string().nullish(),
   "notes": zod.string().nullish(),
-  "content": zod.string().nullish(),
   "tags": zod.array(zod.string()).optional(),
-  "storyId": zod.number().nullish(),
-  "projectId": zod.number().nullish(),
-  "workspaceId": zod.number().min(1).optional(),
-  "repository": zod.string().nullish(),
   "classification": zod.enum(['FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference']).optional(),
   "reviewStatus": zod.enum(['Unreviewed', 'Reviewed', 'Disputed']).optional()
 })
@@ -1568,13 +1563,193 @@ export const UpdateEvidenceResponse = zod.object({
 
 
 /**
- * @summary Delete an evidence item
+ * @deprecated
+ * @summary Permanent Evidence deletion is disabled; archive it instead
  */
 export const DeleteEvidenceParams = zod.object({
   "id": zod.coerce.number()
 })
 
 export const DeleteEvidenceResponse = zod.void()
+
+
+/**
+ * @summary Archive active Evidence without destroying provenance
+ */
+export const ArchiveEvidenceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const ArchiveEvidenceBody = zod.object({
+  "expectedVersion": zod.number().min(1)
+})
+
+
+
+
+export const ArchiveEvidenceResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "type": zod.enum(['Screenshot', 'TerminalOutput', 'GitLog', 'Benchmark', 'Diagram', 'MeetingNotes', 'ResearchPDF', 'Image', 'Video', 'VoiceRecording', 'CodeSnippet', 'IssueReport', 'BuildLog', 'RepositoryAudit', 'Other']),
+  "source": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "tags": zod.array(zod.string()).optional(),
+  "storyId": zod.number().nullish(),
+  "projectId": zod.number().nullish().describe('Legacy alias retained for one compatibility window. Use workspaceId.'),
+  "workspaceId": zod.number().nullable().describe('Canonical Workspace owner. Null only for reported legacy migration exceptions.'),
+  "repository": zod.string().nullish(),
+  "classification": zod.enum(['FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference']),
+  "lifecycleStatus": zod.enum(['CapturePending', 'Active', 'Archived', 'IngestFailed']),
+  "reviewStatus": zod.enum(['Unreviewed', 'Reviewed', 'Disputed']),
+  "version": zod.number().min(1),
+  "archivedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Restore archived Evidence
+ */
+export const RestoreEvidenceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const RestoreEvidenceBody = zod.object({
+  "expectedVersion": zod.number().min(1)
+})
+
+
+
+
+export const RestoreEvidenceResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "type": zod.enum(['Screenshot', 'TerminalOutput', 'GitLog', 'Benchmark', 'Diagram', 'MeetingNotes', 'ResearchPDF', 'Image', 'Video', 'VoiceRecording', 'CodeSnippet', 'IssueReport', 'BuildLog', 'RepositoryAudit', 'Other']),
+  "source": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "tags": zod.array(zod.string()).optional(),
+  "storyId": zod.number().nullish(),
+  "projectId": zod.number().nullish().describe('Legacy alias retained for one compatibility window. Use workspaceId.'),
+  "workspaceId": zod.number().nullable().describe('Canonical Workspace owner. Null only for reported legacy migration exceptions.'),
+  "repository": zod.string().nullish(),
+  "classification": zod.enum(['FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference']),
+  "lifecycleStatus": zod.enum(['CapturePending', 'Active', 'Archived', 'IngestFailed']),
+  "reviewStatus": zod.enum(['Unreviewed', 'Reviewed', 'Disputed']),
+  "version": zod.number().min(1),
+  "archivedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List immutable source versions for Evidence
+ */
+export const ListEvidenceSourcesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+export const listEvidenceSourcesResponseByteSizeMin = 0;
+
+export const listEvidenceSourcesResponseSha256RegExp = new RegExp('^[0-9a-f]{64}$');
+
+
+export const ListEvidenceSourcesResponseItem = zod.object({
+  "id": zod.number(),
+  "evidenceId": zod.number(),
+  "version": zod.number().min(1),
+  "sourceKind": zod.enum(['ManagedFile', 'InlineText', 'ExternalReference', 'RepositorySnapshot']),
+  "mediaType": zod.string().nullish(),
+  "originalName": zod.string().nullish(),
+  "byteSize": zod.number().min(listEvidenceSourcesResponseByteSizeMin).nullish(),
+  "sha256": zod.string().regex(listEvidenceSourcesResponseSha256RegExp).nullish(),
+  "vaultPath": zod.string().nullish(),
+  "inlineContent": zod.string().nullish(),
+  "originUri": zod.string().nullish(),
+  "repositoryId": zod.number().nullish(),
+  "repositoryRevision": zod.string().nullish(),
+  "captureMethod": zod.string(),
+  "producerMetadata": zod.record(zod.string(), zod.unknown()),
+  "createdAt": zod.coerce.date()
+})
+export const ListEvidenceSourcesResponse = zod.array(ListEvidenceSourcesResponseItem)
+
+
+/**
+ * @summary List typed Story relationships for Evidence
+ */
+export const ListEvidenceStoryLinksParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListEvidenceStoryLinksResponseItem = zod.object({
+  "evidenceId": zod.number(),
+  "storyId": zod.number(),
+  "storyTitle": zod.string(),
+  "role": zod.enum(['Supporting', 'Contradicting', 'Context', 'Primary']),
+  "relevance": zod.number(),
+  "notes": zod.string().nullish(),
+  "sourceLocatorId": zod.number().nullish(),
+  "linkedAt": zod.coerce.date()
+})
+export const ListEvidenceStoryLinksResponse = zod.array(ListEvidenceStoryLinksResponseItem)
+
+
+/**
+ * @summary Link active Evidence to a Story in the same Workspace
+ */
+export const LinkEvidenceToStoryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+export const linkEvidenceToStoryBodyRoleDefault = `Supporting`;
+export const linkEvidenceToStoryBodyRelevanceDefault = 100;
+export const linkEvidenceToStoryBodyRelevanceMin = 0;
+export const linkEvidenceToStoryBodyRelevanceMax = 100;
+
+
+
+
+export const LinkEvidenceToStoryBody = zod.object({
+  "storyId": zod.number().min(1),
+  "role": zod.enum(['Supporting', 'Contradicting', 'Context', 'Primary']).default(linkEvidenceToStoryBodyRoleDefault),
+  "relevance": zod.number().min(linkEvidenceToStoryBodyRelevanceMin).max(linkEvidenceToStoryBodyRelevanceMax).default(linkEvidenceToStoryBodyRelevanceDefault),
+  "notes": zod.string().nullish(),
+  "sourceLocatorId": zod.number().min(1).nullish()
+})
+
+export const LinkEvidenceToStoryResponse = zod.object({
+  "evidenceId": zod.number(),
+  "storyId": zod.number(),
+  "storyTitle": zod.string(),
+  "role": zod.enum(['Supporting', 'Contradicting', 'Context', 'Primary']),
+  "relevance": zod.number(),
+  "notes": zod.string().nullish(),
+  "sourceLocatorId": zod.number().nullish(),
+  "linkedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Remove a typed Story relationship from active Evidence
+ */
+export const UnlinkEvidenceFromStoryParams = zod.object({
+  "id": zod.coerce.number(),
+  "storyId": zod.coerce.number()
+})
+
+export const UnlinkEvidenceFromStoryResponse = zod.void()
 
 
 /**

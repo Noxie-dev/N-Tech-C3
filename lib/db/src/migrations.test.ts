@@ -195,4 +195,29 @@ describe('SQLite migrations', () => {
       "SELECT enabled FROM feature_flags WHERE flag_key = 'evidence.recoverable-ingest'",
     ).get()).toEqual({ enabled: 1 });
   });
+
+  it('keeps archived Evidence out of the rebuildable search projection', () => {
+    const database = new DatabaseSync(':memory:');
+    runMigrations(database);
+    const evidence = database.prepare(`
+      INSERT INTO evidence (title, type, content, lifecycle_status)
+      VALUES ('Governed proof', 'BuildLog', 'unique replay token', 'Active')
+    `).run();
+
+    expect(database.prepare(
+      "SELECT count(*) count FROM global_search WHERE global_search MATCH 'replay'",
+    ).get()).toEqual({ count: 1 });
+
+    database.prepare("UPDATE evidence SET lifecycle_status = 'Archived' WHERE id = ?")
+      .run(evidence.lastInsertRowid);
+    expect(database.prepare(
+      "SELECT count(*) count FROM global_search WHERE global_search MATCH 'replay'",
+    ).get()).toEqual({ count: 0 });
+
+    database.prepare("UPDATE evidence SET lifecycle_status = 'Active' WHERE id = ?")
+      .run(evidence.lastInsertRowid);
+    expect(database.prepare(
+      "SELECT count(*) count FROM global_search WHERE global_search MATCH 'replay'",
+    ).get()).toEqual({ count: 1 });
+  });
 });

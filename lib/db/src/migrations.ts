@@ -709,6 +709,56 @@ export const migrations: Migration[] = [
       WHERE flag_key = 'evidence.recoverable-ingest';
     `,
   },
+  {
+    version: 8,
+    name: 'governed_evidence_operations',
+    sql: `
+      ALTER TABLE story_evidence ADD COLUMN role TEXT NOT NULL DEFAULT 'Supporting'
+        CHECK (role IN ('Supporting', 'Contradicting', 'Context', 'Primary'));
+      ALTER TABLE story_evidence ADD COLUMN source_locator_id INTEGER
+        REFERENCES evidence_source_locators(id) ON DELETE SET NULL;
+
+      CREATE INDEX story_evidence_timeline_idx
+        ON story_evidence(evidence_id, linked_at DESC);
+
+      DROP TRIGGER IF EXISTS evidence_search_insert;
+      DROP TRIGGER IF EXISTS evidence_search_update;
+      DROP TRIGGER IF EXISTS evidence_search_delete;
+
+      DELETE FROM global_search WHERE entity_type = 'evidence';
+      INSERT INTO global_search(entity_type, entity_id, title, body, tags)
+        SELECT 'evidence', id, title,
+          coalesce(notes, '') || ' ' || coalesce(content, '') || ' ' || coalesce(source, ''),
+          tags
+        FROM evidence
+        WHERE lifecycle_status = 'Active';
+
+      CREATE TRIGGER evidence_search_insert AFTER INSERT ON evidence
+      WHEN new.lifecycle_status = 'Active'
+      BEGIN
+        INSERT INTO global_search VALUES (
+          'evidence', new.id, new.title,
+          coalesce(new.notes, '') || ' ' || coalesce(new.content, '') || ' ' || coalesce(new.source, ''),
+          new.tags
+        );
+      END;
+
+      CREATE TRIGGER evidence_search_update AFTER UPDATE ON evidence
+      BEGIN
+        DELETE FROM global_search WHERE entity_type = 'evidence' AND entity_id = old.id;
+        INSERT INTO global_search(entity_type, entity_id, title, body, tags)
+          SELECT 'evidence', new.id, new.title,
+            coalesce(new.notes, '') || ' ' || coalesce(new.content, '') || ' ' || coalesce(new.source, ''),
+            new.tags
+          WHERE new.lifecycle_status = 'Active';
+      END;
+
+      CREATE TRIGGER evidence_search_delete AFTER DELETE ON evidence
+      BEGIN
+        DELETE FROM global_search WHERE entity_type = 'evidence' AND entity_id = old.id;
+      END;
+    `,
+  },
 ];
 
 export function runMigrations(database: DatabaseSync): number[] {

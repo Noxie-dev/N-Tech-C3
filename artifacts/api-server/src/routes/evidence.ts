@@ -3,6 +3,12 @@ import {
   ListEvidenceQueryParams, ListEvidenceResponse, CreateEvidenceBody, CreateEvidenceResponse,
   GetEvidenceParams, GetEvidenceResponse, UpdateEvidenceParams, UpdateEvidenceBody,
   UpdateEvidenceResponse, DeleteEvidenceParams,
+  ArchiveEvidenceParams, ArchiveEvidenceBody, ArchiveEvidenceResponse,
+  RestoreEvidenceParams, RestoreEvidenceBody, RestoreEvidenceResponse,
+  ListEvidenceSourcesParams, ListEvidenceSourcesResponse,
+  ListEvidenceStoryLinksParams, ListEvidenceStoryLinksResponse,
+  LinkEvidenceToStoryParams, LinkEvidenceToStoryBody, LinkEvidenceToStoryResponse,
+  UnlinkEvidenceFromStoryParams,
   ListRecoverableEvidenceIngestsResponse, CreateEvidenceIngestBody, CreateEvidenceIngestResponse,
   RecordEvidenceIngestStagedParams, RecordEvidenceIngestStagedBody,
   RecordEvidenceIngestStagedResponse, CompleteEvidenceIngestMetadataParams,
@@ -10,7 +16,7 @@ import {
   FinalizeEvidenceIngestParams, FinalizeEvidenceIngestResponse, FailEvidenceIngestParams,
   FailEvidenceIngestBody, FailEvidenceIngestResponse,
 } from '@workspace/api-zod';
-import { createEntity, deleteEntity, entityConfigs, getEntity, listEntities, updateEntity } from '../lib/entity-store';
+import { createEntity, entityConfigs, getEntity, listEntities, updateEntity } from '../lib/entity-store';
 import { all, get, run, transaction, type Row } from '@workspace/db';
 import { appendDomainEvent, projectDomainEventsToActivity } from '../lib/events';
 import { guardWorkspaceMutations, workspaceMutationError } from '../lib/workspace-guard';
@@ -62,6 +68,47 @@ function ingestResult(id: string) {
   if (!ingest?.evidenceId) return undefined;
   const evidence = getEntity(config, ingest.evidenceId);
   return evidence ? { ingest, evidence } : undefined;
+}
+
+function evidenceSource(row: Row) {
+  let producerMetadata: Record<string, unknown> = {};
+  try { producerMetadata = JSON.parse(String(row.producer_metadata ?? '{}')); } catch { /* preserve empty metadata */ }
+  return {
+    id: Number(row.id), evidenceId: Number(row.evidence_id), version: Number(row.version),
+    sourceKind: String(row.source_kind), mediaType: row.media_type, originalName: row.original_name,
+    byteSize: row.byte_size == null ? null : Number(row.byte_size), sha256: row.sha256,
+    vaultPath: row.vault_path, inlineContent: row.inline_content, originUri: row.origin_uri,
+    repositoryId: row.repository_id == null ? null : Number(row.repository_id),
+    repositoryRevision: row.repository_revision, captureMethod: String(row.capture_method),
+    producerMetadata, createdAt: row.created_at,
+  };
+}
+
+function evidenceStoryLink(row: Row) {
+  return {
+    evidenceId: Number(row.evidence_id), storyId: Number(row.story_id),
+    storyTitle: String(row.story_title), role: String(row.role),
+    relevance: Number(row.relevance), notes: row.notes,
+    sourceLocatorId: row.source_locator_id == null ? null : Number(row.source_locator_id),
+    linkedAt: row.linked_at,
+  };
+}
+
+function storyLinks(evidenceId: number) {
+  return all(`
+    SELECT se.*, s.title story_title
+    FROM story_evidence se
+    JOIN stories s ON s.id = se.story_id
+    WHERE se.evidence_id = ?
+    ORDER BY se.linked_at DESC, se.story_id
+  `, [evidenceId]).map(evidenceStoryLink);
+}
+
+function appendEvidenceEvent(evidence: Row, eventType: string, action: string, payload: Record<string, unknown> = {}) {
+  appendDomainEvent({
+    eventType, eventVersion: 1, aggregateType: 'evidence', aggregateId: Number(evidence.id),
+    payload: { entityTitle: String(evidence.title), action, ...payload },
+  });
 }
 
 router.get('/evidence', (req, res) => {
@@ -348,23 +395,28 @@ router.patch('/evidence/:id', (req, res) => {
   const params = UpdateEvidenceParams.safeParse(req.params);
   const body = UpdateEvidenceBody.safeParse(req.body);
   if (!params.success || !body.success) return void res.status(400).json({ error: 'Invalid evidence update' });
-  if (body.data.projectId != null && body.data.workspaceId != null
-    && body.data.projectId !== body.data.workspaceId) {
-    return void res.status(400).json({ error: 'projectId must match canonical workspaceId when both are supplied' });
-  }
   const existing = getEntity(config, params.data.id);
   if (!existing) return void res.status(404).json({ error: 'Evidence not found' });
-  const updateData = body.data.workspaceId == null
-    ? body.data
-    : { ...body.data, projectId: undefined };
+  if (existing.lifecycleStatus === 'Archived') {
+    return void res.status(409).json({ error: 'Archived Evidence is read-only; restore it before editing' });
+  }
+  if (body.data.expectedVersion !== existing.version) {
+    return void res.status(409).json({ error: 'Evidence has changed; reload before saving', currentVersion: existing.version });
+  }
+  const { expectedVersion: _expectedVersion, ...updateData } = body.data;
   const row = transaction(() => {
-    const updated = updateEntity(config, params.data.id, updateData)!;
-    appendDomainEvent({
-      eventType: 'EvidenceUpdated', eventVersion: 1, aggregateType: 'evidence',
-      aggregateId: params.data.id,
-      payload: { entityTitle: String(updated.title), action: 'updated' },
+    updateEntity(config, params.data.id, updateData);
+    run('UPDATE evidence SET version = version + 1 WHERE id = ?', [params.data.id]);
+    const versioned = getEntity(config, params.data.id)!;
+    appendEvidenceEvent(versioned, 'EvidenceMetadataUpdated', 'metadata updated', {
+      previousVersion: existing.version, version: versioned.version,
     });
-    return updated;
+    if (body.data.reviewStatus != null && body.data.reviewStatus !== existing.reviewStatus) {
+      appendEvidenceEvent(versioned, 'EvidenceReviewChanged', `review marked ${body.data.reviewStatus}`, {
+        previousReviewStatus: existing.reviewStatus, reviewStatus: body.data.reviewStatus,
+      });
+    }
+    return versioned;
   });
   projectDomainEventsToActivity();
   res.json(UpdateEvidenceResponse.parse(row));
@@ -374,13 +426,112 @@ router.delete('/evidence/:id', (req, res) => {
   if (!params.success) return void res.status(400).json({ error: params.error.message });
   const existing = getEntity(config, params.data.id);
   if (!existing) return void res.status(404).json({ error: 'Evidence not found' });
+  res.status(409).json({ error: 'Permanent Evidence deletion is disabled; archive it instead' });
+});
+
+router.post('/evidence/:id/archive', (req, res) => {
+  const params = ArchiveEvidenceParams.safeParse(req.params);
+  const body = ArchiveEvidenceBody.safeParse(req.body);
+  if (!params.success || !body.success) return void res.status(400).json({ error: 'Invalid archive command' });
+  const existing = getEntity(config, params.data.id);
+  if (!existing) return void res.status(404).json({ error: 'Evidence not found' });
+  if (existing.lifecycleStatus === 'Archived') return void res.json(ArchiveEvidenceResponse.parse(existing));
+  if (existing.lifecycleStatus !== 'Active') return void res.status(409).json({ error: `Evidence in ${existing.lifecycleStatus} cannot be archived` });
+  if (body.data.expectedVersion !== existing.version) {
+    return void res.status(409).json({ error: 'Evidence has changed; reload before archiving', currentVersion: existing.version });
+  }
+  const row = transaction(() => {
+    run(`UPDATE evidence SET lifecycle_status = 'Archived', archived_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
+      version = version + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?`, [params.data.id]);
+    const archived = getEntity(config, params.data.id)!;
+    appendEvidenceEvent(archived, 'EvidenceArchived', 'archived');
+    return archived;
+  });
+  projectDomainEventsToActivity();
+  res.json(ArchiveEvidenceResponse.parse(row));
+});
+
+router.post('/evidence/:id/restore', (req, res) => {
+  const params = RestoreEvidenceParams.safeParse(req.params);
+  const body = RestoreEvidenceBody.safeParse(req.body);
+  if (!params.success || !body.success) return void res.status(400).json({ error: 'Invalid restore command' });
+  const existing = getEntity(config, params.data.id);
+  if (!existing) return void res.status(404).json({ error: 'Evidence not found' });
+  if (existing.lifecycleStatus === 'Active') return void res.json(RestoreEvidenceResponse.parse(existing));
+  if (existing.lifecycleStatus !== 'Archived') return void res.status(409).json({ error: `Evidence in ${existing.lifecycleStatus} cannot be restored` });
+  if (body.data.expectedVersion !== existing.version) {
+    return void res.status(409).json({ error: 'Evidence has changed; reload before restoring', currentVersion: existing.version });
+  }
+  const workspaceError = workspaceMutationError(existing.workspaceId);
+  if (workspaceError) return void res.status(workspaceError === 'Workspace not found' ? 404 : 409).json({ error: workspaceError });
+  const row = transaction(() => {
+    run(`UPDATE evidence SET lifecycle_status = 'Active', archived_at = NULL, version = version + 1,
+      updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?`, [params.data.id]);
+    const restored = getEntity(config, params.data.id)!;
+    appendEvidenceEvent(restored, 'EvidenceRestored', 'restored');
+    return restored;
+  });
+  projectDomainEventsToActivity();
+  res.json(RestoreEvidenceResponse.parse(row));
+});
+
+router.get('/evidence/:id/sources', (req, res) => {
+  const params = ListEvidenceSourcesParams.safeParse(req.params);
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  if (!getEntity(config, params.data.id)) return void res.status(404).json({ error: 'Evidence not found' });
+  const rows = all('SELECT * FROM evidence_sources WHERE evidence_id = ? ORDER BY version DESC', [params.data.id])
+    .map(evidenceSource);
+  res.json(ListEvidenceSourcesResponse.parse(rows));
+});
+
+router.get('/evidence/:id/stories', (req, res) => {
+  const params = ListEvidenceStoryLinksParams.safeParse(req.params);
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  if (!getEntity(config, params.data.id)) return void res.status(404).json({ error: 'Evidence not found' });
+  res.json(ListEvidenceStoryLinksResponse.parse(storyLinks(params.data.id)));
+});
+
+router.post('/evidence/:id/stories', (req, res) => {
+  const params = LinkEvidenceToStoryParams.safeParse(req.params);
+  const body = LinkEvidenceToStoryBody.safeParse(req.body);
+  if (!params.success || !body.success) return void res.status(400).json({ error: 'Invalid Evidence Story link' });
+  const evidence = getEntity(config, params.data.id);
+  if (!evidence) return void res.status(404).json({ error: 'Evidence not found' });
+  if (evidence.lifecycleStatus !== 'Active') return void res.status(409).json({ error: 'Only active Evidence can be linked' });
+  const story = get('SELECT id, title, project_id, status FROM stories WHERE id = ?', [body.data.storyId]);
+  if (!story) return void res.status(404).json({ error: 'Story not found' });
+  if (story.status === 'Archived') return void res.status(409).json({ error: 'Archived Stories are read-only' });
+  if (story.project_id !== evidence.workspaceId) return void res.status(409).json({ error: 'Evidence and Story must belong to the same Workspace' });
+  if (body.data.sourceLocatorId != null) {
+    const locator = get(`SELECT l.id FROM evidence_source_locators l JOIN evidence_sources s ON s.id = l.source_id
+      WHERE l.id = ? AND s.evidence_id = ?`, [body.data.sourceLocatorId, params.data.id]);
+    if (!locator) return void res.status(404).json({ error: 'Evidence source locator not found' });
+  }
   transaction(() => {
-    deleteEntity(config, params.data.id);
-    appendDomainEvent({
-      eventType: 'EvidenceDeleted', eventVersion: 1, aggregateType: 'evidence',
-      aggregateId: params.data.id,
-      payload: { entityTitle: String(existing.title), action: 'deleted' },
-    });
+    const previous = get('SELECT * FROM story_evidence WHERE story_id = ? AND evidence_id = ?', [body.data.storyId, params.data.id]);
+    run(`INSERT INTO story_evidence (story_id, evidence_id, role, relevance, notes, source_locator_id)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(story_id, evidence_id) DO UPDATE SET
+        role = excluded.role, relevance = excluded.relevance, notes = excluded.notes,
+        source_locator_id = excluded.source_locator_id`,
+    [body.data.storyId, params.data.id, body.data.role, body.data.relevance, body.data.notes ?? null, body.data.sourceLocatorId ?? null]);
+    if (!previous) appendEvidenceEvent(evidence, 'EvidenceLinkedToStory', `linked to Story ${story.title}`, { storyId: body.data.storyId });
+  });
+  projectDomainEventsToActivity();
+  res.status(201).json(LinkEvidenceToStoryResponse.parse(storyLinks(params.data.id)
+    .find((link) => link.storyId === body.data.storyId)));
+});
+
+router.delete('/evidence/:id/stories/:storyId', (req, res) => {
+  const params = UnlinkEvidenceFromStoryParams.safeParse(req.params);
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  const evidence = getEntity(config, params.data.id);
+  if (!evidence) return void res.status(404).json({ error: 'Evidence not found' });
+  if (evidence.lifecycleStatus !== 'Active') return void res.status(409).json({ error: 'Only active Evidence can be unlinked' });
+  transaction(() => {
+    const existing = get('SELECT 1 FROM story_evidence WHERE story_id = ? AND evidence_id = ?', [params.data.storyId, params.data.id]);
+    run('DELETE FROM story_evidence WHERE story_id = ? AND evidence_id = ?', [params.data.storyId, params.data.id]);
+    if (existing) appendEvidenceEvent(evidence, 'EvidenceUnlinkedFromStory', `unlinked from Story ${params.data.storyId}`, { storyId: params.data.storyId });
   });
   projectDomainEventsToActivity();
   res.sendStatus(204);

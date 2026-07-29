@@ -469,4 +469,66 @@ describe('local API', () => {
       ['Invalid linked capture'],
     )).toEqual({ count: 0 });
   });
+
+  it('governs Evidence metadata, lifecycle, sources, and typed Story links', async () => {
+    const workspace = await request(app).post('/api/workspaces')
+      .send({ name: 'Governed Evidence workspace' }).expect(201);
+    const otherWorkspace = await request(app).post('/api/workspaces')
+      .send({ name: 'Other Evidence workspace' }).expect(201);
+    const story = await request(app).post('/api/stories')
+      .send({ title: 'Evidence consumer', workspaceId: workspace.body.id }).expect(201);
+    const otherStory = await request(app).post('/api/stories')
+      .send({ title: 'Foreign consumer', workspaceId: otherWorkspace.body.id }).expect(201);
+    const evidence = await request(app).post('/api/evidence').send({
+      title: 'Governed build proof', type: 'BuildLog', workspaceId: workspace.body.id,
+      content: 'replay safe search token',
+    }).expect(201);
+
+    const updated = await request(app).patch(`/api/evidence/${evidence.body.id}`)
+      .send({ expectedVersion: evidence.body.version, notes: 'Reviewed metadata' }).expect(200);
+    expect(updated.body).toMatchObject({ version: evidence.body.version + 1, notes: 'Reviewed metadata' });
+    await request(app).patch(`/api/evidence/${evidence.body.id}`)
+      .send({ expectedVersion: evidence.body.version, notes: 'Stale write' }).expect(409);
+
+    database.run(`INSERT INTO evidence_sources (
+      evidence_id, version, source_kind, inline_content, capture_method, producer_metadata
+    ) VALUES (?, 1, 'InlineText', 'immutable source', 'ApiTest', '{"fixture":true}')`, [evidence.body.id]);
+    const sources = await request(app).get(`/api/evidence/${evidence.body.id}/sources`).expect(200);
+    expect(sources.body).toEqual([expect.objectContaining({
+      evidenceId: evidence.body.id, version: 1, sourceKind: 'InlineText',
+      producerMetadata: { fixture: true },
+    })]);
+
+    await request(app).post(`/api/evidence/${evidence.body.id}/stories`)
+      .send({ storyId: otherStory.body.id }).expect(409);
+    await request(app).post(`/api/evidence/${evidence.body.id}/stories`)
+      .send({ storyId: story.body.id, role: 'Primary', relevance: 95 }).expect(201);
+    await request(app).post(`/api/evidence/${evidence.body.id}/stories`)
+      .send({ storyId: story.body.id, role: 'Primary', relevance: 95 }).expect(201);
+    const links = await request(app).get(`/api/evidence/${evidence.body.id}/stories`).expect(200);
+    expect(links.body).toEqual([expect.objectContaining({
+      evidenceId: evidence.body.id, storyId: story.body.id, role: 'Primary', relevance: 95,
+    })]);
+    expect(database.get(`SELECT count(*) count FROM domain_events
+      WHERE aggregate_type = 'evidence' AND aggregate_id = ? AND event_type = 'EvidenceLinkedToStory'`,
+    [evidence.body.id])).toEqual({ count: 1 });
+
+    const archived = await request(app).post(`/api/evidence/${evidence.body.id}/archive`)
+      .send({ expectedVersion: updated.body.version }).expect(200);
+    expect(archived.body).toMatchObject({ lifecycleStatus: 'Archived', version: updated.body.version + 1 });
+    await request(app).patch(`/api/evidence/${evidence.body.id}`)
+      .send({ expectedVersion: archived.body.version, notes: 'Forbidden' }).expect(409);
+    await request(app).delete(`/api/evidence/${evidence.body.id}`).expect(409);
+    expect(database.get(
+      "SELECT count(*) count FROM global_search WHERE global_search MATCH 'replay'",
+    )).toEqual({ count: 0 });
+
+    const restored = await request(app).post(`/api/evidence/${evidence.body.id}/restore`)
+      .send({ expectedVersion: archived.body.version }).expect(200);
+    expect(restored.body).toMatchObject({ lifecycleStatus: 'Active', version: archived.body.version + 1 });
+    expect(database.get(
+      "SELECT count(*) count FROM global_search WHERE global_search MATCH 'replay'",
+    )).toEqual({ count: 1 });
+    await request(app).delete(`/api/evidence/${evidence.body.id}/stories/${story.body.id}`).expect(204);
+  });
 });
