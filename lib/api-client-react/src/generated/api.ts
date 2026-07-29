@@ -37,6 +37,8 @@ import type {
   EvidenceInput,
   EvidencePatch,
   EvidenceSource,
+  EvidenceSourceLocator,
+  EvidenceSourceLocatorInput,
   EvidenceStoryLink,
   EvidenceStoryLinkInput,
   EvidenceVersionCommand,
@@ -3991,6 +3993,237 @@ export function useListEvidenceSources<TData = Awaited<ReturnType<typeof listEvi
 
 
 
+
+export const getListEvidenceSourceLocatorsUrl = (id: number,
+    sourceId: number,) => {
+
+
+
+
+  return `/api/evidence/${id}/sources/${sourceId}/locators`
+}
+
+/**
+ * @summary List precise locators for an Evidence source version
+ */
+export const listEvidenceSourceLocators = async (id: number,
+    sourceId: number, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceSourceLocator[]> => {
+
+  return customFetch<EvidenceSourceLocator[]>(getListEvidenceSourceLocatorsUrl(id,sourceId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListEvidenceSourceLocatorsQueryKey = (id: number,
+    sourceId: number,) => {
+    return [
+    `/api/evidence/${id}/sources/${sourceId}/locators`
+    ] as const;
+    }
+
+
+export const getListEvidenceSourceLocatorsQueryOptions = <TData = Awaited<ReturnType<typeof listEvidenceSourceLocators>>, TError = ErrorType<void>>(id: number,
+    sourceId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listEvidenceSourceLocators>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListEvidenceSourceLocatorsQueryKey(id,sourceId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listEvidenceSourceLocators>>> = ({ signal }) => listEvidenceSourceLocators(id,sourceId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && sourceId !== null && sourceId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listEvidenceSourceLocators>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListEvidenceSourceLocatorsQueryResult = NonNullable<Awaited<ReturnType<typeof listEvidenceSourceLocators>>>
+export type ListEvidenceSourceLocatorsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List precise locators for an Evidence source version
+ */
+
+export function useListEvidenceSourceLocators<TData = Awaited<ReturnType<typeof listEvidenceSourceLocators>>, TError = ErrorType<void>>(
+ id: number,
+    sourceId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listEvidenceSourceLocators>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListEvidenceSourceLocatorsQueryOptions(id,sourceId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateEvidenceSourceLocatorUrl = (id: number,
+    sourceId: number,) => {
+
+
+
+
+  return `/api/evidence/${id}/sources/${sourceId}/locators`
+}
+
+/**
+ * @summary Add an immutable precise locator to active Evidence
+ */
+export const createEvidenceSourceLocator = async (id: number,
+    sourceId: number,
+    evidenceSourceLocatorInput: EvidenceSourceLocatorInput, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceSourceLocator> => {
+
+  return customFetch<EvidenceSourceLocator>(getCreateEvidenceSourceLocatorUrl(id,sourceId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(evidenceSourceLocatorInput)
+  }
+);}
+
+
+
+
+
+export const getCreateEvidenceSourceLocatorMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEvidenceSourceLocator>>, TError,{id: number;sourceId: number;data: BodyType<EvidenceSourceLocatorInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createEvidenceSourceLocator>>, TError,{id: number;sourceId: number;data: BodyType<EvidenceSourceLocatorInput>}, TContext> => {
+
+const mutationKey = ['createEvidenceSourceLocator'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEvidenceSourceLocator>>, {id: number;sourceId: number;data: BodyType<EvidenceSourceLocatorInput>}> = (props) => {
+          const {id,sourceId,data} = props ?? {};
+
+          return  createEvidenceSourceLocator(id,sourceId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateEvidenceSourceLocatorMutationResult = NonNullable<Awaited<ReturnType<typeof createEvidenceSourceLocator>>>
+    export type CreateEvidenceSourceLocatorMutationBody = BodyType<EvidenceSourceLocatorInput>
+    export type CreateEvidenceSourceLocatorMutationError = ErrorType<void>
+
+    /**
+ * @summary Add an immutable precise locator to active Evidence
+ */
+export const useCreateEvidenceSourceLocator = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEvidenceSourceLocator>>, TError,{id: number;sourceId: number;data: BodyType<EvidenceSourceLocatorInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createEvidenceSourceLocator>>,
+        TError,
+        {id: number;sourceId: number;data: BodyType<EvidenceSourceLocatorInput>},
+        TContext
+      > => {
+      return useMutation(getCreateEvidenceSourceLocatorMutationOptions(options));
+    }
+
+export const getDeleteEvidenceSourceLocatorUrl = (id: number,
+    sourceId: number,
+    locatorId: number,) => {
+
+
+
+
+  return `/api/evidence/${id}/sources/${sourceId}/locators/${locatorId}`
+}
+
+/**
+ * @summary Remove a locator from active Evidence
+ */
+export const deleteEvidenceSourceLocator = async (id: number,
+    sourceId: number,
+    locatorId: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteEvidenceSourceLocatorUrl(id,sourceId,locatorId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteEvidenceSourceLocatorMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteEvidenceSourceLocator>>, TError,{id: number;sourceId: number;locatorId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteEvidenceSourceLocator>>, TError,{id: number;sourceId: number;locatorId: number}, TContext> => {
+
+const mutationKey = ['deleteEvidenceSourceLocator'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteEvidenceSourceLocator>>, {id: number;sourceId: number;locatorId: number}> = (props) => {
+          const {id,sourceId,locatorId} = props ?? {};
+
+          return  deleteEvidenceSourceLocator(id,sourceId,locatorId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteEvidenceSourceLocatorMutationResult = NonNullable<Awaited<ReturnType<typeof deleteEvidenceSourceLocator>>>
+
+    export type DeleteEvidenceSourceLocatorMutationError = ErrorType<void>
+
+    /**
+ * @summary Remove a locator from active Evidence
+ */
+export const useDeleteEvidenceSourceLocator = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteEvidenceSourceLocator>>, TError,{id: number;sourceId: number;locatorId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteEvidenceSourceLocator>>,
+        TError,
+        {id: number;sourceId: number;locatorId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteEvidenceSourceLocatorMutationOptions(options));
+    }
 
 export const getListEvidenceStoryLinksUrl = (id: number,) => {
 

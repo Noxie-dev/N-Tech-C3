@@ -498,6 +498,20 @@ describe('local API', () => {
       evidenceId: evidence.body.id, version: 1, sourceKind: 'InlineText',
       producerMetadata: { fixture: true },
     })]);
+    const locator = await request(app)
+      .post(`/api/evidence/${evidence.body.id}/sources/${sources.body[0].id}/locators`)
+      .send({ kind: 'TextRange', coordinates: { startLine: 1, endLine: 3 }, label: 'Relevant lines' })
+      .expect(201);
+    await request(app)
+      .post(`/api/evidence/${evidence.body.id}/sources/${sources.body[0].id}/locators`)
+      .send({ kind: 'Page', coordinates: { page: 0 } })
+      .expect(400);
+    const listedLocators = await request(app)
+      .get(`/api/evidence/${evidence.body.id}/sources/${sources.body[0].id}/locators`)
+      .expect(200);
+    expect(listedLocators.body).toEqual([expect.objectContaining({
+      id: locator.body.id, kind: 'TextRange', coordinates: { startLine: 1, endLine: 3 },
+    })]);
 
     await request(app).post(`/api/evidence/${evidence.body.id}/stories`)
       .send({ storyId: otherStory.body.id }).expect(409);
@@ -518,6 +532,10 @@ describe('local API', () => {
     expect(archived.body).toMatchObject({ lifecycleStatus: 'Archived', version: updated.body.version + 1 });
     await request(app).patch(`/api/evidence/${evidence.body.id}`)
       .send({ expectedVersion: archived.body.version, notes: 'Forbidden' }).expect(409);
+    await request(app)
+      .post(`/api/evidence/${evidence.body.id}/sources/${sources.body[0].id}/locators`)
+      .send({ kind: 'WholeArtifact', coordinates: {} })
+      .expect(409);
     await request(app).delete(`/api/evidence/${evidence.body.id}`).expect(409);
     expect(database.get(
       "SELECT count(*) count FROM global_search WHERE global_search MATCH 'replay'",
@@ -530,5 +548,8 @@ describe('local API', () => {
       "SELECT count(*) count FROM global_search WHERE global_search MATCH 'replay'",
     )).toEqual({ count: 1 });
     await request(app).delete(`/api/evidence/${evidence.body.id}/stories/${story.body.id}`).expect(204);
+    await request(app)
+      .delete(`/api/evidence/${evidence.body.id}/sources/${sources.body[0].id}/locators/${locator.body.id}`)
+      .expect(204);
   });
 });

@@ -1053,6 +1053,15 @@ export interface EvidenceSourceLocator {
   createdAt: string;
 }
 
+export type EvidenceSourceLocatorInputCoordinates = { [key: string]: unknown };
+
+export interface EvidenceSourceLocatorInput {
+  kind: EvidenceLocatorKind;
+  coordinates: EvidenceSourceLocatorInputCoordinates;
+  /** @nullable */
+  label?: string | null;
+}
+
 export interface EvidenceIngest {
   id: string;
   workspaceId: number;

@@ -434,9 +434,22 @@ Execution evidence:
 
 ### Pass 3A — Explorer and inspector
 
+Status: **Implemented and verified 2026-07-29**
+
 - Migrate quick capture to the recoverable workflow.
 - Add catalogue filters, detail route, source/provenance panels, recovery feedback,
   locators, archive/restore, and accessibility states.
+
+Execution evidence:
+
+- `/evidence/:id` is the canonical inspector with provenance, sources, locators,
+  relationships, recovery state, and governed lifecycle controls;
+- catalogue filtering covers authoritative Evidence dimensions;
+- canonical locator endpoints validate kind-specific coordinates and preserve
+  archived read-only behavior;
+- migration 9 enables source-version reads and the detail-route rollout; and
+- `System-Design-Book/evidence/evidence-inspector-experience-2026-07-29.md`
+  records experience verification.
 
 ### Pass 3B — Integrity and measured evidence
 
@@ -496,5 +509,5 @@ Route 03 reaches L3 Governed only when:
 ## Approval gate
 
 This dossier completed TNB3 Pass 1 and was accepted with ADR-001 on 2026-07-29.
-Pass 3A is the next authorized implementation boundary. Later passes remain
+Pass 3B is the next authorized implementation boundary. Later passes remain
 separately reviewable against the preceding pass evidence.

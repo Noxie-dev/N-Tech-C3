@@ -220,4 +220,17 @@ describe('SQLite migrations', () => {
       "SELECT count(*) count FROM global_search WHERE global_search MATCH 'replay'",
     ).get()).toEqual({ count: 1 });
   });
+
+  it('enables the governed Evidence inspector and source-version reads', () => {
+    const database = new DatabaseSync(':memory:');
+    runMigrations(database);
+    expect(database.prepare(`
+      SELECT flag_key, enabled FROM feature_flags
+      WHERE flag_key IN ('evidence.detail-route', 'evidence.source-versions')
+      ORDER BY flag_key
+    `).all()).toEqual([
+      { flag_key: 'evidence.detail-route', enabled: 1 },
+      { flag_key: 'evidence.source-versions', enabled: 1 },
+    ]);
+  });
 });

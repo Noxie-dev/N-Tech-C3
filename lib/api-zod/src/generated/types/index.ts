@@ -42,6 +42,8 @@ export * from './evidenceSource';
 export * from './evidenceSourceKind';
 export * from './evidenceSourceLocator';
 export * from './evidenceSourceLocatorCoordinates';
+export * from './evidenceSourceLocatorInput';
+export * from './evidenceSourceLocatorInputCoordinates';
 export * from './evidenceSourceProducerMetadata';
 export * from './evidenceStoryLink';
 export * from './evidenceStoryLinkInput';

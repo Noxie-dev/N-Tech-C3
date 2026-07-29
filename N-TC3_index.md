@@ -873,6 +873,41 @@ Pass 2C does not implement arbitrary source-version writes, locator authoring,
 preview streaming, the Evidence inspector route, or Evidence Integrity. These
 remain Passes 3A and 3B.
 
+### Route 03 Pass 3A execution report — Evidence explorer and inspector
+
+Status: **Implemented and verified**
+
+The canonical `/evidence/:id` inspector displays lifecycle, classification, review
+and version state; artifact content; immutable source provenance; structured
+SHA-256; precise locators; Story backlinks; timestamps; and incomplete-ingest
+recovery state. `/evidence` now filters by Workspace, type, classification, review,
+lifecycle, and title.
+
+Quick inline capture remains on the canonical Workspace-owned API because it has
+no filesystem failure boundary. File capture remains on the explorer and uses the
+Pass 2B staged, recoverable ingest saga.
+
+Source locator list/create/delete contracts support Whole Artifact, Text Range,
+Page, Timestamp, Image Region, Repository Path, and JSON Pointer locators. The API
+validates coordinates, source ownership, active lifecycle, and relationship
+references. Locator changes append durable events atomically.
+
+Migration 9, `evidence_inspector_rollout`, prevents duplicate locator identity and
+enables `evidence.source-versions` plus `evidence.detail-route`. Arbitrary source
+replacement remains disabled by the absence of a public write contract.
+
+Archive and restore are accessible from the inspector. Archived Evidence announces
+its read-only state and suppresses locator and relationship mutation controls.
+Story backlinks are navigable, managed files can be safely revealed, and recovery
+states use semantic announcements.
+
+Verification completed with OpenAPI regeneration, repository typecheck,
+production builds, and all 28 Vitest assertions passing. The controlled report is
+`Docs/System-Design-Book/evidence/evidence-inspector-experience-2026-07-29.md`.
+
+Pass 3A does not implement streamed previews, source replacement, Evidence
+Integrity, verification jobs, or final performance/conformance closure.
+
 ## 2B. Proposed Phase III — C³ Canon and Knowledge Intelligence
 
 Status: **Proposed future architecture — not implemented and not yet binding**
@@ -1657,12 +1692,11 @@ atomic promotion, and restart reconciliation.
 
 ### Next implementation order
 
-1. Execute Route 03 Pass 3A: Evidence explorer/inspector migration, provenance,
-   recovery feedback, locators, and accessible archive/restore experience.
-2. Execute Route 03 Pass 3B: deterministic Evidence Integrity, bounded verification
+1. Execute Route 03 Pass 3B: deterministic Evidence Integrity, bounded verification
    jobs, invalidation, diagnostics, performance workloads, and Tier 1–3 evidence.
-3. Execute Route 03 Pass 3C: preview streaming, compatibility-field retirement
+2. Execute Route 03 Pass 3C: preview streaming, compatibility-field retirement
    evidence, full route conformance, and release-readiness closure.
+3. Audit Route 04 prerequisites after Route 03 reaches its L3 governance gate.
 
 ## 8. Contract and data workflow
 

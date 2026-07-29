@@ -759,6 +759,19 @@ export const migrations: Migration[] = [
       END;
     `,
   },
+  {
+    version: 9,
+    name: 'evidence_inspector_rollout',
+    sql: `
+      CREATE UNIQUE INDEX evidence_locator_identity_idx
+        ON evidence_source_locators(source_id, kind, coordinates);
+
+      UPDATE feature_flags
+      SET enabled = 1,
+          updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+      WHERE flag_key IN ('evidence.source-versions', 'evidence.detail-route');
+    `,
+  },
 ];
 
 export function runMigrations(database: DatabaseSync): number[] {

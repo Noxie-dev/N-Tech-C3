@@ -17,6 +17,7 @@ const StoryDetail = lazyPage(() => import('@/pages/StoryDetail'), 'StoryDetail')
 const Campaigns = lazyPage(() => import('@/pages/Campaigns'), 'Campaigns');
 const CampaignDetail = lazyPage(() => import('@/pages/CampaignDetail'), 'CampaignDetail');
 const Evidence = lazyPage(() => import('@/pages/Evidence'), 'Evidence');
+const EvidenceDetail = lazyPage(() => import('@/pages/EvidenceDetail'), 'EvidenceDetail');
 const Knowledge = lazyPage(() => import('@/pages/Knowledge'), 'Knowledge');
 const KnowledgeDetail = lazyPage(() => import('@/pages/KnowledgeDetail'), 'KnowledgeDetail');
 const Assets = lazyPage(() => import('@/pages/Assets'), 'Assets');
@@ -73,6 +74,7 @@ function Router() {
           <Route path="/campaigns" component={Campaigns} />
           <Route path="/campaigns/:id" component={CampaignDetail} />
           <Route path="/evidence" component={Evidence} />
+          <Route path="/evidence/:id" component={EvidenceDetail} />
           <Route path="/knowledge" component={Knowledge} />
           <Route path="/knowledge/:id" component={KnowledgeDetail} />
           <Route path="/assets" component={Assets} />

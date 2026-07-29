@@ -1183,6 +1183,58 @@ paths:
                   $ref: "#/components/schemas/EvidenceSource"
         "404": { description: Not found }
 
+  /evidence/{id}/sources/{sourceId}/locators:
+    get:
+      operationId: listEvidenceSourceLocators
+      tags: [evidence]
+      summary: List precise locators for an Evidence source version
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+        - { name: sourceId, in: path, required: true, schema: { type: number } }
+      responses:
+        "200":
+          description: Source locators
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/EvidenceSourceLocator" }
+        "404": { description: Evidence source not found }
+    post:
+      operationId: createEvidenceSourceLocator
+      tags: [evidence]
+      summary: Add an immutable precise locator to active Evidence
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+        - { name: sourceId, in: path, required: true, schema: { type: number } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EvidenceSourceLocatorInput" }
+      responses:
+        "201":
+          description: Locator created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvidenceSourceLocator" }
+        "404": { description: Evidence source not found }
+        "409": { description: Archived Evidence }
+
+  /evidence/{id}/sources/{sourceId}/locators/{locatorId}:
+    delete:
+      operationId: deleteEvidenceSourceLocator
+      tags: [evidence]
+      summary: Remove a locator from active Evidence
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+        - { name: sourceId, in: path, required: true, schema: { type: number } }
+        - { name: locatorId, in: path, required: true, schema: { type: number } }
+      responses:
+        "204": { description: Locator removed }
+        "404": { description: Locator not found }
+        "409": { description: Archived Evidence or locator in use }
+
   /evidence/{id}/stories:
     get:
       operationId: listEvidenceStoryLinks
@@ -2525,6 +2577,18 @@ components:
         createdAt:
           type: string
           format: date-time
+
+    EvidenceSourceLocatorInput:
+      type: object
+      required: [kind, coordinates]
+      properties:
+        kind:
+          $ref: "#/components/schemas/EvidenceLocatorKind"
+        coordinates:
+          type: object
+          additionalProperties: true
+        label:
+          type: ["string", "null"]
 
     EvidenceIngest:
       type: object

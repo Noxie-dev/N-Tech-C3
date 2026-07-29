@@ -6,6 +6,9 @@ import {
   ArchiveEvidenceParams, ArchiveEvidenceBody, ArchiveEvidenceResponse,
   RestoreEvidenceParams, RestoreEvidenceBody, RestoreEvidenceResponse,
   ListEvidenceSourcesParams, ListEvidenceSourcesResponse,
+  ListEvidenceSourceLocatorsParams, ListEvidenceSourceLocatorsResponse,
+  CreateEvidenceSourceLocatorParams, CreateEvidenceSourceLocatorBody, CreateEvidenceSourceLocatorResponse,
+  DeleteEvidenceSourceLocatorParams,
   ListEvidenceStoryLinksParams, ListEvidenceStoryLinksResponse,
   LinkEvidenceToStoryParams, LinkEvidenceToStoryBody, LinkEvidenceToStoryResponse,
   UnlinkEvidenceFromStoryParams,
@@ -92,6 +95,29 @@ function evidenceStoryLink(row: Row) {
     sourceLocatorId: row.source_locator_id == null ? null : Number(row.source_locator_id),
     linkedAt: row.linked_at,
   };
+}
+
+function evidenceLocator(row: Row) {
+  let coordinates: Record<string, unknown> = {};
+  try { coordinates = JSON.parse(String(row.coordinates)); } catch { /* invalid legacy JSON is represented safely */ }
+  return {
+    id: Number(row.id), sourceId: Number(row.source_id),
+    locatorVersion: Number(row.locator_version), kind: String(row.kind),
+    coordinates, label: row.label, createdAt: row.created_at,
+  };
+}
+
+function locatorCoordinatesError(kind: string, value: Record<string, unknown>): string | undefined {
+  const finite = (key: string) => typeof value[key] === 'number' && Number.isFinite(value[key]);
+  const positive = (key: string) => finite(key) && Number(value[key]) > 0;
+  if (kind === 'WholeArtifact') return Object.keys(value).length ? 'WholeArtifact coordinates must be empty' : undefined;
+  if (kind === 'Page') return positive('page') ? undefined : 'Page locator requires a positive page';
+  if (kind === 'Timestamp') return finite('startMs') && (!('endMs' in value) || finite('endMs')) ? undefined : 'Timestamp locator requires startMs and optional endMs';
+  if (kind === 'TextRange') return (positive('startLine') || finite('startOffset')) ? undefined : 'TextRange requires startLine or startOffset';
+  if (kind === 'ImageRegion') return ['x', 'y', 'width', 'height'].every(finite) ? undefined : 'ImageRegion requires numeric x, y, width, and height';
+  if (kind === 'RepositoryPath') return typeof value.path === 'string' && typeof value.revision === 'string' ? undefined : 'RepositoryPath requires path and immutable revision';
+  if (kind === 'JsonPointer') return typeof value.pointer === 'string' && String(value.pointer).startsWith('/') ? undefined : 'JsonPointer requires an RFC 6901 pointer';
+  return 'Unsupported locator kind';
 }
 
 function storyLinks(evidenceId: number) {
@@ -482,6 +508,64 @@ router.get('/evidence/:id/sources', (req, res) => {
   const rows = all('SELECT * FROM evidence_sources WHERE evidence_id = ? ORDER BY version DESC', [params.data.id])
     .map(evidenceSource);
   res.json(ListEvidenceSourcesResponse.parse(rows));
+});
+
+router.get('/evidence/:id/sources/:sourceId/locators', (req, res) => {
+  const params = ListEvidenceSourceLocatorsParams.safeParse(req.params);
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  const source = get('SELECT id FROM evidence_sources WHERE id = ? AND evidence_id = ?', [params.data.sourceId, params.data.id]);
+  if (!source) return void res.status(404).json({ error: 'Evidence source not found' });
+  res.json(ListEvidenceSourceLocatorsResponse.parse(
+    all('SELECT * FROM evidence_source_locators WHERE source_id = ? ORDER BY created_at, id', [params.data.sourceId])
+      .map(evidenceLocator),
+  ));
+});
+
+router.post('/evidence/:id/sources/:sourceId/locators', (req, res) => {
+  const params = CreateEvidenceSourceLocatorParams.safeParse(req.params);
+  const body = CreateEvidenceSourceLocatorBody.safeParse(req.body);
+  if (!params.success || !body.success) return void res.status(400).json({ error: 'Invalid source locator' });
+  const evidence = getEntity(config, params.data.id);
+  if (!evidence) return void res.status(404).json({ error: 'Evidence not found' });
+  if (evidence.lifecycleStatus !== 'Active') return void res.status(409).json({ error: 'Archived or incomplete Evidence is read-only' });
+  const source = get('SELECT id FROM evidence_sources WHERE id = ? AND evidence_id = ?', [params.data.sourceId, params.data.id]);
+  if (!source) return void res.status(404).json({ error: 'Evidence source not found' });
+  const coordinatesError = locatorCoordinatesError(body.data.kind, body.data.coordinates);
+  if (coordinatesError) return void res.status(400).json({ error: coordinatesError });
+  const row = transaction(() => {
+    const result = run(`INSERT INTO evidence_source_locators (source_id, kind, coordinates, label)
+      VALUES (?, ?, ?, ?)`, [params.data.sourceId, body.data.kind, JSON.stringify(body.data.coordinates), body.data.label ?? null]);
+    const created = get('SELECT * FROM evidence_source_locators WHERE id = ?', [Number(result.lastInsertRowid)])!;
+    appendEvidenceEvent(evidence, 'EvidenceSourceLocatorAdded', 'source locator added', {
+      sourceId: params.data.sourceId, locatorId: Number(created.id), locatorKind: body.data.kind,
+    });
+    return evidenceLocator(created);
+  });
+  projectDomainEventsToActivity();
+  res.status(201).json(CreateEvidenceSourceLocatorResponse.parse(row));
+});
+
+router.delete('/evidence/:id/sources/:sourceId/locators/:locatorId', (req, res) => {
+  const params = DeleteEvidenceSourceLocatorParams.safeParse(req.params);
+  if (!params.success) return void res.status(400).json({ error: params.error.message });
+  const evidence = getEntity(config, params.data.id);
+  if (!evidence) return void res.status(404).json({ error: 'Evidence not found' });
+  if (evidence.lifecycleStatus !== 'Active') return void res.status(409).json({ error: 'Archived or incomplete Evidence is read-only' });
+  const locator = get(`SELECT l.id FROM evidence_source_locators l JOIN evidence_sources s ON s.id = l.source_id
+    WHERE l.id = ? AND l.source_id = ? AND s.evidence_id = ?`, [params.data.locatorId, params.data.sourceId, params.data.id]);
+  if (!locator) return void res.status(404).json({ error: 'Evidence source locator not found' });
+  try {
+    transaction(() => {
+      run('DELETE FROM evidence_source_locators WHERE id = ?', [params.data.locatorId]);
+      appendEvidenceEvent(evidence, 'EvidenceSourceLocatorRemoved', 'source locator removed', {
+        sourceId: params.data.sourceId, locatorId: params.data.locatorId,
+      });
+    });
+  } catch {
+    return void res.status(409).json({ error: 'Locator is referenced by an Evidence relationship' });
+  }
+  projectDomainEventsToActivity();
+  res.sendStatus(204);
 });
 
 router.get('/evidence/:id/stories', (req, res) => {

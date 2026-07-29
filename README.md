@@ -42,7 +42,8 @@ and executable code mark them as implemented.
 | `/stories`                         | Global Story catalogue                                      |
 | `/workspaces/:workspaceId/stories` | Workspace-scoped Story catalogue                            |
 | `/stories/:id`                     | Story studio, graph, Outputs, health, and timeline          |
-| `/evidence`                        | Evidence capture and vault                                  |
+| `/evidence`                        | Evidence explorer, governed capture, and filters             |
+| `/evidence/:id`                    | Evidence inspector, provenance, locators, and lifecycle      |
 | `/knowledge`, `/knowledge/:id`     | Knowledge catalogue and authoring                           |
 | `/campaigns`, `/campaigns/:id`     | Campaign catalogue and detail                               |
 | `/assets`                          | Asset catalogue                                             |
@@ -242,6 +243,11 @@ Activity remains replay-safe through its persisted event checkpoint, while the
 rebuildable search projection excludes archived Evidence. The full Evidence
 inspector, locator authoring, preview streaming, and Evidence Integrity remain
 future Pass 3 work.
+
+Route 03 Pass 3A adds the canonical Evidence inspector and governed explorer
+filters. Source versions, checksums, provenance, precise locators, Story backlinks,
+recovery state, and accessible archive/restore controls are visible from
+`/evidence/:id`. Streamed previews and Evidence Integrity remain future work.
 
 The default desktop vault is `Documents/N-TechC3-Vault` and contains:
 

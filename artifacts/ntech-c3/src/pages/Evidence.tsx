@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { useListEvidence, useCreateEvidence, useLinkEvidenceToStory, useListWorkspaces, useListStories, getListEvidenceQueryKey } from '@workspace/api-client-react';
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button, Input, Select, Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/shared';
 import { Archive, FolderOpen, Plus, Search, Terminal, UploadCloud } from 'lucide-react';
 import { formatShortDate } from '@/lib/utils';
-import type { Evidence as EvidenceRecord, EvidenceInput } from '@workspace/api-client-react';
+import type { Evidence as EvidenceRecord, EvidenceInput, EvidenceClassification, EvidenceLifecycleStatus, EvidenceReviewStatus } from '@workspace/api-client-react';
 import { evidenceTypeForMimeType } from '@/lib/capture-utils';
 
 export function Evidence() {
@@ -14,6 +15,9 @@ export function Evidence() {
   const [workspaceId, setWorkspaceId] = useState<number | undefined>(initialWorkspaceId);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [classificationFilter, setClassificationFilter] = useState('');
+  const [reviewFilter, setReviewFilter] = useState('');
+  const [lifecycleFilter, setLifecycleFilter] = useState('Active');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [importMessage, setImportMessage] = useState('');
@@ -25,6 +29,9 @@ export function Evidence() {
   const { data: evidence, isLoading, refetch } = useListEvidence({
     search: search || undefined,
     type: typeFilter || undefined,
+    classification: (classificationFilter || undefined) as EvidenceClassification | undefined,
+    reviewStatus: (reviewFilter || undefined) as EvidenceReviewStatus | undefined,
+    lifecycleStatus: (lifecycleFilter || undefined) as EvidenceLifecycleStatus | undefined,
     workspaceId,
   });
   const createEvidence = useCreateEvidence();
@@ -198,6 +205,17 @@ export function Evidence() {
           <option value="">ALL TYPES</option>
           {evidenceTypes.map(t => <option key={t} value={t}>{t}</option>)}
         </Select>
+        <Select aria-label="Evidence classification" value={classificationFilter} onChange={(event) => setClassificationFilter(event.target.value)}>
+          <option value="">ALL CLASSES</option>
+          {['FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference'].map((item) => <option key={item}>{item}</option>)}
+        </Select>
+        <Select aria-label="Evidence review state" value={reviewFilter} onChange={(event) => setReviewFilter(event.target.value)}>
+          <option value="">ALL REVIEWS</option>
+          {['Unreviewed', 'Reviewed', 'Disputed'].map((item) => <option key={item}>{item}</option>)}
+        </Select>
+        <Select aria-label="Evidence lifecycle" value={lifecycleFilter} onChange={(event) => setLifecycleFilter(event.target.value)}>
+          {['Active', 'Archived', 'CapturePending', 'IngestFailed'].map((item) => <option key={item}>{item}</option>)}
+        </Select>
         <Select
           aria-label="Evidence Workspace"
           className="w-full sm:w-[220px] font-mono text-sm bg-card"
@@ -284,6 +302,9 @@ export function Evidence() {
                 <Badge variant="outline">{selectedEvidence.type}</Badge>
                 <Badge variant="secondary">{formatShortDate(selectedEvidence.createdAt)}</Badge>
               </div>
+              <Link href={`/evidence/${selectedEvidence.id}`} className="inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground">
+                Open Evidence inspector
+              </Link>
               {selectedEvidence.source && <p className="break-all rounded bg-background p-3 font-mono text-xs">src: {selectedEvidence.source}</p>}
               <div className="max-h-80 overflow-auto whitespace-pre-wrap rounded border bg-background p-4 font-mono text-sm">
                 {selectedEvidence.content || selectedEvidence.notes || 'No inline preview is available for this artifact.'}

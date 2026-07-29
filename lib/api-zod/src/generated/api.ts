@@ -1686,6 +1686,69 @@ export const ListEvidenceSourcesResponse = zod.array(ListEvidenceSourcesResponse
 
 
 /**
+ * @summary List precise locators for an Evidence source version
+ */
+export const ListEvidenceSourceLocatorsParams = zod.object({
+  "id": zod.coerce.number(),
+  "sourceId": zod.coerce.number()
+})
+
+
+
+
+export const ListEvidenceSourceLocatorsResponseItem = zod.object({
+  "id": zod.number(),
+  "sourceId": zod.number(),
+  "locatorVersion": zod.number().min(1),
+  "kind": zod.enum(['WholeArtifact', 'TextRange', 'Page', 'Timestamp', 'ImageRegion', 'RepositoryPath', 'JsonPointer']),
+  "coordinates": zod.record(zod.string(), zod.unknown()),
+  "label": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListEvidenceSourceLocatorsResponse = zod.array(ListEvidenceSourceLocatorsResponseItem)
+
+
+/**
+ * @summary Add an immutable precise locator to active Evidence
+ */
+export const CreateEvidenceSourceLocatorParams = zod.object({
+  "id": zod.coerce.number(),
+  "sourceId": zod.coerce.number()
+})
+
+export const CreateEvidenceSourceLocatorBody = zod.object({
+  "kind": zod.enum(['WholeArtifact', 'TextRange', 'Page', 'Timestamp', 'ImageRegion', 'RepositoryPath', 'JsonPointer']),
+  "coordinates": zod.record(zod.string(), zod.unknown()),
+  "label": zod.string().nullish()
+})
+
+
+
+
+export const CreateEvidenceSourceLocatorResponse = zod.object({
+  "id": zod.number(),
+  "sourceId": zod.number(),
+  "locatorVersion": zod.number().min(1),
+  "kind": zod.enum(['WholeArtifact', 'TextRange', 'Page', 'Timestamp', 'ImageRegion', 'RepositoryPath', 'JsonPointer']),
+  "coordinates": zod.record(zod.string(), zod.unknown()),
+  "label": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Remove a locator from active Evidence
+ */
+export const DeleteEvidenceSourceLocatorParams = zod.object({
+  "id": zod.coerce.number(),
+  "sourceId": zod.coerce.number(),
+  "locatorId": zod.coerce.number()
+})
+
+export const DeleteEvidenceSourceLocatorResponse = zod.void()
+
+
+/**
  * @summary List typed Story relationships for Evidence
  */
 export const ListEvidenceStoryLinksParams = zod.object({
