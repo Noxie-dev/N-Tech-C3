@@ -122,6 +122,10 @@ describe('local API', () => {
       storyType: 'TechnicalDocumentation',
       version: 1,
     });
+    expect(database.get(
+      'SELECT event_type FROM domain_events WHERE aggregate_type = ? AND aggregate_id = ?',
+      ['story', story.body.id],
+    )).toEqual({ event_type: 'StoryCreated' });
 
     const outline = await request(app)
       .put(`/api/stories/${story.body.id}/outline`)
@@ -155,6 +159,10 @@ describe('local API', () => {
       blockers: expect.any(Array),
       components: expect.arrayContaining([expect.objectContaining({ key: 'evidence' })]),
     });
+    expect(database.get(
+      'SELECT capability_version, classification FROM intelligence_results WHERE capability_id = ? AND subject_id = ?',
+      ['story-health', story.body.id],
+    )).toEqual({ capability_version: '1.0.0', classification: 'deterministic' });
 
     const updated = await request(app)
       .patch(`/api/stories/${story.body.id}`)
@@ -243,6 +251,14 @@ describe('local API', () => {
       type: 'TerminalOutput',
       content: 'pnpm run build\\nDone',
     });
+    expect(database.get(
+      'SELECT event_type FROM domain_events WHERE aggregate_type = ? AND aggregate_id = ?',
+      ['evidence', response.body.id],
+    )).toEqual({ event_type: 'EvidenceCaptured' });
+    expect(database.get(
+      'SELECT source_event_id FROM activity WHERE entity_type = ? AND entity_id = ?',
+      ['evidence', response.body.id],
+    )?.source_event_id).toEqual(expect.any(Number));
 
     const search = await request(app)
       .get('/api/search')

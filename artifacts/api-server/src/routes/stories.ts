@@ -14,7 +14,8 @@ import {
 } from '@workspace/api-zod';
 import { all, get, run, transaction } from '@workspace/db';
 import { createEntity, deleteEntity, entityConfigs, getEntity, listEntities, updateEntity } from '../lib/entity-store';
-import { recordActivity } from '../lib/activity';
+import { appendDomainEvent, projectDomainEventsToActivity } from '../lib/events';
+import { executeCapability } from '../lib/intelligence';
 import {
   canTransitionStory, checkpointStory, contentMetrics, normalizeStory, storyEvent, storyHealth, storyLinks,
   storyLinkConfig,
@@ -24,6 +25,16 @@ import { guardWorkspaceMutations, workspaceMutationError } from '../lib/workspac
 const router: IRouter = Router();
 const config = entityConfigs.stories;
 router.use(guardWorkspaceMutations(config.table));
+
+function appendStoryEvent(storyId: number, title: string, eventType: string, action: string) {
+  appendDomainEvent({
+    eventType,
+    eventVersion: 1,
+    aggregateType: 'story',
+    aggregateId: storyId,
+    payload: { entityTitle: title, action },
+  });
+}
 
 router.get('/stories/by-status', (_req, res) => {
   const rows = all('SELECT status, COUNT(*) AS count FROM stories GROUP BY status')
@@ -55,11 +66,15 @@ router.post('/stories', async (req, res) => {
   if (input.workspaceId != null) input.projectId = input.workspaceId;
   delete input.workspaceId;
   const metrics = contentMetrics(input.content);
-  const row = createEntity(config, { ...input, ...metrics });
-  if (!row) return void res.status(500).json({ error: 'Story creation failed' });
-  await recordActivity('story', Number(row.id), String(row.title), 'created');
-  storyEvent(Number(row.id), 'created', { status: row.status });
-  checkpointStory(Number(row.id), 'Initial Story');
+  const row = transaction(() => {
+    const created = createEntity(config, { ...input, ...metrics });
+    if (!created) throw new Error('Story creation failed');
+    storyEvent(Number(created.id), 'created', { status: created.status });
+    checkpointStory(Number(created.id), 'Initial Story');
+    appendStoryEvent(Number(created.id), String(created.title), 'StoryCreated', 'created');
+    return created;
+  });
+  projectDomainEventsToActivity();
   res.status(201).json(CreateStoryResponse.parse(normalizeStory(row)));
 });
 router.get('/stories/:id', (req, res) => {
@@ -87,11 +102,15 @@ router.patch('/stories/:id', async (req, res) => {
   delete input.expectedVersion;
   const metrics = input.content === undefined ? {} : contentMetrics(input.content);
   input.version = Number(existing.version ?? 1) + 1;
-  const row = updateEntity(config, params.data.id, { ...input, ...metrics });
-  if (!row) return void res.status(404).json({ error: 'Story not found' });
-  await recordActivity('story', Number(row.id), String(row.title), 'updated');
-  storyEvent(Number(row.id), 'updated', { fields: Object.keys(input) });
-  checkpointStory(Number(row.id), 'Story updated');
+  const row = transaction(() => {
+    const updated = updateEntity(config, params.data.id, { ...input, ...metrics });
+    if (!updated) throw new Error('Story update failed');
+    storyEvent(Number(updated.id), 'updated', { fields: Object.keys(input) });
+    checkpointStory(Number(updated.id), 'Story updated');
+    appendStoryEvent(Number(updated.id), String(updated.title), 'StoryUpdated', 'updated');
+    return updated;
+  });
+  projectDomainEventsToActivity();
   res.json(UpdateStoryResponse.parse(normalizeStory(row)));
 });
 router.delete('/stories/:id', (req, res) => {
@@ -122,14 +141,18 @@ router.post('/stories/:id/transition', async (req, res) => {
     const ready = get("SELECT id FROM story_outputs WHERE story_id = ? AND status IN ('Ready', 'Published') LIMIT 1", [params.data.id]);
     if (!ready) return void res.status(409).json({ error: 'A ready Output is required before publishing' });
   }
-  const row = updateEntity(config, params.data.id, {
-    status: body.data.status,
-    archivedAt: body.data.status === 'Archived' ? new Date().toISOString() : null,
-    version: Number(existing.version ?? 1) + 1,
-  })!;
-  storyEvent(params.data.id, 'transitioned', { from: existing.status, to: body.data.status });
-  checkpointStory(params.data.id, `Transitioned to ${body.data.status}`);
-  await recordActivity('story', params.data.id, String(row.title), `transitioned to ${body.data.status}`);
+  const row = transaction(() => {
+    const transitioned = updateEntity(config, params.data.id, {
+      status: body.data.status,
+      archivedAt: body.data.status === 'Archived' ? new Date().toISOString() : null,
+      version: Number(existing.version ?? 1) + 1,
+    })!;
+    storyEvent(params.data.id, 'transitioned', { from: existing.status, to: body.data.status });
+    checkpointStory(params.data.id, `Transitioned to ${body.data.status}`);
+    appendStoryEvent(params.data.id, String(transitioned.title), 'StoryTransitioned', `transitioned to ${body.data.status}`);
+    return transitioned;
+  });
+  projectDomainEventsToActivity();
   res.json(TransitionStoryResponse.parse(normalizeStory(row)));
 });
 
@@ -167,7 +190,9 @@ router.put('/stories/:id/outline', (req, res) => {
       ]);
     });
     storyEvent(params.data.id, 'outline_replaced', { count: body.data.length });
+    appendStoryEvent(params.data.id, String(story.title), 'StoryOutlineReplaced', 'outline updated');
   });
+  projectDomainEventsToActivity();
   const rows = all('SELECT * FROM story_outline_items WHERE story_id = ? ORDER BY position', [params.data.id])
     .map((row) => ({
       id: Number(row.id), storyId: Number(row.story_id), parentId: null,
@@ -265,14 +290,19 @@ router.post('/stories/:id/outputs', (req, res) => {
   if (req.body?.status && req.body.status !== 'Draft') {
     return void res.status(409).json({ error: 'Outputs must be created as Draft and transitioned after validation' });
   }
-  const result = run(`INSERT INTO story_outputs
-    (story_id, type, title, status, content, format, destination)
-    VALUES (?, ?, ?, ?, ?, ?, ?)`, [
-    params.data.id, body.data.type, body.data.title, 'Draft',
-    body.data.content ?? null, body.data.format ?? null, body.data.destination ?? null,
-  ]);
-  const row = get('SELECT * FROM story_outputs WHERE id = ?', [Number(result.lastInsertRowid)])!;
-  storyEvent(params.data.id, 'output_created', { outputId: Number(row.id), type: row.type });
+  const row = transaction(() => {
+    const result = run(`INSERT INTO story_outputs
+      (story_id, type, title, status, content, format, destination)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`, [
+      params.data.id, body.data.type, body.data.title, 'Draft',
+      body.data.content ?? null, body.data.format ?? null, body.data.destination ?? null,
+    ]);
+    const created = get('SELECT * FROM story_outputs WHERE id = ?', [Number(result.lastInsertRowid)])!;
+    storyEvent(params.data.id, 'output_created', { outputId: Number(created.id), type: created.type });
+    appendStoryEvent(params.data.id, String(story.title), 'StoryOutputCreated', 'output created');
+    return created;
+  });
+  projectDomainEventsToActivity();
   res.status(201).json(CreateStoryOutputResponse.parse({
     id: Number(row.id), storyId: Number(row.story_id), type: String(row.type),
     title: String(row.title), status: String(row.status),
@@ -284,8 +314,28 @@ router.post('/stories/:id/outputs', (req, res) => {
 router.get('/stories/:id/health', (req, res) => {
   const params = GetStoryHealthParams.safeParse(req.params);
   if (!params.success) return void res.status(400).json({ error: params.error.message });
-  const health = storyHealth(params.data.id);
-  if (!health) return void res.status(404).json({ error: 'Story not found' });
+  const story = get(`
+    SELECT s.id, s.version,
+      coalesce((SELECT max(id) FROM domain_events
+        WHERE aggregate_type = 'story' AND aggregate_id = s.id), 0) event_watermark
+    FROM stories s WHERE s.id = ?
+  `, [params.data.id]);
+  if (!story) return void res.status(404).json({ error: 'Story not found' });
+  const health = executeCapability({
+    subjectType: 'story',
+    subjectId: params.data.id,
+    inputWatermark: `${story.version}:${story.event_watermark}`,
+    capability: {
+      id: 'story-health',
+      version: '1.0.0',
+      resultKind: 'health-score',
+      classification: 'deterministic',
+      analyze: () => ({
+        value: storyHealth(params.data.id)!,
+        explanation: 'Calculated from Story structure, relationships, metadata, content, and Outputs.',
+      }),
+    },
+  });
   res.json(GetStoryHealthResponse.parse(health));
 });
 
@@ -313,12 +363,19 @@ router.post('/stories/:id/archive', (req, res) => {
   if (!params.success || !body.success) return void res.status(400).json({ error: 'Invalid archive request' });
   const existing = getEntity(config, params.data.id);
   if (!existing) return void res.status(404).json({ error: 'Story not found' });
-  const row = updateEntity(config, params.data.id, {
-    status: body.data.archived ? 'Archived' : 'Draft',
-    archivedAt: body.data.archived ? new Date().toISOString() : null,
-    version: Number(existing.version ?? 1) + 1,
-  })!;
-  storyEvent(params.data.id, body.data.archived ? 'archived' : 'restored');
+  const row = transaction(() => {
+    const archived = updateEntity(config, params.data.id, {
+      status: body.data.archived ? 'Archived' : 'Draft',
+      archivedAt: body.data.archived ? new Date().toISOString() : null,
+      version: Number(existing.version ?? 1) + 1,
+    })!;
+    const action = body.data.archived ? 'archived' : 'restored';
+    storyEvent(params.data.id, action);
+    checkpointStory(params.data.id, body.data.archived ? 'Story archived' : 'Story restored');
+    appendStoryEvent(params.data.id, String(archived.title), body.data.archived ? 'StoryArchived' : 'StoryRestored', action);
+    return archived;
+  });
+  projectDomainEventsToActivity();
   res.json(ArchiveStoryResponse.parse(normalizeStory(row)));
 });
 

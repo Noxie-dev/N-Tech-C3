@@ -12,16 +12,19 @@ When sources disagree, use this precedence:
 
 1. `N-TC3_index.md` — canonical interpretation and current-state map.
 2. `Docs/N-Tech-C³-product architecture-design.md` — canonical route intent and Route Discovery Framework.
-3. `Docs/Route-01-Workspaces-execution-plan.md` — accepted implementation decisions for Route 01.
-4. `wireframe.png` and `branding-brief.png` — binding visual sources for the Home composition and complete brand/design system.
-5. `Docs/NTC3_UI-UX_Spec.md` — reconciled governing UI/UX specification for information architecture, interaction, visual language, accessibility, and screen behavior.
-6. Executable code and configuration — truth for current behavior, but not authority to override approved target visuals.
-7. `lib/api-spec/openapi.yaml` — truth for HTTP contracts.
-8. `lib/db/src/migrations.ts` and `lib/db/src/index.ts` — truth for SQLite migrations, initialization, and vault access.
-9. `Docs/NTC3_Feature` — active, explicitly requested feature outcomes.
-10. `Docs/NTC3_spec-doc.txt` — refined long-term EIOS product direction.
-11. `Docs/NTC3.txt` — original v0.1 ECOS scope and architecture proposal.
-12. `README.md` — operator guide; update it when commands, prerequisites, routes, or architecture change.
+3. `Docs/Route-Discovery-Framework.md` — accepted methodology for defining,
+   implementing, measuring, and evolving routes.
+4. `Docs/Route-01-Workspaces-execution-plan.md` and
+   `Docs/Route-02-Stories-execution-plan.md` — accepted route-specific decisions.
+5. `wireframe.png` and `branding-brief.png` — binding visual sources for the Home composition and complete brand/design system.
+6. `Docs/NTC3_UI-UX_Spec.md` — reconciled governing UI/UX specification for information architecture, interaction, visual language, accessibility, and screen behavior.
+7. Executable code and configuration — truth for current behavior, but not authority to override approved target visuals.
+8. `lib/api-spec/openapi.yaml` — truth for HTTP contracts.
+9. `lib/db/src/migrations.ts` and `lib/db/src/index.ts` — truth for SQLite migrations, initialization, and vault access.
+10. `Docs/NTC3_Feature` — active, explicitly requested feature outcomes.
+11. `Docs/NTC3_spec-doc.txt` — refined long-term EIOS product direction.
+12. `Docs/NTC3.txt` — original v0.1 ECOS scope and architecture proposal.
+13. `README.md` — operator guide; update it when commands, prerequisites, routes, or architecture change.
 
 The documentation is strategic, not a claim that every described feature exists. A feature is implemented only when it is present in executable code and its required data/API path exists.
 
@@ -593,6 +596,39 @@ Remaining related work: define Output transition endpoints, deprecate maintenanc
 hard deletes, migrate remaining child contracts from `projectId` to `workspaceId`,
 and extend durable event projection beyond Workspace creation.
 
+### NB3RP Pass 2 execution report — durable events and EIE expansion
+
+Status: **Implemented and verified**
+
+The second Next Best Recommended Pass extends the executable platform foundation:
+
+- canonical Story create, update, lifecycle transition, outline replacement,
+  Output creation, archive, and restore paths append typed version-1 domain events;
+- Story writes, legacy Story timeline records, version checkpoints, and durable
+  event appends commit in the same SQLite transaction on the migrated paths;
+- Evidence capture, update, and deletion commit atomically with
+  `EvidenceCaptured`, `EvidenceUpdated`, and `EvidenceDeleted`;
+- Story and Evidence Activity entries are projected from durable events through the
+  existing replay-safe consumer rather than direct lossy writes on those paths;
+- Story Health now executes as deterministic EIE capability `story-health@1.0.0`
+  with stored result provenance and caching; and
+- the Story Health input watermark combines Story version with the latest durable
+  Story event so relationship, outline, and Output changes cannot reuse stale
+  cached results.
+
+Regression assertions verify durable `StoryCreated` and `EvidenceCaptured` events,
+projected Activity source-event identity, and stored deterministic Story Health
+capability provenance.
+
+Verification completed with repository typecheck and production builds passing,
+15 Vitest tests passing across three files, two Playwright workflows passing, and
+Markdown whitespace validation passing.
+
+Remaining Pass 2 expansion debt: Story link/unlink and hard-delete paths still need
+atomic durable events; Campaign, Knowledge, Asset, and Template mutations still use
+legacy Activity writes; event projection lag diagnostics and background scheduling
+remain future Platform Services work.
+
 ## 2B. Proposed Phase III — C³ Canon and Knowledge Intelligence
 
 Status: **Proposed future architecture — not implemented and not yet binding**
@@ -815,6 +851,76 @@ remaining Filesystem and Platform Services specifications.
 
 Therefore this future vision does not authorize Route 04 implementation or bypass
 the Route 03 gate.
+
+## 2C. Accepted Route Discovery Framework v1
+
+`Docs/Route-Discovery-Framework.md` is the governing route-design standard.
+
+The RDF establishes that a route is an experience adapter over domain and platform
+capabilities, not the owner of business rules, data, algorithms, or Intelligence.
+Major routes advance from user need through outcome, domain capability, executable
+contracts, experience, evidence, and acceptance.
+
+The accepted framework provides:
+
+- Tier 1 identity requirements for every user-facing route;
+- Tier 2 workflow, lifecycle, event, recovery, permission, and migration
+  requirements for stateful routes;
+- Tier 3 provenance, explainability, human authority, AI boundaries, and
+  performance requirements for Intelligence-bearing routes;
+- maturity levels L0 Proposed, L1 Defined, L2 Functional, L3 Integrated,
+  L4 Intelligence-assisted, and L5 Operationally mature;
+- blocking conformance gates for correctness, contracts, traceability,
+  accessibility, recovery, performance, security, observability, and Intelligence;
+- separate definitions for Domain Health, route telemetry, data quality, and
+  capability conformance;
+- typed route relationships with feedback loops rather than a mandatory linear
+  pipeline; and
+- a standardized Route DNA dossier for major routes.
+
+Weighted Route Intelligence scoring and “self-improving” maturity are rejected.
+AI readiness and automation are applicable capabilities, not universal measures of
+route quality. Route DNA remains repository-controlled design metadata rather than
+duplicated runtime state.
+
+All future route plans and material revisions to implemented routes MUST use RDF v1.
+Existing Route 01 and Route 02 plans remain valid but SHOULD receive RDF v1 dossiers
+when next materially revised. Route 03 must pass the applicable Tier 1–3 gates
+before its implementation pause is lifted.
+
+### Proposed future route — Templates
+
+Status: **Architecturally approved proposal; implementation not authorized**
+
+`Docs/Route-Templates-proposal.md` is the RDF v1 dossier for evolving the current
+Templates CRUD seed into a governed Blueprint Library.
+
+The accepted direction defines a Template as a versioned, governed blueprint that
+produces a validated creation plan for one supported target capability. Templates
+encode expertise but never own or bypass the domains of the objects they create.
+
+The proposal requires:
+
+- a Domain Model amendment before implementation;
+- immutable Template versions and a
+  `Draft → Review → Approved → Active → Deprecated → Archived` lifecycle;
+- declared, typed, deterministic variables with no arbitrary code execution;
+- preview and target-domain validation before application;
+- exact Template-version application provenance;
+- separate semantics for version, derivation, replacement, and application
+  lineage;
+- deterministic conformance and similarity before probabilistic assistance; and
+- human approval for official promotion, replacement, and multi-object execution.
+
+Initial implementation is deliberately limited to a Template editor, scope,
+governance, versions, deterministic preview, one target—preferably Story—validated
+application, provenance, durable events, archive/restore, and tests. Workspace
+blueprints, workflow orchestration, adaptive behavior, AI generation, visual
+composition, and marketplace functionality are deferred.
+
+The current `/templates` route remains an L2 catalogue seed, while the proposed
+expanded route is L1 Defined. It remains sequenced after NB3RP Pass 3, Route 03
+Evidence provenance, and acceptance of its target-domain Template contract.
 
 ## 3. Current implementation snapshot
 
@@ -1158,6 +1264,20 @@ backward-compatible storage, and records Route 01 acceptance criteria and deferr
 Audit and implementation contract for the Story Engine. It defines the Story
 lifecycle, catalogue/studio routes, graph relationships, outline, Outputs, health,
 timeline, version/concurrency rules, compatibility strategy, and acceptance criteria.
+
+### `Docs/Route-Discovery-Framework.md`
+
+Accepted RDF v1 route-design and review standard. It defines tiered route dossiers,
+architectural sequencing, maturity levels, conformance gates, measurement
+boundaries, typed route relationships, Route DNA, and evidence required to advance
+a route.
+
+### `Docs/Route-Templates-proposal.md`
+
+Architecturally approved RDF v1 proposal for a governed, versioned Template
+Library. It defines the current implementation boundary, phased capability model,
+safe variable resolution, target-domain validation, application provenance,
+lineage, Intelligence boundaries, initial scope, and dependency sequence.
 
 ### `wireframe.png` and `branding-brief.png`
 

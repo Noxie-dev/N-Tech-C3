@@ -192,9 +192,10 @@ Three foundational passes are complete:
    records 13 conformant items, 7 corrective items, 5 migration items, and 4
    accepted compatibility debts.
 3. Migration 5 introduces durable typed events, consumer checkpoints, projection
-   quarantine, and versioned Intelligence results. Workspace creation atomically
-   appends `WorkspaceCreated`; the Activity projection is replay-safe; Workspace
-   Health runs as the first deterministic, provenance-bearing EIE capability.
+   quarantine, and versioned Intelligence results. Workspace creation and core
+   Story/Evidence mutations now use atomic event append; the Activity projection is
+   replay-safe; Workspace and Story Health run as deterministic,
+   provenance-bearing EIE capabilities.
 
 The first reproducible benchmark covers cold database initialization, save, FTS5
 search, Workspace load, and deterministic capability execution. See
@@ -366,9 +367,9 @@ pnpm package:mac
 - Entity version history, collaboration, cloud sync, and AI providers are not
   implemented.
 - Native Electron restore/reveal/dialog workflows need deeper desktop automation.
-- Durable events and EIE provenance are implemented as a Workspace vertical slice,
-  not yet across every domain mutation. Story Health still needs migration to the
-  common execution contract.
+- Durable events and EIE provenance cover Workspace creation, core Story/Evidence
+  mutations, and both Workspace and Story Health. Story link/delete and the
+  Campaign, Knowledge, Asset, and Template mutation paths still need migration.
 - Outputs are safely created as Draft, but their validated Review/Ready/Published
   transition API remains future corrective work.
 

@@ -5,7 +5,8 @@ import {
   UpdateEvidenceResponse, DeleteEvidenceParams,
 } from '@workspace/api-zod';
 import { createEntity, deleteEntity, entityConfigs, getEntity, listEntities, updateEntity } from '../lib/entity-store';
-import { recordActivity } from '../lib/activity';
+import { transaction } from '@workspace/db';
+import { appendDomainEvent, projectDomainEventsToActivity } from '../lib/events';
 import { guardWorkspaceMutations } from '../lib/workspace-guard';
 
 const router: IRouter = Router();
@@ -28,9 +29,17 @@ router.get('/evidence', (req, res) => {
 router.post('/evidence', async (req, res) => {
   const parsed = CreateEvidenceBody.safeParse(req.body);
   if (!parsed.success) return void res.status(400).json({ error: parsed.error.message });
-  const row = createEntity(config, parsed.data);
-  if (!row) return void res.status(500).json({ error: 'Evidence creation failed' });
-  await recordActivity('evidence', Number(row.id), String(row.title), 'captured');
+  const row = transaction(() => {
+    const created = createEntity(config, parsed.data);
+    if (!created) throw new Error('Evidence creation failed');
+    appendDomainEvent({
+      eventType: 'EvidenceCaptured', eventVersion: 1, aggregateType: 'evidence',
+      aggregateId: Number(created.id),
+      payload: { entityTitle: String(created.title), action: 'captured' },
+    });
+    return created;
+  });
+  projectDomainEventsToActivity();
   res.status(201).json(CreateEvidenceResponse.parse(row));
 });
 router.get('/evidence/:id', (req, res) => {
@@ -44,14 +53,34 @@ router.patch('/evidence/:id', (req, res) => {
   const params = UpdateEvidenceParams.safeParse(req.params);
   const body = UpdateEvidenceBody.safeParse(req.body);
   if (!params.success || !body.success) return void res.status(400).json({ error: 'Invalid evidence update' });
-  const row = updateEntity(config, params.data.id, body.data);
-  if (!row) return void res.status(404).json({ error: 'Evidence not found' });
+  const existing = getEntity(config, params.data.id);
+  if (!existing) return void res.status(404).json({ error: 'Evidence not found' });
+  const row = transaction(() => {
+    const updated = updateEntity(config, params.data.id, body.data)!;
+    appendDomainEvent({
+      eventType: 'EvidenceUpdated', eventVersion: 1, aggregateType: 'evidence',
+      aggregateId: params.data.id,
+      payload: { entityTitle: String(updated.title), action: 'updated' },
+    });
+    return updated;
+  });
+  projectDomainEventsToActivity();
   res.json(UpdateEvidenceResponse.parse(row));
 });
 router.delete('/evidence/:id', (req, res) => {
   const params = DeleteEvidenceParams.safeParse(req.params);
   if (!params.success) return void res.status(400).json({ error: params.error.message });
-  if (!deleteEntity(config, params.data.id)) return void res.status(404).json({ error: 'Evidence not found' });
+  const existing = getEntity(config, params.data.id);
+  if (!existing) return void res.status(404).json({ error: 'Evidence not found' });
+  transaction(() => {
+    deleteEntity(config, params.data.id);
+    appendDomainEvent({
+      eventType: 'EvidenceDeleted', eventVersion: 1, aggregateType: 'evidence',
+      aggregateId: params.data.id,
+      payload: { entityTitle: String(existing.title), action: 'deleted' },
+    });
+  });
+  projectDomainEventsToActivity();
   res.sendStatus(204);
 });
 
