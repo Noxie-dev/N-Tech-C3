@@ -1,0 +1,20 @@
+{
+  "name": "N-Tech C³",
+  "short_name": "N-Tech C³",
+  "description": "A local-first engineering intelligence operating system.",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#090b10",
+  "background_color": "#090b10",
+  "display": "standalone"
+}

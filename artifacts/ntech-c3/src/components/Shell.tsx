@@ -6,7 +6,6 @@ import {
   Megaphone, PlusCircle, ScrollText, Settings, TerminalSquare,
 } from 'lucide-react';
 import { QuickCapture } from '@/components/QuickCapture';
-import ntechMark from '@/assets/ntech-mark.svg';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Home', icon: Home },
@@ -42,8 +41,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[#090b10] text-foreground">
       <header className="flex h-14 shrink-0 items-center border-b border-[#272b34] bg-[#090b10] px-5">
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <img src={ntechMark} alt="" className="h-8 w-8" />
-          <span className="text-[15px] font-bold tracking-[0.16em] text-[#f5f7fa]">N-TECH <span className="text-[#2f80ff]">C³</span></span>
+          <img
+            src="/main-logo.png"
+            alt="N-Tech C³"
+            className="h-10 w-auto max-w-[150px] object-contain object-left"
+          />
         </Link>
         <div className="ml-auto flex items-center gap-1">
           <button aria-label="Notifications" className="rounded-md p-2 text-[#aeb6c2] hover:bg-[#161c24] hover:text-white"><Bell className="h-[18px] w-[18px]" /></button>
