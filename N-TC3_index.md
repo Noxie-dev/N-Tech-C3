@@ -1,6 +1,6 @@
 # N-Tech C³ — Repository Source of Truth
 
-> Last audited: 2026-07-29
+> Last audited: 2026-07-30
 > Repository: `N-TechC3`  
 > Product stage: v0.1 alpha / active development
 
@@ -21,16 +21,19 @@ When sources disagree, use this precedence:
 6. `Docs/Route-04-Knowledge-execution-plan.md` — implemented Route 04 RDF v1
    dossier and L3 Integrated decision.
 7. `Docs/Route-05-Campaigns-execution-plan.md` — accepted Route 05 RDF v1
-   dossier and L2 Functional Pass 1 decision.
-8. `wireframe.png` and `branding-brief.png` — binding visual sources for the Home composition and complete brand/design system.
-9. `Docs/NTC3_UI-UX_Spec.md` — reconciled governing UI/UX specification for information architecture, interaction, visual language, accessibility, and screen behavior.
-10. Executable code and configuration — truth for current behavior, but not authority to override approved target visuals.
-11. `lib/api-spec/openapi.yaml` — truth for HTTP contracts.
-12. `lib/db/src/migrations.ts` and `lib/db/src/index.ts` — truth for SQLite migrations, initialization, and vault access.
-13. `Docs/NTC3_Feature` — active, explicitly requested feature outcomes.
-14. `Docs/NTC3_spec-doc.txt` — refined long-term EIOS product direction.
-15. `Docs/NTC3.txt` — original v0.1 ECOS scope and architecture proposal.
-16. `README.md` — operator guide; update it when commands, prerequisites, routes, or architecture change.
+   dossier and L3 Integrated decision.
+8. `Docs/Route-06-Publications-execution-plan.md` — accepted Route 06 RDF v1
+   dossier; Pass 1A constitutional design is complete at L1 Defined, with
+   production implementation unauthorized.
+9. `wireframe.png` and `branding-brief.png` — binding visual sources for the Home composition and complete brand/design system.
+10. `Docs/NTC3_UI-UX_Spec.md` — reconciled governing UI/UX specification for information architecture, interaction, visual language, accessibility, and screen behavior.
+11. Executable code and configuration — truth for current behavior, but not authority to override approved target visuals.
+12. `lib/api-spec/openapi.yaml` — truth for HTTP contracts.
+13. `lib/db/src/migrations.ts` and `lib/db/src/index.ts` — truth for SQLite migrations, initialization, and vault access.
+14. `Docs/NTC3_Feature` — active, explicitly requested feature outcomes.
+15. `Docs/NTC3_spec-doc.txt` — refined long-term EIOS product direction.
+16. `Docs/NTC3.txt` — original v0.1 ECOS scope and architecture proposal.
+17. `README.md` — operator guide; update it when commands, prerequisites, routes, or architecture change.
 
 The documentation is strategic, not a claim that every described feature exists. A feature is implemented only when it is present in executable code and its required data/API path exists.
 
@@ -1709,6 +1712,82 @@ Electron packaging passed.
 Route 05 is accepted at **L3 Integrated**. Publications, Channels, scheduling,
 analytics, and Campaign Intelligence remain explicitly future and unauthorized.
 
+### Route 06 Publications prerequisite audit and corrected RDF dossier
+
+The next route in the original product architecture is Route 06 Publishing
+Pipeline. Its original statement that Pipeline owns the entire lifecycle is
+superseded by the accepted C³ Canon.
+
+`Docs/Route-06-Publications-execution-plan.md` corrects Route 06 to a
+Publication-led operating surface with separate ownership:
+
+- Publication owns channel-neutral content, review, immutable versions, and
+  primary Story provenance;
+- Publication Variant owns one Channel-specific editorial adaptation;
+- Channel is a first-class destination capability definition;
+- Channel Connection identifies a configured destination while credentials remain
+  in OS-secure storage;
+- Rendition owns immutable generated-file provenance;
+- Deployment owns schedule, timezone, validation, idempotency, attempts, result,
+  external identity, cancellation, and optional retraction;
+- Campaign retains communication objectives and milestones; and
+- Pipeline and Calendar are rebuildable operational projections.
+
+The executable prerequisite audit confirms the repository currently provides only
+the `story_outputs` compatibility seed and Story-side Draft Output creation. There
+is no Publication aggregate/version, Channel, Connection, Variant, Rendition,
+Deployment, attempt history, durable scheduling, provider boundary,
+`/publications`, `/calendar`, or production Pipeline route.
+
+Outputs must not be silently renamed or grouped. Existing type, format,
+destination, status, and identity require a conservative inventory and
+user-correctable migration. Free-text destinations cannot create Channels or
+Connections.
+
+Route 06 is recorded at **L1 Defined**. Pass 0, the prerequisite audit and RDF
+dossier, and Pass 1A, constitutional contracts and compatibility design, are
+complete.
+
+Pass 1A accepted the following repository-level constitutional changes:
+
+- Domain Model definitions, ownership, relationship cardinalities, and distinct
+  Publication and Deployment lifecycles;
+- conceptual persistence for Publications, versions, Channels, Connections,
+  Variants, Renditions, Deployments, attempts, jobs, projections, and compatibility
+  records;
+- validation, export, Channel catalogue/Connection, durable job, and adapter
+  Platform Service boundaries;
+- versioned Publication/Deployment event families with ordering, replay,
+  correction, failure, and redaction rules;
+- staged immutable Rendition filesystem layout, manifests, atomic promotion,
+  reconciliation, backup, and path-security requirements;
+- proposed named Publication, projection, schedule, job, and Rendition performance
+  budgets and representative scale fixtures;
+- ADR-002, which makes Publication and Channel canonical, preserves Campaign
+  ownership, and limits Pipeline and Calendar to rebuildable projections; and
+- `Docs/System-Design-Book/contracts/route-06-output-compatibility.md`, which
+  specifies the future read-only Output audit command, report version, finding
+  vocabulary, deterministic mapping rules, redaction, exit codes, fixtures,
+  rollback evidence, and compatibility-removal gates.
+
+The Pass 1A execution report is recorded in
+`Docs/System-Design-Book/evidence/route-06-pass-1a-2026-07-30.md`. The pass changed
+documentation only: it added no production schema, API, generated contract,
+migration, route, job, Connection, schedule, or provider behavior.
+
+The next authorization boundary is **Route 06 Pass 1B — Publication foundation
+and conservative migration**. If separately approved, Pass 1B may add canonical
+OpenAPI contracts, generated clients/Zod, ordered SQLite migrations, the
+Publication aggregate/version/checkpoint/event foundation, primary Story
+provenance, the executable Output inventory/audit, active search, archive/restore,
+and Library/Studio foundations. First-class Channel definitions may enter the
+schema, but Connections and external delivery remain disabled.
+
+Pass 1B is not authorized by this record. Connections, Variants, Renditions,
+Deployments, scheduling, external providers, Pipeline/Calendar production
+surfaces, AFI writes, analytics, and Publication Intelligence remain future and
+separately gated.
+
 ## 2C. Accepted Route Discovery Framework v1
 
 `Docs/Route-Discovery-Framework.md` is the governing route-design standard.
@@ -1985,13 +2064,16 @@ atomic promotion, and restart reconciliation.
 
 ### Next implementation order
 
-1. Treat Route 05 Passes 1–3 as accepted at L3 Integrated and select the next
-   separately authorized route or foundational pass.
-2. Retain physical Campaign compatibility fields through the observed migration
-   window; remove them only with explicit evidence and a change-controlled
-   migration.
-3. Keep Publications, Channels, scheduling, analytics, Campaign Intelligence,
-   and Route 04 Pass 4 separately gated, future, and unauthorized.
+1. Review the accepted Route 06 Pass 1A constitutional and compatibility evidence
+   and decide whether to authorize Pass 1B — Publication foundation and
+   conservative migration.
+2. If authorized, implement OpenAPI-first Publication/version contracts, ordered
+   migrations, the read-only Output audit, generated clients/Zod, active search,
+   archive/restore, and Library/Studio foundations under the accepted contracts.
+3. Keep Connections, Variants, Renditions, Deployments, scheduling, external
+   providers, Pipeline/Calendar production surfaces, Calendar/AFI writes,
+   analytics, Publication Intelligence, Campaign Intelligence, and Route 04 Pass
+   4 separately gated, future, and unauthorized.
 
 ## 8. Contract and data workflow
 

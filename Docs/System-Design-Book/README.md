@@ -2,7 +2,7 @@
 
 Status: **Accepted**
 Owner: NaniTech Engineering
-Last reviewed: 2026-07-29
+Last reviewed: 2026-07-30
 
 This directory is the detailed Engineering Constitution for N-Tech C³.
 `N-TC3_index.md` remains the repository-level authority for precedence and
@@ -19,17 +19,17 @@ standards, and acceptance evidence.
 
 ## Accepted foundational specifications
 
-| Specification | Status | Purpose |
-| --- | --- | --- |
-| [01 Domain Model](01-domain-model.md) | Accepted | Domain ownership, lifecycle, relationships, invariants |
-| [02 Data Architecture](02-data-architecture.md) | Accepted | Persistence, migrations, authoritative and derived data |
-| [03 Filesystem](03-filesystem.md) | Accepted | Portable Vault paths, managed files, integrity, backup, recovery |
-| [06 Platform Services](06-platform-services.md) | Accepted | Shared service contracts, jobs, failure, security, observability |
-| [08 Event Architecture](08-event-architecture.md) | Accepted | Durable domain events, outbox, consumers, replay |
-| [09 Performance](09-performance.md) | Accepted | Measurement, workloads, proposed budgets, regression policy |
-| [10 Engineering Standards](10-engineering-standards.md) | Accepted | Enforceable implementation and review standards |
-| [11 Engineering Principles](11-engineering-principles.md) | Accepted | Timeless decision filters |
-| [12 Intelligence Engine](12-intelligence-engine.md) | Accepted | Unified EIE, capabilities, provenance, recommendations |
+| Specification                                             | Status   | Purpose                                                          |
+| --------------------------------------------------------- | -------- | ---------------------------------------------------------------- |
+| [01 Domain Model](01-domain-model.md)                     | Accepted | Domain ownership, lifecycle, relationships, invariants           |
+| [02 Data Architecture](02-data-architecture.md)           | Accepted | Persistence, migrations, authoritative and derived data          |
+| [03 Filesystem](03-filesystem.md)                         | Accepted | Portable Vault paths, managed files, integrity, backup, recovery |
+| [06 Platform Services](06-platform-services.md)           | Accepted | Shared service contracts, jobs, failure, security, observability |
+| [08 Event Architecture](08-event-architecture.md)         | Accepted | Durable domain events, outbox, consumers, replay                 |
+| [09 Performance](09-performance.md)                       | Accepted | Measurement, workloads, proposed budgets, regression policy      |
+| [10 Engineering Standards](10-engineering-standards.md)   | Accepted | Enforceable implementation and review standards                  |
+| [11 Engineering Principles](11-engineering-principles.md) | Accepted | Timeless decision filters                                        |
+| [12 Intelligence Engine](12-intelligence-engine.md)       | Accepted | Unified EIE, capabilities, provenance, recommendations           |
 
 Specifications 04, 05, and 07 remain to be completed in later platform-definition
 passes. A subsystem governed by a proposed specification cannot be called
@@ -49,7 +49,12 @@ Silent architecture drift is prohibited.
 
 Accepted amendments are indexed in
 [`decisions/README.md`](decisions/README.md). ADR-001 establishes the canonical
-Evidence definition and state separation required by Route 03.
+Evidence definition and state separation required by Route 03. ADR-002 separates
+Publication and delivery ownership and controls Route 06 Output compatibility.
+
+Accepted cross-specification compatibility contracts are indexed in
+[`contracts/README.md`](contracts/README.md). A contract constrains later
+executable work but does not authorize its production implementation.
 
 ## Evidence
 

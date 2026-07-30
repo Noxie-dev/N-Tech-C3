@@ -17,6 +17,12 @@
 - `route-05-campaign-pass-3-2026-07-29.md` — Route 05 recovery, accessibility,
   conflict, observability, compatibility-retirement, backup, performance,
   Electron packaging, and L3 governance evidence.
+- `route-06-prerequisite-audit-2026-07-30.md` — corrected Publications/Channels/
+  Deployment ownership, Output compatibility, missing foundation audit, and
+  Route 06 Pass 1A recommendation.
+- `route-06-pass-1a-2026-07-30.md` — accepted constitutional ownership,
+  persistence, service, event, filesystem, performance, and Output compatibility
+  contracts with a verified documentation-only boundary.
 
 Benchmark reports, invariant audits, conformance reports, and reproducible evidence
 for constitutional claims are stored here.

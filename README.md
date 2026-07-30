@@ -32,6 +32,10 @@ favicon set from `artifacts/ntech-c3/public`.
   control studio with governed lifecycle/phase, optimistic checkpoints, ordered
   Story roles/backlinks, milestones, transactional events, projection audit,
   named performance evidence, and archive/restore.
+- **Publications (Route 06, future/L1 Defined):** Pass 1A has accepted
+  constitutional ownership, persistence, service, event, filesystem, performance,
+  and conservative Output compatibility contracts. No production Publication or
+  scheduling capability is implemented.
 - **Assets and Templates:** core catalogue workflows.
 - **Global Search:** trigger-maintained SQLite FTS5 index across the core domains.
 - **Desktop operations:** portable vault, backup/restore, safe file reveal,
@@ -475,6 +479,11 @@ The following are documented product direction, **not current functionality**:
 - **Route 05 Campaign expansion (future):** Separately authorized later passes may
   integrate first-class Publications and Channels or Campaign Intelligence.
   Scheduling and analytics are not current capabilities.
+- **Route 06 Publications (future):** Pass 1A specification is complete. Pass 1B
+  may later implement the Publication/version foundation and conservative
+  read-only Output audit. Connections, Variants, Renditions, Deployments,
+  scheduling, providers, Pipeline/Calendar production surfaces, Calendar/AFI
+  writes, and Publication Intelligence remain unauthorized.
 - **Knowledge Query:** an information-first EIE capability that answers from
   authorized sources with citations or abstains when evidence is insufficient.
 - **Knowledge Evolution Explorer:** distinct relationship, version, lineage, and

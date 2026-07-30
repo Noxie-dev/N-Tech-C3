@@ -2,7 +2,7 @@
 
 Status: **Accepted**
 Owner: Platform Architecture
-Last reviewed: 2026-07-29
+Last reviewed: 2026-07-30
 
 ## Purpose
 
@@ -26,6 +26,11 @@ Vault/
 ├── workspaces/
 ├── stories/
 ├── campaigns/
+├── publications/
+│   ├── .staging/
+│   └── <publication-id>/
+│       ├── renditions/
+│       └── manifests/
 ├── knowledge/
 ├── evidence/
 ├── media/
@@ -55,16 +60,16 @@ before their owning feature is implemented.
 
 ## File ownership
 
-| Content | Owner | Mutation policy |
-| --- | --- | --- |
-| SQLite database/WAL | Database service | SQLite only |
-| Imported Evidence | Evidence domain + Vault service | Immutable or versioned |
-| Media blobs | Media domain + Vault service | Blob immutable; metadata mutable |
-| Renditions/exports | Export service | Reproducible output, versioned provenance |
-| Backups | Backup service | Immutable archive |
-| Logs | Logging service | Retention policy |
-| Settings files | Settings service | Atomic replace |
-| External repositories | User/external tool | Read-only observation |
+| Content               | Owner                           | Mutation policy                           |
+| --------------------- | ------------------------------- | ----------------------------------------- |
+| SQLite database/WAL   | Database service                | SQLite only                               |
+| Imported Evidence     | Evidence domain + Vault service | Immutable or versioned                    |
+| Media blobs           | Media domain + Vault service    | Blob immutable; metadata mutable          |
+| Renditions/exports    | Export service                  | Reproducible output, versioned provenance |
+| Backups               | Backup service                  | Immutable archive                         |
+| Logs                  | Logging service                 | Retention policy                          |
+| Settings files        | Settings service                | Atomic replace                            |
+| External repositories | User/external tool              | Read-only observation                     |
 
 ## Import and attachment rules
 
@@ -78,6 +83,63 @@ before their owning feature is implemented.
 Database/file operations cannot share one native transaction. Workflows MUST use
 staging plus compensation and MUST surface orphan/integrity failures.
 
+## Publication Rendition layout
+
+The canonical Route 06 target layout is:
+
+```text
+publications/
+├── .staging/
+│   └── <job-id>/
+│       ├── payload.part
+│       └── manifest.part.json
+└── <publication-id>/
+    ├── renditions/
+    │   └── <publication-version>/
+    │       └── <rendition-id>.<extension>
+    └── manifests/
+        └── <rendition-id>.json
+```
+
+The database remains authoritative for Rendition identity and metadata. The file
+and manifest are managed immutable content after successful promotion.
+
+Every Rendition manifest MUST record:
+
+- Rendition, Publication, Publication Version, Variant, and Channel IDs where
+  applicable;
+- source watermark;
+- generator ID and version;
+- format and media type;
+- SHA-256 and byte size;
+- Vault-relative file path;
+- generation job ID;
+- generated-at timestamp; and
+- application/schema version.
+
+Manifests MUST NOT include provider credentials, access tokens, connection
+secrets, unrestricted absolute paths, or unredacted delivery payloads.
+
+## Rendition generation workflow
+
+1. Validate the immutable source version, Variant, requested format, and generator.
+2. Create a persisted job and Vault-relative staging directory.
+3. Stream generation output to `payload.part` with bounded memory.
+4. Calculate SHA-256 and write a temporary manifest.
+5. Verify the generated payload against the declared format and size policy.
+6. Atomically promote payload and manifest to the final version directory.
+7. Commit successful Rendition metadata and durable event through the recoverable
+   job workflow.
+8. Reconcile restart state: complete an idempotent promotion, compensate an
+   uncommitted file, or surface an orphan/integrity finding.
+
+The workflow MUST never expose a staged or partially written file as a successful
+Rendition.
+
+Existing `exports/` files remain compatibility output. Migration to Publication
+Renditions requires an explicit inventory and mapping; filesystem location alone
+does not establish identity.
+
 ## Backup and restore
 
 - Backups MUST include the database and all managed content required for recovery.
@@ -87,6 +149,10 @@ staging plus compensation and MUST surface orphan/integrity failures.
 - A failed restore MUST preserve or restore the prior Vault.
 - Backup and restore evidence MUST name application version, schema version,
   checksum, creation time, and source Vault identity.
+- Backups MUST include successful Publication Renditions, manifests, database job
+  state needed for reconciliation, and compatibility Outputs/exports required by
+  the active migration window.
+- OS-secure Channel credentials MUST NOT be copied into Vault backups.
 
 ## Human-readable content
 
@@ -101,6 +167,8 @@ required to be directly human-editable.
 - External repository traversal is bounded, ignore-aware, and symlink-aware.
 - Secrets, credentials, and provider tokens MUST NOT be stored in managed content,
   events, logs, backups, or export manifests.
+- Channel Connection metadata may reference an opaque credential key, but no
+  filesystem artifact may resolve or serialize the credential value.
 - Reveal/open operations MUST resolve inside the allowed Vault or an explicitly
   authorized external source.
 
@@ -125,6 +193,8 @@ unbounded synchronous filesystem operations.
 - Checksum and duplicate-content tests.
 - Backup/restore rollback tests.
 - Representative copy/hash/scan benchmarks.
+- Rendition staged-write, crash-boundary, checksum, idempotent promotion, orphan
+  reconciliation, and manifest-redaction tests.
 
 ## Open decisions
 
@@ -135,3 +205,6 @@ unbounded synchronous filesystem operations.
 ## Amendment history
 
 - 2026-07-29: Initial filesystem constitution accepted.
+- 2026-07-30: ADR-002 accepted the Publication Rendition/staging layout,
+  immutable manifest, recovery workflow, backup boundary, and credential
+  exclusions.
