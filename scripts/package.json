@@ -7,6 +7,7 @@
     "audit:evidence-migration": "tsx ./src/audit-evidence-migration.ts",
     "audit:campaign-migration": "tsx ./src/audit-campaign-migration.ts",
     "audit:knowledge-migration": "tsx ./src/audit-knowledge-migration.ts",
+    "audit:output-migration": "tsx ./src/audit-output-migration.ts",
     "benchmark:platform": "tsx ./src/benchmark-platform.ts",
     "hello": "tsx ./src/hello.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"

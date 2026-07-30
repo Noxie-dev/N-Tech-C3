@@ -639,4 +639,59 @@ describe("SQLite migrations", () => {
         .get(),
     ).toEqual({ name: "evidence_integrity_jobs" });
   });
+
+  it("adds the additive Publication foundation without migrating Outputs", () => {
+    const database = new DatabaseSync(":memory:");
+    runMigrations(database);
+    database
+      .prepare("INSERT INTO projects (id, name) VALUES (1, 'Workspace')")
+      .run();
+    database
+      .prepare(
+        "INSERT INTO stories (id, title, project_id) VALUES (1, 'Story', 1)",
+      )
+      .run();
+    database
+      .prepare(
+        `INSERT INTO story_outputs
+          (id, story_id, type, title, status, content)
+         VALUES (77, 1, 'Blog', 'Legacy Output', 'Draft', 'legacy-body')`,
+      )
+      .run();
+
+    expect(
+      database
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('channels', 'publications', 'publication_versions') ORDER BY name",
+        )
+        .all(),
+    ).toEqual([
+      { name: "channels" },
+      { name: "publication_versions" },
+      { name: "publications" },
+    ]);
+    expect(
+      database.prepare("SELECT count(*) count FROM channels").get(),
+    ).toEqual({ count: 6 });
+    expect(
+      database.prepare("SELECT count(*) count FROM publications").get(),
+    ).toEqual({ count: 0 });
+    expect(
+      database
+        .prepare(
+          "SELECT flag_key, enabled FROM feature_flags WHERE flag_key LIKE 'publication.%' ORDER BY flag_key",
+        )
+        .all(),
+    ).toEqual([
+      { flag_key: "publication.canonical-story-writes", enabled: 0 },
+      { flag_key: "publication.foundation", enabled: 1 },
+      { flag_key: "publication.output-migration", enabled: 0 },
+      { flag_key: "publication.ui", enabled: 1 },
+    ]);
+    expect(
+      database
+        .prepare("SELECT id, content FROM story_outputs WHERE id = 77")
+        .get(),
+    ).toEqual({ id: 77, content: "legacy-body" });
+  });
 });

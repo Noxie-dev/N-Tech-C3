@@ -725,6 +725,107 @@ export const CampaignSuccessAssessment = {
   NotAchieved: 'NotAchieved',
 } as const;
 
+export type PublicationLifecycleStatus = typeof PublicationLifecycleStatus[keyof typeof PublicationLifecycleStatus];
+
+
+export const PublicationLifecycleStatus = {
+  Draft: 'Draft',
+  InReview: 'InReview',
+  Approved: 'Approved',
+  Archived: 'Archived',
+} as const;
+
+export interface Publication {
+  id: number;
+  workspaceId: number;
+  primaryStoryId: number;
+  primaryStoryTitle: string;
+  title: string;
+  /** @nullable */
+  summary?: string | null;
+  /** @nullable */
+  content?: string | null;
+  lifecycleStatus: PublicationLifecycleStatus;
+  /** @minimum 1 */
+  version: number;
+  createdBy: string;
+  /** @nullable */
+  archivedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicationCreate {
+  workspaceId: number;
+  primaryStoryId: number;
+  /** @minLength 1 */
+  title: string;
+  summary?: string;
+  content?: string;
+}
+
+export interface PublicationUpdate {
+  /** @minimum 1 */
+  expectedVersion: number;
+  /** @minLength 1 */
+  title?: string;
+  /** @nullable */
+  summary?: string | null;
+  /** @nullable */
+  content?: string | null;
+  /** @minLength 1 */
+  changeSummary?: string;
+}
+
+export interface PublicationTransition {
+  /** @minimum 1 */
+  expectedVersion: number;
+  lifecycleStatus: PublicationLifecycleStatus;
+  /** @minLength 1 */
+  changeSummary?: string;
+}
+
+export interface VersionedCommand {
+  /** @minimum 1 */
+  expectedVersion: number;
+  reason?: string;
+}
+
+export interface PublicationVersion {
+  id: number;
+  publicationId: number;
+  version: number;
+  title: string;
+  /** @nullable */
+  summary?: string | null;
+  /** @nullable */
+  content?: string | null;
+  lifecycleStatus: PublicationLifecycleStatus;
+  primaryStoryId: number;
+  changeSummary: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+export type ChannelDefinitionStatus = typeof ChannelDefinitionStatus[keyof typeof ChannelDefinitionStatus];
+
+
+export const ChannelDefinitionStatus = {
+  Defined: 'Defined',
+  Disabled: 'Disabled',
+  Archived: 'Archived',
+} as const;
+
+export interface ChannelDefinition {
+  id: number;
+  key: string;
+  name: string;
+  capabilityVersion: string;
+  status: ChannelDefinitionStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Campaign {
   id: number;
   workspaceId: number;
@@ -2004,6 +2105,7 @@ export const SearchResultEntityType = {
   evidence: 'evidence',
   knowledge: 'knowledge',
   campaign: 'campaign',
+  publication: 'publication',
   asset: 'asset',
   template: 'template',
   project: 'project',
@@ -2042,6 +2144,7 @@ export const GlobalSearchEntityType = {
   evidence: 'evidence',
   knowledge: 'knowledge',
   campaign: 'campaign',
+  publication: 'publication',
   asset: 'asset',
   template: 'template',
   workspace: 'workspace',
@@ -2105,6 +2208,13 @@ type?: string;
  * @nullable
  */
 storyId?: number | null;
+};
+
+export type ListPublicationsParams = {
+workspaceId?: number;
+storyId?: number;
+lifecycleStatus?: PublicationLifecycleStatus;
+search?: string;
 };
 
 export type ListKnowledgeParams = {

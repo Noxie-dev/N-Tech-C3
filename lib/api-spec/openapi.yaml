@@ -20,6 +20,8 @@ tags:
     description: Asset library operations
   - name: knowledge
     description: Knowledge base operations
+  - name: publications
+    description: Channel-neutral Publication operations
   - name: templates
     description: Template operations
   - name: projects
@@ -98,7 +100,16 @@ paths:
           schema:
             type: string
             enum:
-              [story, evidence, knowledge, campaign, asset, template, workspace]
+              [
+                story,
+                evidence,
+                knowledge,
+                campaign,
+                publication,
+                asset,
+                template,
+                workspace,
+              ]
         - name: projectId
           in: query
           schema:
@@ -1060,12 +1071,7 @@ paths:
       tags: [campaigns]
       parameters:
         - { name: id, in: path, required: true, schema: { type: number } }
-        - {
-            name: storyId,
-            in: path,
-            required: true,
-            schema: { type: number },
-          }
+        - { name: storyId, in: path, required: true, schema: { type: number } }
       requestBody:
         required: true
         content:
@@ -1083,12 +1089,7 @@ paths:
       tags: [campaigns]
       parameters:
         - { name: id, in: path, required: true, schema: { type: number } }
-        - {
-            name: storyId,
-            in: path,
-            required: true,
-            schema: { type: number },
-          }
+        - { name: storyId, in: path, required: true, schema: { type: number } }
       requestBody:
         required: true
         content:
@@ -1813,6 +1814,179 @@ paths:
           description: Not found
 
   # Knowledge Base
+  /publications:
+    get:
+      operationId: listPublications
+      tags: [publications]
+      summary: List canonical Publications
+      parameters:
+        - { name: workspaceId, in: query, schema: { type: number } }
+        - { name: storyId, in: query, schema: { type: number } }
+        - {
+            name: lifecycleStatus,
+            in: query,
+            schema: { $ref: "#/components/schemas/PublicationLifecycleStatus" },
+          }
+        - { name: search, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Publication catalogue
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Publication" }
+    post:
+      operationId: createPublication
+      tags: [publications]
+      summary: Create a canonical Publication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PublicationCreate" }
+      responses:
+        "201":
+          description: Publication created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Publication" }
+
+  /publications/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: number }
+    get:
+      operationId: getPublication
+      tags: [publications]
+      summary: Get a Publication
+      responses:
+        "200":
+          description: Publication
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Publication" }
+    patch:
+      operationId: updatePublication
+      tags: [publications]
+      summary: Update a Draft or InReview Publication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PublicationUpdate" }
+      responses:
+        "200":
+          description: Publication updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Publication" }
+
+  /publications/{id}/transition:
+    post:
+      operationId: transitionPublication
+      tags: [publications]
+      summary: Transition the Publication lifecycle
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PublicationTransition" }
+      responses:
+        "200":
+          description: Publication transitioned
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Publication" }
+
+  /publications/{id}/archive:
+    post:
+      operationId: archivePublication
+      tags: [publications]
+      summary: Archive a Publication
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VersionedCommand" }
+      responses:
+        "200":
+          description: Publication archived
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Publication" }
+
+  /publications/{id}/restore:
+    post:
+      operationId: restorePublication
+      tags: [publications]
+      summary: Restore an archived Publication to Draft
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VersionedCommand" }
+      responses:
+        "200":
+          description: Publication restored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Publication" }
+
+  /publications/{id}/versions:
+    get:
+      operationId: listPublicationVersions
+      tags: [publications]
+      summary: List immutable Publication checkpoints
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+      responses:
+        "200":
+          description: Publication versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PublicationVersion" }
+
+  /stories/{id}/publications:
+    get:
+      operationId: listStoryPublications
+      tags: [publications, stories]
+      summary: List Publications with primary provenance from a Story
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: number } }
+      responses:
+        "200":
+          description: Story Publications
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Publication" }
+
+  /channels:
+    get:
+      operationId: listChannels
+      tags: [publications]
+      summary: List governed Channel capability definitions
+      responses:
+        "200":
+          description: Channel definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ChannelDefinition" }
+
   /knowledge:
     get:
       operationId: listKnowledge
@@ -3069,6 +3243,119 @@ components:
       type: string
       enum: [Achieved, PartiallyAchieved, NotAchieved]
 
+    PublicationLifecycleStatus:
+      type: string
+      enum: [Draft, InReview, Approved, Archived]
+
+    Publication:
+      type: object
+      required:
+        [
+          id,
+          workspaceId,
+          primaryStoryId,
+          primaryStoryTitle,
+          title,
+          lifecycleStatus,
+          version,
+          createdBy,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id: { type: number }
+        workspaceId: { type: number }
+        primaryStoryId: { type: number }
+        primaryStoryTitle: { type: string }
+        title: { type: string }
+        summary: { type: ["string", "null"] }
+        content: { type: ["string", "null"] }
+        lifecycleStatus:
+          { $ref: "#/components/schemas/PublicationLifecycleStatus" }
+        version: { type: number, minimum: 1 }
+        createdBy: { type: string }
+        archivedAt: { type: ["string", "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    PublicationCreate:
+      type: object
+      required: [workspaceId, primaryStoryId, title]
+      properties:
+        workspaceId: { type: number }
+        primaryStoryId: { type: number }
+        title: { type: string, minLength: 1 }
+        summary: { type: string }
+        content: { type: string }
+
+    PublicationUpdate:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: number, minimum: 1 }
+        title: { type: string, minLength: 1 }
+        summary: { type: ["string", "null"] }
+        content: { type: ["string", "null"] }
+        changeSummary: { type: string, minLength: 1 }
+
+    PublicationTransition:
+      type: object
+      required: [expectedVersion, lifecycleStatus]
+      properties:
+        expectedVersion: { type: number, minimum: 1 }
+        lifecycleStatus:
+          { $ref: "#/components/schemas/PublicationLifecycleStatus" }
+        changeSummary: { type: string, minLength: 1 }
+
+    VersionedCommand:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: number, minimum: 1 }
+        reason: { type: string }
+
+    PublicationVersion:
+      type: object
+      required:
+        [
+          id,
+          publicationId,
+          version,
+          title,
+          lifecycleStatus,
+          primaryStoryId,
+          changeSummary,
+          createdBy,
+          createdAt,
+        ]
+      properties:
+        id: { type: number }
+        publicationId: { type: number }
+        version: { type: number }
+        title: { type: string }
+        summary: { type: ["string", "null"] }
+        content: { type: ["string", "null"] }
+        lifecycleStatus:
+          { $ref: "#/components/schemas/PublicationLifecycleStatus" }
+        primaryStoryId: { type: number }
+        changeSummary: { type: string }
+        createdBy: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    ChannelDefinition:
+      type: object
+      required: [id, key, name, capabilityVersion, status, createdAt, updatedAt]
+      properties:
+        id: { type: number }
+        key: { type: string }
+        name: { type: string }
+        capabilityVersion: { type: string }
+        status:
+          type: string
+          enum: [Defined, Disabled, Archived]
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
     Campaign:
       type: object
       required:
@@ -3294,15 +3581,7 @@ components:
 
     CampaignStoryBacklink:
       type: object
-      required:
-        [
-          campaignId,
-          title,
-          lifecycleStatus,
-          role,
-          position,
-          isPrimary,
-        ]
+      required: [campaignId, title, lifecycleStatus, role, position, isPrimary]
       properties:
         campaignId: { type: number }
         title: { type: string }
@@ -3320,16 +3599,7 @@ components:
     CampaignMilestone:
       type: object
       required:
-        [
-          id,
-          campaignId,
-          title,
-          position,
-          status,
-          version,
-          createdAt,
-          updatedAt,
-        ]
+        [id, campaignId, title, position, status, version, createdAt, updatedAt]
       properties:
         id: { type: number }
         campaignId: { type: number }
@@ -4486,7 +4756,17 @@ components:
       properties:
         entityType:
           type: string
-          enum: [story, evidence, knowledge, campaign, asset, template, project]
+          enum:
+            [
+              story,
+              evidence,
+              knowledge,
+              campaign,
+              publication,
+              asset,
+              template,
+              project,
+            ]
         entityId:
           type: number
         title:

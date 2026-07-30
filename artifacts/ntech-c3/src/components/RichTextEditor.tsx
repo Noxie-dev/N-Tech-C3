@@ -1,15 +1,15 @@
-import { useEffect } from 'react';
-import { EditorContent, useEditor } from '@tiptap/react';
-import { StarterKit } from '@tiptap/starter-kit';
-import { Placeholder } from '@tiptap/extension-placeholder';
-import { Image } from '@tiptap/extension-image';
-import { Table } from '@tiptap/extension-table';
-import { TableRow } from '@tiptap/extension-table-row';
-import { TableHeader } from '@tiptap/extension-table-header';
-import { TableCell } from '@tiptap/extension-table-cell';
-import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight';
-import { Typography } from '@tiptap/extension-typography';
-import { common, createLowlight } from 'lowlight';
+import { useEffect } from "react";
+import { EditorContent, useEditor } from "@tiptap/react";
+import { StarterKit } from "@tiptap/starter-kit";
+import { Placeholder } from "@tiptap/extension-placeholder";
+import { Image } from "@tiptap/extension-image";
+import { Table } from "@tiptap/extension-table";
+import { TableRow } from "@tiptap/extension-table-row";
+import { TableHeader } from "@tiptap/extension-table-header";
+import { TableCell } from "@tiptap/extension-table-cell";
+import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight";
+import { Typography } from "@tiptap/extension-typography";
+import { common, createLowlight } from "lowlight";
 import {
   Bold,
   Italic,
@@ -23,8 +23,8 @@ import {
   ImagePlus,
   Undo2,
   Redo2,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const lowlight = createLowlight(common);
 
@@ -33,13 +33,17 @@ type RichTextEditorProps = {
   onChange: (html: string) => void;
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
+  ariaLabel?: string;
 };
 
 export function RichTextEditor({
   value,
   onChange,
-  placeholder = 'Start writing…',
+  placeholder = "Start writing…",
   className,
+  disabled = false,
+  ariaLabel = "Rich text editor",
 }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
@@ -54,10 +58,12 @@ export function RichTextEditor({
       Typography,
     ],
     content: value,
+    editable: !disabled,
     editorProps: {
       attributes: {
+        "aria-label": ariaLabel,
         class:
-          'prose prose-invert prose-cyan max-w-none min-h-[420px] px-6 py-5 focus:outline-none',
+          "prose prose-invert prose-cyan max-w-none min-h-[420px] px-6 py-5 focus:outline-none",
       },
     },
     onUpdate: ({ editor: currentEditor }) => onChange(currentEditor.getHTML()),
@@ -68,27 +74,81 @@ export function RichTextEditor({
     editor.commands.setContent(value, { emitUpdate: false });
   }, [editor, value]);
 
+  useEffect(() => {
+    editor?.setEditable(!disabled);
+  }, [disabled, editor]);
+
   if (!editor) return null;
 
   const addImage = () => {
-    const src = window.prompt('Image URL');
+    const src = window.prompt("Image URL");
     if (src) editor.chain().focus().setImage({ src }).run();
   };
 
   const controls = [
-    { label: 'Heading 1', icon: Heading1, active: editor.isActive('heading', { level: 1 }), run: () => editor.chain().focus().toggleHeading({ level: 1 }).run() },
-    { label: 'Heading 2', icon: Heading2, active: editor.isActive('heading', { level: 2 }), run: () => editor.chain().focus().toggleHeading({ level: 2 }).run() },
-    { label: 'Bold', icon: Bold, active: editor.isActive('bold'), run: () => editor.chain().focus().toggleBold().run() },
-    { label: 'Italic', icon: Italic, active: editor.isActive('italic'), run: () => editor.chain().focus().toggleItalic().run() },
-    { label: 'Code', icon: Code2, active: editor.isActive('codeBlock'), run: () => editor.chain().focus().toggleCodeBlock().run() },
-    { label: 'Blockquote', icon: Quote, active: editor.isActive('blockquote'), run: () => editor.chain().focus().toggleBlockquote().run() },
-    { label: 'Bullet list', icon: List, active: editor.isActive('bulletList'), run: () => editor.chain().focus().toggleBulletList().run() },
-    { label: 'Numbered list', icon: ListOrdered, active: editor.isActive('orderedList'), run: () => editor.chain().focus().toggleOrderedList().run() },
+    {
+      label: "Heading 1",
+      icon: Heading1,
+      active: editor.isActive("heading", { level: 1 }),
+      run: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
+    },
+    {
+      label: "Heading 2",
+      icon: Heading2,
+      active: editor.isActive("heading", { level: 2 }),
+      run: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+    },
+    {
+      label: "Bold",
+      icon: Bold,
+      active: editor.isActive("bold"),
+      run: () => editor.chain().focus().toggleBold().run(),
+    },
+    {
+      label: "Italic",
+      icon: Italic,
+      active: editor.isActive("italic"),
+      run: () => editor.chain().focus().toggleItalic().run(),
+    },
+    {
+      label: "Code",
+      icon: Code2,
+      active: editor.isActive("codeBlock"),
+      run: () => editor.chain().focus().toggleCodeBlock().run(),
+    },
+    {
+      label: "Blockquote",
+      icon: Quote,
+      active: editor.isActive("blockquote"),
+      run: () => editor.chain().focus().toggleBlockquote().run(),
+    },
+    {
+      label: "Bullet list",
+      icon: List,
+      active: editor.isActive("bulletList"),
+      run: () => editor.chain().focus().toggleBulletList().run(),
+    },
+    {
+      label: "Numbered list",
+      icon: ListOrdered,
+      active: editor.isActive("orderedList"),
+      run: () => editor.chain().focus().toggleOrderedList().run(),
+    },
   ];
 
   return (
-    <div className={cn('flex min-h-0 flex-1 flex-col overflow-hidden rounded-md', className)}>
-      <div className="flex flex-wrap items-center gap-1 border-b border-border/60 bg-muted/25 p-2">
+    <div
+      className={cn(
+        "flex min-h-0 flex-1 flex-col overflow-hidden rounded-md",
+        className,
+      )}
+    >
+      <div
+        className={cn(
+          "flex flex-wrap items-center gap-1 border-b border-border/60 bg-muted/25 p-2",
+          disabled && "pointer-events-none opacity-40",
+        )}
+      >
         {controls.map(({ label, icon: Icon, active, run }) => (
           <button
             key={label}
@@ -98,10 +158,10 @@ export function RichTextEditor({
             aria-pressed={active}
             onClick={run}
             className={cn(
-              'inline-flex h-8 w-8 items-center justify-center rounded border text-muted-foreground transition-colors',
+              "inline-flex h-8 w-8 items-center justify-center rounded border text-muted-foreground transition-colors",
               active
-                ? 'border-primary/50 bg-primary/15 text-primary'
-                : 'border-transparent hover:border-border hover:bg-muted hover:text-foreground',
+                ? "border-primary/50 bg-primary/15 text-primary"
+                : "border-transparent hover:border-border hover:bg-muted hover:text-foreground",
             )}
           >
             <Icon className="h-4 w-4" />
@@ -112,7 +172,13 @@ export function RichTextEditor({
           type="button"
           title="Insert table"
           aria-label="Insert table"
-          onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+          onClick={() =>
+            editor
+              .chain()
+              .focus()
+              .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+              .run()
+          }
           className="inline-flex h-8 w-8 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <Table2 className="h-4 w-4" />
@@ -151,7 +217,10 @@ export function RichTextEditor({
           HTML
         </span>
       </div>
-      <EditorContent editor={editor} className="min-h-0 flex-1 overflow-y-auto" />
+      <EditorContent
+        editor={editor}
+        className="min-h-0 flex-1 overflow-y-auto"
+      />
     </div>
   );
 }

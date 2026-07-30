@@ -23,6 +23,15 @@
 - `route-06-pass-1a-2026-07-30.md` — accepted constitutional ownership,
   persistence, service, event, filesystem, performance, and Output compatibility
   contracts with a verified documentation-only boundary.
+- `route-06-pass-1b0-2026-07-30.md` — read-only Output inventory/audit command,
+  deterministic/redacted report contract, acceptance fixtures, CLI smoke test,
+  and verified no-mutation boundary.
+- `route-06-pass-1b1-2026-07-30.md` — additive Publication/Channel persistence,
+  OpenAPI/generated contracts, governed headless lifecycle, Story provenance,
+  versions/events/search/archive recovery, and Output-isolation evidence.
+- `route-06-pass-1b2-2026-07-30.md` — Publication Library and Studio routes,
+  Story-backed creation/provenance, shared editor, lifecycle/checkpoint UX,
+  search/navigation integration, browser QA, and continued Output isolation.
 
 Benchmark reports, invariant audits, conformance reports, and reproducible evidence
 for constitutional claims are stored here.

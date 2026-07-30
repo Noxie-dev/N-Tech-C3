@@ -1228,6 +1228,115 @@ export const migrations: Migration[] = [
         ON campaign_milestones(campaign_id, status, position);
     `,
   },
+  {
+    version: 14,
+    name: "publication_foundation",
+    sql: `
+      CREATE TABLE channels (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        key TEXT NOT NULL UNIQUE COLLATE NOCASE,
+        name TEXT NOT NULL,
+        capability_version TEXT NOT NULL DEFAULT '1.0.0',
+        status TEXT NOT NULL DEFAULT 'Defined'
+          CHECK (status IN ('Defined', 'Disabled', 'Archived')),
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+
+      INSERT INTO channels (key, name) VALUES
+        ('blog', 'Blog'),
+        ('linkedin', 'LinkedIn'),
+        ('markdown', 'Markdown'),
+        ('pdf', 'PDF'),
+        ('presentation', 'Presentation'),
+        ('website', 'Website');
+
+      INSERT INTO feature_flags (flag_key, enabled, description) VALUES
+        ('publication.foundation', 1, 'Headless canonical Publication aggregate and queries'),
+        ('publication.ui', 0, 'Publication Library and Studio application routes'),
+        ('publication.output-migration', 0, 'Legacy Output to Publication migration writes'),
+        ('publication.canonical-story-writes', 0, 'Replace Story Output writes with Publication writes');
+
+      CREATE TABLE publications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        workspace_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE RESTRICT,
+        primary_story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE RESTRICT,
+        title TEXT NOT NULL CHECK (length(trim(title)) > 0),
+        summary TEXT,
+        content TEXT,
+        lifecycle_status TEXT NOT NULL DEFAULT 'Draft'
+          CHECK (lifecycle_status IN ('Draft', 'InReview', 'Approved', 'Archived')),
+        version INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
+        created_by TEXT NOT NULL DEFAULT 'Local Owner',
+        archived_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        CHECK (
+          (lifecycle_status = 'Archived' AND archived_at IS NOT NULL) OR
+          (lifecycle_status != 'Archived' AND archived_at IS NULL)
+        )
+      );
+
+      CREATE TABLE publication_versions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        publication_id INTEGER NOT NULL REFERENCES publications(id) ON DELETE RESTRICT,
+        version INTEGER NOT NULL CHECK (version >= 1),
+        title TEXT NOT NULL,
+        summary TEXT,
+        content TEXT,
+        lifecycle_status TEXT NOT NULL,
+        primary_story_id INTEGER NOT NULL,
+        change_summary TEXT NOT NULL,
+        created_by TEXT NOT NULL DEFAULT 'Local Owner',
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        UNIQUE (publication_id, version)
+      );
+
+      CREATE INDEX publications_workspace_lifecycle_updated_idx
+        ON publications(workspace_id, lifecycle_status, updated_at DESC);
+      CREATE INDEX publications_primary_story_idx
+        ON publications(primary_story_id, lifecycle_status, updated_at DESC);
+      CREATE INDEX publication_versions_publication_version_idx
+        ON publication_versions(publication_id, version DESC);
+
+      INSERT INTO global_search(entity_type, entity_id, title, body, tags)
+        SELECT 'publication', id, title,
+          coalesce(summary, '') || ' ' || coalesce(content, ''), '[]'
+        FROM publications WHERE lifecycle_status != 'Archived';
+
+      CREATE TRIGGER publications_search_insert AFTER INSERT ON publications
+      WHEN new.lifecycle_status != 'Archived'
+      BEGIN
+        INSERT INTO global_search VALUES (
+          'publication', new.id, new.title,
+          coalesce(new.summary, '') || ' ' || coalesce(new.content, ''), '[]'
+        );
+      END;
+      CREATE TRIGGER publications_search_update AFTER UPDATE ON publications
+      BEGIN
+        DELETE FROM global_search
+          WHERE entity_type = 'publication' AND entity_id = old.id;
+        INSERT INTO global_search(entity_type, entity_id, title, body, tags)
+          SELECT 'publication', new.id, new.title,
+            coalesce(new.summary, '') || ' ' || coalesce(new.content, ''), '[]'
+          WHERE new.lifecycle_status != 'Archived';
+      END;
+      CREATE TRIGGER publications_search_delete AFTER DELETE ON publications
+      BEGIN
+        DELETE FROM global_search
+          WHERE entity_type = 'publication' AND entity_id = old.id;
+      END;
+    `,
+  },
+  {
+    version: 15,
+    name: "publication_experience_activation",
+    sql: `
+      UPDATE feature_flags
+      SET enabled = 1
+      WHERE flag_key = 'publication.ui';
+    `,
+  },
 ];
 
 export function runMigrations(database: DatabaseSync): number[] {

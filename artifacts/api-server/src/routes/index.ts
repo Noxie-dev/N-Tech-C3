@@ -10,6 +10,7 @@ import knowledgeRouter from "./knowledge";
 import templatesRouter from "./templates";
 import searchRouter from "./search";
 import workspacesRouter from "./workspaces";
+import publicationsRouter from "./publications";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(knowledgeRouter);
 router.use(templatesRouter);
 router.use(searchRouter);
 router.use(workspacesRouter);
+router.use(publicationsRouter);
 
 export default router;

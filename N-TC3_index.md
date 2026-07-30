@@ -1733,9 +1733,10 @@ Publication-led operating surface with separate ownership:
 - Campaign retains communication objectives and milestones; and
 - Pipeline and Calendar are rebuildable operational projections.
 
-The executable prerequisite audit confirms the repository currently provides only
-the `story_outputs` compatibility seed and Story-side Draft Output creation. There
-is no Publication aggregate/version, Channel, Connection, Variant, Rendition,
+The executable prerequisite audit confirmed that, before Pass 1B.1, the repository
+provided only the `story_outputs` compatibility seed and Story-side Draft Output
+creation. At that boundary there was no Publication aggregate/version, Channel,
+Connection, Variant, Rendition,
 Deployment, attempt history, durable scheduling, provider boundary,
 `/publications`, `/calendar`, or production Pipeline route.
 
@@ -1775,18 +1776,41 @@ The Pass 1A execution report is recorded in
 documentation only: it added no production schema, API, generated contract,
 migration, route, job, Connection, schedule, or provider behavior.
 
-The next authorization boundary is **Route 06 Pass 1B — Publication foundation
-and conservative migration**. If separately approved, Pass 1B may add canonical
-OpenAPI contracts, generated clients/Zod, ordered SQLite migrations, the
-Publication aggregate/version/checkpoint/event foundation, primary Story
-provenance, the executable Output inventory/audit, active search, archive/restore,
-and Library/Studio foundations. First-class Channel definitions may enter the
-schema, but Connections and external delivery remain disabled.
+Pass 1B.0 — read-only Output migration intelligence — is implemented and
+verified. `pnpm run audit:output-migration -- --vault <vault-or-sqlite> --json
+<report>` validates and opens the selected SQLite database read-only, emits the
+versioned deterministic/redacted Output inventory and findings required by the
+compatibility contract, and returns exit code `0`, `1`, or `2`. Acceptance
+fixtures cover clean, invalid, ambiguous, secret-bearing, and legacy-integrity
+cases while proving the audited database remains unchanged. The execution report
+is `Docs/System-Design-Book/evidence/route-06-pass-1b0-2026-07-30.md`.
 
-Pass 1B is not authorized by this record. Connections, Variants, Renditions,
+Pass 1B.1 — headless Publication foundation — is implemented and verified.
+Migration 14 adds Workspace-owned Publications, immutable checkpoints, primary
+Story provenance, first-class governed Channel definitions, constraints,
+indexes, active-search triggers, and explicit disabled UI/migration/write flags.
+OpenAPI-generated React/Zod contracts and the local API provide catalogue,
+creation, optimistic editing, guarded lifecycle, archive/restore, versions,
+Story backlinks, Channel catalogue, durable events, and Activity projection.
+The additive migration leaves every legacy Output unchanged and creates no
+Publication from compatibility data. The execution report is
+`Docs/System-Design-Book/evidence/route-06-pass-1b1-2026-07-30.md`.
+
+Pass 1B.2 — Publication Library and Studio experience foundation — is implemented
+and verified. Lazy-loaded catalogue and Studio routes compose the generated
+contracts into Workspace/lifecycle filtering, Story-backed creation, shared
+TipTap editing, optimistic checkpoints, lifecycle/archive controls, immutable
+version history, primary Story provenance, global search, and Story backlinks.
+Migration 15 enables `publication.ui`; legacy Output migration and canonical
+Story writes remain disabled. The execution report is
+`Docs/System-Design-Book/evidence/route-06-pass-1b2-2026-07-30.md`.
+
+Route 06 is now **L2 Functional at the Library/Studio foundation boundary**. The
+next authorization boundary is **Route 06 Pass 1B.3 — user-correctable Output
+resolution and migration workflow**. Connections, Variants, Renditions,
 Deployments, scheduling, external providers, Pipeline/Calendar production
-surfaces, AFI writes, analytics, and Publication Intelligence remain future and
-separately gated.
+surfaces, AFI writes, actual Output migration, analytics, and Publication
+Intelligence remain future and separately gated.
 
 ## 2C. Accepted Route Discovery Framework v1
 
@@ -1934,6 +1958,8 @@ V1 is committed to Electron + SQLite + filesystem vault. The local Express servi
 | `/stories/:id`                     | Story studio             | Overview, ordered outline, TipTap editor, Evidence, Assets, References, Outputs, Timeline, health inspector, lifecycle, version-safe save, and archive/restore           |
 | `/campaigns`                       | Campaign Library         | Workspace/lifecycle/search filters, governed creation, mission and factual planning summaries                                                                            |
 | `/campaigns/:id`                   | Campaign Mission Control | Mission/strategy authoring, governed Story portfolio/backlinks, milestone plan, lifecycle/phase commands, optimistic checkpoints, completion/reopen, and archive/restore |
+| `/publications`                    | Publication Library      | Workspace/lifecycle/search filters, primary Story-backed creation, and lifecycle/version catalogue context                                                               |
+| `/publications/:id`                | Publication Studio       | Shared TipTap authoring, optimistic checkpoints, primary Story provenance, lifecycle/archive commands, immutable version history, and read-only governed states          |
 | `/evidence`                        | Evidence Vault           | Workspace-scoped capture, type/search filter, recoverable import, preview, typed Story linking, and governed archive/restore API                                         |
 | `/knowledge`                       | Knowledge Base           | Workspace/lifecycle/search catalogue and Workspace-required creation                                                                                                     |
 | `/knowledge/:id`                   | Knowledge Studio         | Optimistic TipTap authoring, claims/citations, lifecycle/review, typed relationships/backlinks, versions, and archive/restore                                            |
@@ -1958,6 +1984,8 @@ The API is mounted at `/api`. It provides:
 - list/create/get/update/delete endpoints for assets
 - list/create/get/update/delete endpoints for knowledge pages
 - list/create/get/update/delete endpoints for templates
+- governed Publication catalogue/create/get/update/lifecycle/archive/restore/
+  version endpoints, primary Story backlinks, and the Channel definition catalogue
 
 The complete operation names and schemas are defined in `lib/api-spec/openapi.yaml`.
 
@@ -1989,6 +2017,9 @@ Relationship coverage remains domain-specific:
 - stories carry a physical `project_id` exposed as Workspace context in new flows
 - evidence and assets carry Workspace/project foreign keys
 - campaigns, Knowledge pages, and templates have Workspace/project foreign keys
+- Publications have canonical Workspace ownership, primary Story provenance,
+  immutable checkpoints, governed lifecycle, durable events, and active search;
+  Channels are governed capability definitions only
 - Knowledge uses typed relationship edges and backlinks; `linked_page_ids` is
   read-only compatibility data
 
@@ -2008,6 +2039,7 @@ Legend: **Implemented**, **Partial**, **Not implemented**.
 | Campaign governed operations       | Implemented — L3 Integrated | Workspace-owned mission aggregate, lifecycle/phase, optimistic checkpoints, ordered Story portfolio/roles, authoritative backlinks, governed milestones, transactional recovery, projection audit, named performance, desktop/browser conformance, and archive/restore |
 | Evidence Vault governed operations | Implemented — L3 Governed   | Workspace-owned/source-versioned capture, recoverable streamed ingestion, HTTP range previews, locators, optimistic metadata, typed Story links, archive/restore, lifecycle-aware search, inspector UX, and deterministic Integrity are verified                       |
 | Knowledge governed operations      | Implemented — L3 Integrated | Workspace-owned aggregate, lifecycle/review, optimistic authoring, claims, Evidence source/locator citations, typed backlinks, versions, active search, durable events, and archive/restore are verified                                                               |
+| Publication governed foundation    | Implemented — L2 Functional | Workspace-owned aggregate, Library/Studio UI, primary Story provenance/backlinks, shared editor, lifecycle, optimistic checkpoints, durable events, active search, archive/restore, Channel definitions, and Output isolation; migration remains gated                 |
 | Assets                             | Partial                     | URL/path metadata catalog; no upload, processing, thumbnailing, or local asset storage                                                                                                                                                                                 |
 | Templates                          | Partial                     | Core records exist; no template application/export workflow                                                                                                                                                                                                            |
 | Workspaces (Route 01)              | Implemented                 | Canonical picker, overview and settings routes; filtered list, initial DNA, scoped metrics/activity, health components, duplicate, archive/restore, integrity, manifest export, and old `/projects` redirects                                                          |
@@ -2064,12 +2096,12 @@ atomic promotion, and restart reconciliation.
 
 ### Next implementation order
 
-1. Review the accepted Route 06 Pass 1A constitutional and compatibility evidence
-   and decide whether to authorize Pass 1B — Publication foundation and
-   conservative migration.
-2. If authorized, implement OpenAPI-first Publication/version contracts, ordered
-   migrations, the read-only Output audit, generated clients/Zod, active search,
-   archive/restore, and Library/Studio foundations under the accepted contracts.
+1. Review the implemented Route 06 Passes 1B.0–1B.2 evidence and decide whether
+   to authorize Pass 1B.3 — a user-correctable Output resolution and migration
+   workflow.
+2. If authorized, preserve the read-only audit as the source of migration
+   findings, require explicit user resolution for ambiguity, and retain rollback
+   plus compatibility evidence before enabling any migration write.
 3. Keep Connections, Variants, Renditions, Deployments, scheduling, external
    providers, Pipeline/Calendar production surfaces, Calendar/AFI writes,
    analytics, Publication Intelligence, Campaign Intelligence, and Route 04 Pass
@@ -2121,6 +2153,7 @@ pnpm run typecheck
 pnpm run build
 pnpm --filter @workspace/api-spec run codegen
 pnpm --filter @workspace/db run push
+pnpm run audit:output-migration -- --vault <vault-or-sqlite> --json <report>
 pnpm desktop
 pnpm test
 pnpm package:dir

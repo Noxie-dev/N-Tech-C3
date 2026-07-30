@@ -42,6 +42,7 @@ import type {
   CampaignTransitionInput,
   CampaignVersion,
   CampaignVersionInput,
+  ChannelDefinition,
   DashboardStats,
   Evidence,
   EvidenceIngest,
@@ -77,12 +78,18 @@ import type {
   ListCampaignsParams,
   ListEvidenceParams,
   ListKnowledgeParams,
+  ListPublicationsParams,
   ListStoriesParams,
   ListTemplatesParams,
   ListWorkspacesParams,
   Project,
   ProjectInput,
   ProjectPatch,
+  Publication,
+  PublicationCreate,
+  PublicationTransition,
+  PublicationUpdate,
+  PublicationVersion,
   SearchResult,
   StatusCount,
   Story,
@@ -101,6 +108,7 @@ import type {
   Template,
   TemplateInput,
   TemplatePatch,
+  VersionedCommand,
   Workspace,
   WorkspaceInput,
   WorkspaceIntegrity,
@@ -6303,6 +6311,757 @@ export const useDeleteAsset = <TError = ErrorType<void>,
       > => {
       return useMutation(getDeleteAssetMutationOptions(options));
     }
+
+export const getListPublicationsUrl = (params?: ListPublicationsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/publications?${stringifiedParams}` : `/api/publications`
+}
+
+/**
+ * @summary List canonical Publications
+ */
+export const listPublications = async (params?: ListPublicationsParams, options?: Parameters<typeof customFetch>[1]): Promise<Publication[]> => {
+
+  return customFetch<Publication[]>(getListPublicationsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPublicationsQueryKey = (params?: ListPublicationsParams,) => {
+    return [
+    `/api/publications`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListPublicationsQueryOptions = <TData = Awaited<ReturnType<typeof listPublications>>, TError = ErrorType<unknown>>(params?: ListPublicationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPublications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPublicationsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPublications>>> = ({ signal }) => listPublications(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPublications>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPublicationsQueryResult = NonNullable<Awaited<ReturnType<typeof listPublications>>>
+export type ListPublicationsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List canonical Publications
+ */
+
+export function useListPublications<TData = Awaited<ReturnType<typeof listPublications>>, TError = ErrorType<unknown>>(
+ params?: ListPublicationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPublications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPublicationsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreatePublicationUrl = () => {
+
+
+
+
+  return `/api/publications`
+}
+
+/**
+ * @summary Create a canonical Publication
+ */
+export const createPublication = async (publicationCreate: PublicationCreate, options?: Parameters<typeof customFetch>[1]): Promise<Publication> => {
+
+  return customFetch<Publication>(getCreatePublicationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(publicationCreate)
+  }
+);}
+
+
+
+
+
+export const getCreatePublicationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPublication>>, TError,{data: BodyType<PublicationCreate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createPublication>>, TError,{data: BodyType<PublicationCreate>}, TContext> => {
+
+const mutationKey = ['createPublication'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPublication>>, {data: BodyType<PublicationCreate>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createPublication(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePublicationMutationResult = NonNullable<Awaited<ReturnType<typeof createPublication>>>
+    export type CreatePublicationMutationBody = BodyType<PublicationCreate>
+    export type CreatePublicationMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a canonical Publication
+ */
+export const useCreatePublication = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPublication>>, TError,{data: BodyType<PublicationCreate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createPublication>>,
+        TError,
+        {data: BodyType<PublicationCreate>},
+        TContext
+      > => {
+      return useMutation(getCreatePublicationMutationOptions(options));
+    }
+
+export const getGetPublicationUrl = (id: number,) => {
+
+
+
+
+  return `/api/publications/${id}`
+}
+
+/**
+ * @summary Get a Publication
+ */
+export const getPublication = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<Publication> => {
+
+  return customFetch<Publication>(getGetPublicationUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicationQueryKey = (id: number,) => {
+    return [
+    `/api/publications/${id}`
+    ] as const;
+    }
+
+
+export const getGetPublicationQueryOptions = <TData = Awaited<ReturnType<typeof getPublication>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublication>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicationQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublication>>> = ({ signal }) => getPublication(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublication>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicationQueryResult = NonNullable<Awaited<ReturnType<typeof getPublication>>>
+export type GetPublicationQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get a Publication
+ */
+
+export function useGetPublication<TData = Awaited<ReturnType<typeof getPublication>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublication>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicationQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdatePublicationUrl = (id: number,) => {
+
+
+
+
+  return `/api/publications/${id}`
+}
+
+/**
+ * @summary Update a Draft or InReview Publication
+ */
+export const updatePublication = async (id: number,
+    publicationUpdate: PublicationUpdate, options?: Parameters<typeof customFetch>[1]): Promise<Publication> => {
+
+  return customFetch<Publication>(getUpdatePublicationUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(publicationUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdatePublicationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePublication>>, TError,{id: number;data: BodyType<PublicationUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePublication>>, TError,{id: number;data: BodyType<PublicationUpdate>}, TContext> => {
+
+const mutationKey = ['updatePublication'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePublication>>, {id: number;data: BodyType<PublicationUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updatePublication(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePublicationMutationResult = NonNullable<Awaited<ReturnType<typeof updatePublication>>>
+    export type UpdatePublicationMutationBody = BodyType<PublicationUpdate>
+    export type UpdatePublicationMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a Draft or InReview Publication
+ */
+export const useUpdatePublication = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePublication>>, TError,{id: number;data: BodyType<PublicationUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePublication>>,
+        TError,
+        {id: number;data: BodyType<PublicationUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdatePublicationMutationOptions(options));
+    }
+
+export const getTransitionPublicationUrl = (id: number,) => {
+
+
+
+
+  return `/api/publications/${id}/transition`
+}
+
+/**
+ * @summary Transition the Publication lifecycle
+ */
+export const transitionPublication = async (id: number,
+    publicationTransition: PublicationTransition, options?: Parameters<typeof customFetch>[1]): Promise<Publication> => {
+
+  return customFetch<Publication>(getTransitionPublicationUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(publicationTransition)
+  }
+);}
+
+
+
+
+
+export const getTransitionPublicationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof transitionPublication>>, TError,{id: number;data: BodyType<PublicationTransition>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof transitionPublication>>, TError,{id: number;data: BodyType<PublicationTransition>}, TContext> => {
+
+const mutationKey = ['transitionPublication'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof transitionPublication>>, {id: number;data: BodyType<PublicationTransition>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  transitionPublication(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TransitionPublicationMutationResult = NonNullable<Awaited<ReturnType<typeof transitionPublication>>>
+    export type TransitionPublicationMutationBody = BodyType<PublicationTransition>
+    export type TransitionPublicationMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Transition the Publication lifecycle
+ */
+export const useTransitionPublication = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof transitionPublication>>, TError,{id: number;data: BodyType<PublicationTransition>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof transitionPublication>>,
+        TError,
+        {id: number;data: BodyType<PublicationTransition>},
+        TContext
+      > => {
+      return useMutation(getTransitionPublicationMutationOptions(options));
+    }
+
+export const getArchivePublicationUrl = (id: number,) => {
+
+
+
+
+  return `/api/publications/${id}/archive`
+}
+
+/**
+ * @summary Archive a Publication
+ */
+export const archivePublication = async (id: number,
+    versionedCommand: VersionedCommand, options?: Parameters<typeof customFetch>[1]): Promise<Publication> => {
+
+  return customFetch<Publication>(getArchivePublicationUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(versionedCommand)
+  }
+);}
+
+
+
+
+
+export const getArchivePublicationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archivePublication>>, TError,{id: number;data: BodyType<VersionedCommand>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof archivePublication>>, TError,{id: number;data: BodyType<VersionedCommand>}, TContext> => {
+
+const mutationKey = ['archivePublication'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof archivePublication>>, {id: number;data: BodyType<VersionedCommand>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  archivePublication(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ArchivePublicationMutationResult = NonNullable<Awaited<ReturnType<typeof archivePublication>>>
+    export type ArchivePublicationMutationBody = BodyType<VersionedCommand>
+    export type ArchivePublicationMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Archive a Publication
+ */
+export const useArchivePublication = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archivePublication>>, TError,{id: number;data: BodyType<VersionedCommand>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof archivePublication>>,
+        TError,
+        {id: number;data: BodyType<VersionedCommand>},
+        TContext
+      > => {
+      return useMutation(getArchivePublicationMutationOptions(options));
+    }
+
+export const getRestorePublicationUrl = (id: number,) => {
+
+
+
+
+  return `/api/publications/${id}/restore`
+}
+
+/**
+ * @summary Restore an archived Publication to Draft
+ */
+export const restorePublication = async (id: number,
+    versionedCommand: VersionedCommand, options?: Parameters<typeof customFetch>[1]): Promise<Publication> => {
+
+  return customFetch<Publication>(getRestorePublicationUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(versionedCommand)
+  }
+);}
+
+
+
+
+
+export const getRestorePublicationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restorePublication>>, TError,{id: number;data: BodyType<VersionedCommand>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof restorePublication>>, TError,{id: number;data: BodyType<VersionedCommand>}, TContext> => {
+
+const mutationKey = ['restorePublication'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restorePublication>>, {id: number;data: BodyType<VersionedCommand>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  restorePublication(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestorePublicationMutationResult = NonNullable<Awaited<ReturnType<typeof restorePublication>>>
+    export type RestorePublicationMutationBody = BodyType<VersionedCommand>
+    export type RestorePublicationMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Restore an archived Publication to Draft
+ */
+export const useRestorePublication = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restorePublication>>, TError,{id: number;data: BodyType<VersionedCommand>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof restorePublication>>,
+        TError,
+        {id: number;data: BodyType<VersionedCommand>},
+        TContext
+      > => {
+      return useMutation(getRestorePublicationMutationOptions(options));
+    }
+
+export const getListPublicationVersionsUrl = (id: number,) => {
+
+
+
+
+  return `/api/publications/${id}/versions`
+}
+
+/**
+ * @summary List immutable Publication checkpoints
+ */
+export const listPublicationVersions = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<PublicationVersion[]> => {
+
+  return customFetch<PublicationVersion[]>(getListPublicationVersionsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPublicationVersionsQueryKey = (id: number,) => {
+    return [
+    `/api/publications/${id}/versions`
+    ] as const;
+    }
+
+
+export const getListPublicationVersionsQueryOptions = <TData = Awaited<ReturnType<typeof listPublicationVersions>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPublicationVersions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPublicationVersionsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPublicationVersions>>> = ({ signal }) => listPublicationVersions(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPublicationVersions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPublicationVersionsQueryResult = NonNullable<Awaited<ReturnType<typeof listPublicationVersions>>>
+export type ListPublicationVersionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List immutable Publication checkpoints
+ */
+
+export function useListPublicationVersions<TData = Awaited<ReturnType<typeof listPublicationVersions>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPublicationVersions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPublicationVersionsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListStoryPublicationsUrl = (id: number,) => {
+
+
+
+
+  return `/api/stories/${id}/publications`
+}
+
+/**
+ * @summary List Publications with primary provenance from a Story
+ */
+export const listStoryPublications = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<Publication[]> => {
+
+  return customFetch<Publication[]>(getListStoryPublicationsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListStoryPublicationsQueryKey = (id: number,) => {
+    return [
+    `/api/stories/${id}/publications`
+    ] as const;
+    }
+
+
+export const getListStoryPublicationsQueryOptions = <TData = Awaited<ReturnType<typeof listStoryPublications>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStoryPublications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListStoryPublicationsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listStoryPublications>>> = ({ signal }) => listStoryPublications(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listStoryPublications>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListStoryPublicationsQueryResult = NonNullable<Awaited<ReturnType<typeof listStoryPublications>>>
+export type ListStoryPublicationsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List Publications with primary provenance from a Story
+ */
+
+export function useListStoryPublications<TData = Awaited<ReturnType<typeof listStoryPublications>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStoryPublications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListStoryPublicationsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListChannelsUrl = () => {
+
+
+
+
+  return `/api/channels`
+}
+
+/**
+ * @summary List governed Channel capability definitions
+ */
+export const listChannels = async ( options?: Parameters<typeof customFetch>[1]): Promise<ChannelDefinition[]> => {
+
+  return customFetch<ChannelDefinition[]>(getListChannelsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListChannelsQueryKey = () => {
+    return [
+    `/api/channels`
+    ] as const;
+    }
+
+
+export const getListChannelsQueryOptions = <TData = Awaited<ReturnType<typeof listChannels>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listChannels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListChannelsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listChannels>>> = ({ signal }) => listChannels({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listChannels>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListChannelsQueryResult = NonNullable<Awaited<ReturnType<typeof listChannels>>>
+export type ListChannelsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List governed Channel capability definitions
+ */
+
+export function useListChannels<TData = Awaited<ReturnType<typeof listChannels>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listChannels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListChannelsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListKnowledgeUrl = (params?: ListKnowledgeParams,) => {
   const normalizedParams = new URLSearchParams();

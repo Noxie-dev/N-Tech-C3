@@ -32,10 +32,10 @@ favicon set from `artifacts/ntech-c3/public`.
   control studio with governed lifecycle/phase, optimistic checkpoints, ordered
   Story roles/backlinks, milestones, transactional events, projection audit,
   named performance evidence, and archive/restore.
-- **Publications (Route 06, future/L1 Defined):** Pass 1A has accepted
-  constitutional ownership, persistence, service, event, filesystem, performance,
-  and conservative Output compatibility contracts. No production Publication or
-  scheduling capability is implemented.
+- **Publications (Route 06, L2 Functional):** canonical persistence/API plus the
+  Publication Library and Studio provide Story-backed creation, governed
+  authoring, checkpoints, lifecycle, provenance, search, and archive/restore.
+  Output migration and delivery operations remain gated.
 - **Assets and Templates:** core catalogue workflows.
 - **Global Search:** trigger-maintained SQLite FTS5 index across the core domains.
 - **Desktop operations:** portable vault, backup/restore, safe file reveal,
@@ -241,6 +241,27 @@ cover Evidence classification, lifecycle, review, sources, locators, and ingests
 Legacy rows are conservatively backfilled without discarding existing fields or
 guessing missing ownership. Run `pnpm audit:evidence-migration` against a selected
 Vault to report unresolved upgrade findings.
+
+Route 06 Pass 1B.0 provides a read-only legacy Output inventory without adding
+Publication tables or migrating data:
+
+```bash
+pnpm run audit:output-migration -- --vault <vault-or-sqlite> --json <report-path>
+```
+
+The command returns `0` for a clean audit, `2` when user resolution is required,
+and `1` when the audit cannot complete. It redacts content, secrets, and absolute
+paths and never writes to the selected Vault.
+
+Route 06 Pass 1B.1 adds the headless canonical Publication foundation. Migration
+14 adds additive Publication/version and Channel-definition tables, while the
+OpenAPI-generated local API supports governed lifecycle, optimistic checkpoints,
+primary Story provenance, search, archive/restore, versions, and Story backlinks.
+Pass 1B.2 adds `/publications` and `/publications/:id`, navigation/search
+integration, Story backlinks, shared rich-text authoring, lifecycle controls, and
+checkpoint history. Migration 15 enables the Publication UI flag. Legacy Outputs
+are not migrated or dual-written; migration and canonical Story-write flags
+remain disabled.
 
 Route 03 Pass 2B replaces renderer-wide file buffering with trusted-path bounded
 streaming. Desktop imports stage and hash files, commit structured source
@@ -479,9 +500,9 @@ The following are documented product direction, **not current functionality**:
 - **Route 05 Campaign expansion (future):** Separately authorized later passes may
   integrate first-class Publications and Channels or Campaign Intelligence.
   Scheduling and analytics are not current capabilities.
-- **Route 06 Publications (future):** Pass 1A specification is complete. Pass 1B
-  may later implement the Publication/version foundation and conservative
-  read-only Output audit. Connections, Variants, Renditions, Deployments,
+- **Route 06 Publications:** Passes 1B.0–1B.2 implement the read-only Output audit,
+  canonical Publication/version foundation, and Library/Studio experience.
+  User-correctable Output migration, Connections, Variants, Renditions, Deployments,
   scheduling, providers, Pipeline/Calendar production surfaces, Calendar/AFI
   writes, and Publication Intelligence remain unauthorized.
 - **Knowledge Query:** an information-first EIE capability that answers from

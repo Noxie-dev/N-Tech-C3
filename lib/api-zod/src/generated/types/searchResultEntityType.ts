@@ -14,6 +14,7 @@ export const SearchResultEntityType = {
   evidence: 'evidence',
   knowledge: 'knowledge',
   campaign: 'campaign',
+  publication: 'publication',
   asset: 'asset',
   template: 'template',
   project: 'project',

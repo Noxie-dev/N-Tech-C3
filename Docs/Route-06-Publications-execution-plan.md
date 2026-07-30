@@ -287,7 +287,7 @@ operations, migrations, application routes, provider behavior, or delivery jobs.
 
 ### Pass 1B — Publication foundation and conservative migration
 
-Status: **Future; requires accepted Pass 1A**
+Status: **In progress; Passes 1B.0–1B.2 implemented and verified**
 
 Add canonical OpenAPI contracts, generated clients/Zod, ordered migrations,
 Publication aggregate/version/checkpoint/event behavior, primary Story
@@ -296,6 +296,82 @@ archive/restore, and Library/Studio foundations.
 
 Channels must exist as first-class governed definitions in the schema even though
 Connections and external delivery remain disabled.
+
+#### Pass 1B.0 — Read-only Output migration intelligence
+
+Status: **Implemented and verified**
+
+The versioned `audit:output-migration` command now opens selected Vault databases
+in SQLite read-only/query-only mode, validates the schema boundary, inventories
+legacy Outputs, produces stable findings and fingerprints, redacts secrets and
+absolute paths, distinguishes clean, failed, and action-required runs with exit
+codes `0`, `1`, and `2`, and writes only the explicitly requested external JSON
+report. Acceptance fixtures cover empty, unassigned, cross-Workspace, missing
+Story, unknown status, duplicate/grouping, ambiguous/deterministic destination,
+invalid format, missing title/content, redaction, stable repeat execution, and
+schema failure cases.
+
+Pass 1B.0 adds no Publication schema, migration, API, route, Channel Connection,
+Variant, Rendition, Deployment, schedule, provider, or Vault write. The execution
+evidence is recorded in
+`Docs/System-Design-Book/evidence/route-06-pass-1b0-2026-07-30.md`.
+
+The next separately authorized boundary is Pass 1B.1, the headless Publication
+foundation. Actual legacy Output migration remains unauthorized.
+
+#### Pass 1B.1 — Headless Publication foundation
+
+Status: **Implemented and verified**
+
+Migration 14 adds the Workspace-owned Publication aggregate, immutable
+Publication checkpoints, primary Story provenance, governed Channel capability
+definitions, search indexes/triggers, and explicit feature flags. Canonical
+OpenAPI contracts generate React clients and Zod validators for catalogue,
+creation, optimistic editing, lifecycle transitions, archive/restore, versions,
+Story provenance backlinks, and the Channel catalogue.
+
+Publication mutations enforce active Workspace ownership, same-Workspace active
+Story provenance, guarded `Draft → InReview → Approved` transitions, approved and
+archived read-only states, optimistic versions, transactional checkpoints and
+durable events, Activity projection, and search removal/re-entry on
+archive/restore.
+
+The migration is additive. It creates no Publication from an Output and changes no
+legacy Output. `publication.output-migration`,
+`publication.canonical-story-writes`, and `publication.ui` remain disabled;
+dual-writing is absent. Connections, delivery, Library/Studio application routes,
+and actual migration remain unauthorized.
+
+Execution evidence is recorded in
+`Docs/System-Design-Book/evidence/route-06-pass-1b1-2026-07-30.md`.
+
+The next separately authorized boundary is Pass 1B.2, the Publication Library and
+Studio experience foundation. Actual Output migration remains separately gated.
+
+#### Pass 1B.2 — Publication Library and Studio experience foundation
+
+Status: **Implemented and verified**
+
+The frontend now exposes a lazy-loaded Publication Library at `/publications` and
+Publication Studio at `/publications/:id`. The Library provides search,
+Workspace/lifecycle filters, Story-backed creation, and lifecycle/version
+catalogue context. The Studio composes the generated contracts into shared TipTap
+authoring, optimistic checkpoint saves, primary Story provenance, immutable
+checkpoint history, guarded lifecycle commands, archive/restore, conflict
+feedback, and read-only Approved/Archived states.
+
+Publications are linked from primary Stories and included in global search. The
+legacy Story Output surface remains visibly isolated and creates only legacy
+Outputs. Migration 15 enables `publication.ui`; Output migration and canonical
+Story writes remain disabled. Channel definitions are visible as capability
+metadata only—Connections and delivery are not enabled.
+
+Execution evidence is recorded in
+`Docs/System-Design-Book/evidence/route-06-pass-1b2-2026-07-30.md`.
+
+The next separately authorized boundary is Pass 1B.3, a user-correctable Output
+resolution and migration workflow. No legacy Output migration is authorized by
+this pass.
 
 ### Pass 2 — Variants, Channels, Connections, and Renditions
 
@@ -348,8 +424,9 @@ Route 06 cannot advance beyond L1 until applicable gates pass:
 
 ## Exit decision
 
-Route 06 is **L1 Defined**. The next decision is whether to authorize **Pass 1B —
-Publication foundation and conservative migration**.
+Route 06 is **L2 Functional at the Library/Studio foundation boundary**. Passes
+1B.0–1B.2 are implemented and verified. The next decision is whether to authorize
+**Pass 1B.3 — user-correctable Output resolution and migration workflow**.
 
 This dossier does not authorize production Publication tables, Output migration,
 Channels, Connections, scheduling, external deployment, provider access, AFI

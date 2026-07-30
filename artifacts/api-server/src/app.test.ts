@@ -1437,4 +1437,136 @@ describe("local API", () => {
       ),
     ).toBe(1);
   });
+
+  it("governs the headless Publication lifecycle, provenance, search, and recovery", async () => {
+    const workspace = await request(app)
+      .post("/api/workspaces")
+      .send({ name: "Publication Foundation", purpose: "Product" })
+      .expect(201);
+    const otherWorkspace = await request(app)
+      .post("/api/workspaces")
+      .send({ name: "Other Publication Workspace", purpose: "Product" })
+      .expect(201);
+    const story = await request(app)
+      .post("/api/stories")
+      .send({
+        title: "Publication source Story",
+        workspaceId: workspace.body.id,
+      })
+      .expect(201);
+
+    await request(app)
+      .post("/api/publications")
+      .send({
+        workspaceId: otherWorkspace.body.id,
+        primaryStoryId: story.body.id,
+        title: "Cross Workspace",
+      })
+      .expect(409);
+
+    const created = await request(app)
+      .post("/api/publications")
+      .send({
+        workspaceId: workspace.body.id,
+        primaryStoryId: story.body.id,
+        title: "Governed Publication",
+        summary: "Route 06 foundation",
+        content: "publication-search-token",
+      })
+      .expect(201);
+    expect(created.body).toMatchObject({
+      workspaceId: workspace.body.id,
+      primaryStoryId: story.body.id,
+      lifecycleStatus: "Draft",
+      version: 1,
+    });
+
+    await request(app)
+      .patch(`/api/publications/${created.body.id}`)
+      .send({ expectedVersion: 99, title: "Conflict" })
+      .expect(409);
+    const updated = await request(app)
+      .patch(`/api/publications/${created.body.id}`)
+      .send({
+        expectedVersion: 1,
+        title: "Governed Publication Updated",
+        changeSummary: "Editorial checkpoint",
+      })
+      .expect(200);
+    expect(updated.body.version).toBe(2);
+
+    const review = await request(app)
+      .post(`/api/publications/${created.body.id}/transition`)
+      .send({ expectedVersion: 2, lifecycleStatus: "InReview" })
+      .expect(200);
+    const approved = await request(app)
+      .post(`/api/publications/${created.body.id}/transition`)
+      .send({
+        expectedVersion: review.body.version,
+        lifecycleStatus: "Approved",
+      })
+      .expect(200);
+    await request(app)
+      .patch(`/api/publications/${created.body.id}`)
+      .send({ expectedVersion: approved.body.version, title: "Blocked edit" })
+      .expect(409);
+
+    const search = await request(app)
+      .get("/api/search")
+      .query({ q: "publication-search-token", entityType: "publication" })
+      .expect(200);
+    expect(search.body[0]).toMatchObject({
+      entityType: "publication",
+      entityId: created.body.id,
+      path: `/publications/${created.body.id}`,
+    });
+
+    const archived = await request(app)
+      .post(`/api/publications/${created.body.id}/archive`)
+      .send({
+        expectedVersion: approved.body.version,
+        reason: "Acceptance test",
+      })
+      .expect(200);
+    expect(archived.body.lifecycleStatus).toBe("Archived");
+    expect(
+      (
+        await request(app)
+          .get("/api/search")
+          .query({ q: "publication-search-token", entityType: "publication" })
+          .expect(200)
+      ).body,
+    ).toEqual([]);
+
+    const restored = await request(app)
+      .post(`/api/publications/${created.body.id}/restore`)
+      .send({ expectedVersion: archived.body.version })
+      .expect(200);
+    expect(restored.body).toMatchObject({
+      lifecycleStatus: "Draft",
+      version: archived.body.version + 1,
+    });
+
+    const versions = await request(app)
+      .get(`/api/publications/${created.body.id}/versions`)
+      .expect(200);
+    expect(versions.body).toHaveLength(6);
+    const backlinks = await request(app)
+      .get(`/api/stories/${story.body.id}/publications`)
+      .expect(200);
+    expect(backlinks.body[0].id).toBe(created.body.id);
+    const channels = await request(app).get("/api/channels").expect(200);
+    expect(channels.body).toHaveLength(6);
+    expect(
+      Number(
+        database.get(
+          "SELECT count(*) count FROM domain_events WHERE aggregate_type = 'publication' AND aggregate_id = ?",
+          [created.body.id],
+        )?.count,
+      ),
+    ).toBe(6);
+    expect(
+      Number(database.get("SELECT count(*) count FROM story_outputs")?.count),
+    ).toBeGreaterThanOrEqual(0);
+  });
 });

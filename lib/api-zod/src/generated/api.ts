@@ -60,7 +60,7 @@ export const globalSearchQueryLimitMax = 50;
 export const GlobalSearchQueryParams = zod.object({
   "q": zod.coerce.string().min(globalSearchQueryQMin),
   "limit": zod.coerce.number().min(1).max(globalSearchQueryLimitMax).default(globalSearchQueryLimitDefault),
-  "entityType": zod.enum(['story', 'evidence', 'knowledge', 'campaign', 'asset', 'template', 'workspace']).optional(),
+  "entityType": zod.enum(['story', 'evidence', 'knowledge', 'campaign', 'publication', 'asset', 'template', 'workspace']).optional(),
   "projectId": zod.coerce.number().optional(),
   "status": zod.coerce.string().optional(),
   "from": zod.date().optional(),
@@ -68,7 +68,7 @@ export const GlobalSearchQueryParams = zod.object({
 })
 
 export const GlobalSearchResponseItem = zod.object({
-  "entityType": zod.enum(['story', 'evidence', 'knowledge', 'campaign', 'asset', 'template', 'project']),
+  "entityType": zod.enum(['story', 'evidence', 'knowledge', 'campaign', 'publication', 'asset', 'template', 'project']),
   "entityId": zod.number(),
   "title": zod.string(),
   "snippet": zod.string(),
@@ -2773,6 +2773,311 @@ export const DeleteAssetParams = zod.object({
 })
 
 export const DeleteAssetResponse = zod.void()
+
+
+/**
+ * @summary List canonical Publications
+ */
+export const ListPublicationsQueryParams = zod.object({
+  "workspaceId": zod.coerce.number().optional(),
+  "storyId": zod.coerce.number().optional(),
+  "lifecycleStatus": zod.enum(['Draft', 'InReview', 'Approved', 'Archived']).optional(),
+  "search": zod.coerce.string().optional()
+})
+
+
+
+
+export const ListPublicationsResponseItem = zod.object({
+  "id": zod.number(),
+  "workspaceId": zod.number(),
+  "primaryStoryId": zod.number(),
+  "primaryStoryTitle": zod.string(),
+  "title": zod.string(),
+  "summary": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "lifecycleStatus": zod.enum(['Draft', 'InReview', 'Approved', 'Archived']),
+  "version": zod.number().min(1),
+  "createdBy": zod.string(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListPublicationsResponse = zod.array(ListPublicationsResponseItem)
+
+
+/**
+ * @summary Create a canonical Publication
+ */
+
+
+
+export const CreatePublicationBody = zod.object({
+  "workspaceId": zod.number(),
+  "primaryStoryId": zod.number(),
+  "title": zod.string().min(1),
+  "summary": zod.string().optional(),
+  "content": zod.string().optional()
+})
+
+
+
+
+export const CreatePublicationResponse = zod.object({
+  "id": zod.number(),
+  "workspaceId": zod.number(),
+  "primaryStoryId": zod.number(),
+  "primaryStoryTitle": zod.string(),
+  "title": zod.string(),
+  "summary": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "lifecycleStatus": zod.enum(['Draft', 'InReview', 'Approved', 'Archived']),
+  "version": zod.number().min(1),
+  "createdBy": zod.string(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Get a Publication
+ */
+export const GetPublicationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const GetPublicationResponse = zod.object({
+  "id": zod.number(),
+  "workspaceId": zod.number(),
+  "primaryStoryId": zod.number(),
+  "primaryStoryTitle": zod.string(),
+  "title": zod.string(),
+  "summary": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "lifecycleStatus": zod.enum(['Draft', 'InReview', 'Approved', 'Archived']),
+  "version": zod.number().min(1),
+  "createdBy": zod.string(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a Draft or InReview Publication
+ */
+export const UpdatePublicationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+
+
+export const UpdatePublicationBody = zod.object({
+  "expectedVersion": zod.number().min(1),
+  "title": zod.string().min(1).optional(),
+  "summary": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "changeSummary": zod.string().min(1).optional()
+})
+
+
+
+
+export const UpdatePublicationResponse = zod.object({
+  "id": zod.number(),
+  "workspaceId": zod.number(),
+  "primaryStoryId": zod.number(),
+  "primaryStoryTitle": zod.string(),
+  "title": zod.string(),
+  "summary": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "lifecycleStatus": zod.enum(['Draft', 'InReview', 'Approved', 'Archived']),
+  "version": zod.number().min(1),
+  "createdBy": zod.string(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Transition the Publication lifecycle
+ */
+export const TransitionPublicationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+
+export const TransitionPublicationBody = zod.object({
+  "expectedVersion": zod.number().min(1),
+  "lifecycleStatus": zod.enum(['Draft', 'InReview', 'Approved', 'Archived']),
+  "changeSummary": zod.string().min(1).optional()
+})
+
+
+
+
+export const TransitionPublicationResponse = zod.object({
+  "id": zod.number(),
+  "workspaceId": zod.number(),
+  "primaryStoryId": zod.number(),
+  "primaryStoryTitle": zod.string(),
+  "title": zod.string(),
+  "summary": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "lifecycleStatus": zod.enum(['Draft', 'InReview', 'Approved', 'Archived']),
+  "version": zod.number().min(1),
+  "createdBy": zod.string(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Archive a Publication
+ */
+export const ArchivePublicationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const ArchivePublicationBody = zod.object({
+  "expectedVersion": zod.number().min(1),
+  "reason": zod.string().optional()
+})
+
+
+
+
+export const ArchivePublicationResponse = zod.object({
+  "id": zod.number(),
+  "workspaceId": zod.number(),
+  "primaryStoryId": zod.number(),
+  "primaryStoryTitle": zod.string(),
+  "title": zod.string(),
+  "summary": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "lifecycleStatus": zod.enum(['Draft', 'InReview', 'Approved', 'Archived']),
+  "version": zod.number().min(1),
+  "createdBy": zod.string(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Restore an archived Publication to Draft
+ */
+export const RestorePublicationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const RestorePublicationBody = zod.object({
+  "expectedVersion": zod.number().min(1),
+  "reason": zod.string().optional()
+})
+
+
+
+
+export const RestorePublicationResponse = zod.object({
+  "id": zod.number(),
+  "workspaceId": zod.number(),
+  "primaryStoryId": zod.number(),
+  "primaryStoryTitle": zod.string(),
+  "title": zod.string(),
+  "summary": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "lifecycleStatus": zod.enum(['Draft', 'InReview', 'Approved', 'Archived']),
+  "version": zod.number().min(1),
+  "createdBy": zod.string(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List immutable Publication checkpoints
+ */
+export const ListPublicationVersionsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListPublicationVersionsResponseItem = zod.object({
+  "id": zod.number(),
+  "publicationId": zod.number(),
+  "version": zod.number(),
+  "title": zod.string(),
+  "summary": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "lifecycleStatus": zod.enum(['Draft', 'InReview', 'Approved', 'Archived']),
+  "primaryStoryId": zod.number(),
+  "changeSummary": zod.string(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const ListPublicationVersionsResponse = zod.array(ListPublicationVersionsResponseItem)
+
+
+/**
+ * @summary List Publications with primary provenance from a Story
+ */
+export const ListStoryPublicationsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const ListStoryPublicationsResponseItem = zod.object({
+  "id": zod.number(),
+  "workspaceId": zod.number(),
+  "primaryStoryId": zod.number(),
+  "primaryStoryTitle": zod.string(),
+  "title": zod.string(),
+  "summary": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "lifecycleStatus": zod.enum(['Draft', 'InReview', 'Approved', 'Archived']),
+  "version": zod.number().min(1),
+  "createdBy": zod.string(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListStoryPublicationsResponse = zod.array(ListStoryPublicationsResponseItem)
+
+
+/**
+ * @summary List governed Channel capability definitions
+ */
+export const ListChannelsResponseItem = zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "capabilityVersion": zod.string(),
+  "status": zod.enum(['Defined', 'Disabled', 'Archived']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListChannelsResponse = zod.array(ListChannelsResponseItem)
 
 
 /**
