@@ -5,13 +5,19 @@
  * N-Tech C³ Engineering Intelligence Operating System API
  * OpenAPI spec version: 0.1.0
  */
-import type { CampaignInputStatus } from './campaignInputStatus';
+import type { CampaignType } from './campaignType';
 
 export interface CampaignInput {
   /** @minLength 1 */
   title: string;
+  /** @minimum 1 */
+  workspaceId: number;
   objective?: string;
-  status?: CampaignInputStatus;
-  platforms?: string[];
-  durationWeeks?: number;
+  missionStatement?: string;
+  successDefinition?: string;
+  campaignType?: CampaignType;
+  audience?: string;
+  owner?: string;
+  /** @minimum 0 */
+  targetStoryCount?: number;
 }

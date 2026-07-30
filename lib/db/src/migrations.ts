@@ -1,4 +1,4 @@
-import type { DatabaseSync } from 'node:sqlite';
+import type { DatabaseSync } from "node:sqlite";
 
 export type Migration = {
   version: number;
@@ -9,7 +9,7 @@ export type Migration = {
 export const migrations: Migration[] = [
   {
     version: 1,
-    name: 'initial_vault_schema',
+    name: "initial_vault_schema",
     sql: `
       CREATE TABLE IF NOT EXISTS projects (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -108,7 +108,7 @@ export const migrations: Migration[] = [
   },
   {
     version: 2,
-    name: 'global_full_text_search',
+    name: "global_full_text_search",
     sql: `
       CREATE VIRTUAL TABLE IF NOT EXISTS global_search USING fts5(
         entity_type UNINDEXED,
@@ -214,7 +214,7 @@ export const migrations: Migration[] = [
   },
   {
     version: 3,
-    name: 'workspace_domain_model',
+    name: "workspace_domain_model",
     sql: `
       ALTER TABLE projects ADD COLUMN slug TEXT;
       ALTER TABLE projects ADD COLUMN status TEXT NOT NULL DEFAULT 'Active';
@@ -273,7 +273,7 @@ export const migrations: Migration[] = [
   },
   {
     version: 4,
-    name: 'story_engine',
+    name: "story_engine",
     sql: `
       ALTER TABLE stories ADD COLUMN story_type TEXT NOT NULL DEFAULT 'Other';
       ALTER TABLE stories ADD COLUMN author TEXT;
@@ -397,7 +397,7 @@ export const migrations: Migration[] = [
   },
   {
     version: 5,
-    name: 'durable_events_and_intelligence_results',
+    name: "durable_events_and_intelligence_results",
     sql: `
       ALTER TABLE activity ADD COLUMN source_event_id INTEGER;
 
@@ -457,7 +457,7 @@ export const migrations: Migration[] = [
   },
   {
     version: 6,
-    name: 'evidence_contracts_and_legacy_backfill',
+    name: "evidence_contracts_and_legacy_backfill",
     sql: `
       ALTER TABLE evidence ADD COLUMN classification TEXT NOT NULL DEFAULT 'FactualRecord'
         CHECK (classification IN ('FactualRecord', 'Observation', 'Testimony', 'DerivedAnalysis', 'ExternalReference'));
@@ -698,7 +698,7 @@ export const migrations: Migration[] = [
   },
   {
     version: 7,
-    name: 'recoverable_evidence_ingest_payload',
+    name: "recoverable_evidence_ingest_payload",
     sql: `
       ALTER TABLE evidence_ingests ADD COLUMN capture_payload TEXT NOT NULL DEFAULT '{}'
         CHECK (json_valid(capture_payload));
@@ -711,7 +711,7 @@ export const migrations: Migration[] = [
   },
   {
     version: 8,
-    name: 'governed_evidence_operations',
+    name: "governed_evidence_operations",
     sql: `
       ALTER TABLE story_evidence ADD COLUMN role TEXT NOT NULL DEFAULT 'Supporting'
         CHECK (role IN ('Supporting', 'Contradicting', 'Context', 'Primary'));
@@ -761,7 +761,7 @@ export const migrations: Migration[] = [
   },
   {
     version: 9,
-    name: 'evidence_inspector_rollout',
+    name: "evidence_inspector_rollout",
     sql: `
       CREATE UNIQUE INDEX evidence_locator_identity_idx
         ON evidence_source_locators(source_id, kind, coordinates);
@@ -774,7 +774,7 @@ export const migrations: Migration[] = [
   },
   {
     version: 10,
-    name: 'evidence_integrity_jobs',
+    name: "evidence_integrity_jobs",
     sql: `
       CREATE TABLE evidence_integrity_jobs (
         id TEXT PRIMARY KEY,
@@ -792,7 +792,7 @@ export const migrations: Migration[] = [
   },
   {
     version: 11,
-    name: 'governed_knowledge_domain',
+    name: "governed_knowledge_domain",
     sql: `
       ALTER TABLE knowledge ADD COLUMN summary TEXT;
       ALTER TABLE knowledge ADD COLUMN slug TEXT;
@@ -960,6 +960,274 @@ export const migrations: Migration[] = [
       END;
     `,
   },
+  {
+    version: 12,
+    name: "governed_campaign_domain",
+    sql: `
+      ALTER TABLE campaigns ADD COLUMN mission_statement TEXT;
+      ALTER TABLE campaigns ADD COLUMN success_definition TEXT;
+      ALTER TABLE campaigns ADD COLUMN campaign_type TEXT
+        CHECK (campaign_type IS NULL OR campaign_type IN (
+          'EngineeringPhilosophy', 'ProductDevelopment', 'Launch', 'Research',
+          'Education', 'ThoughtLeadership', 'Community', 'CaseStudy',
+          'Recruitment', 'BehindTheScenes', 'Conference', 'ReleaseNotes',
+          'DeveloperDiary'
+        ));
+      ALTER TABLE campaigns ADD COLUMN lifecycle_status TEXT NOT NULL DEFAULT 'Planning'
+        CHECK (lifecycle_status IN ('Planning', 'Active', 'Paused', 'Completed', 'Archived'));
+      ALTER TABLE campaigns ADD COLUMN phase TEXT
+        CHECK (phase IS NULL OR phase IN (
+          'Planning', 'Research', 'ContentBuilding', 'Review', 'Distribution', 'Monitoring'
+        ));
+      ALTER TABLE campaigns ADD COLUMN audience TEXT;
+      ALTER TABLE campaigns ADD COLUMN owner TEXT;
+      ALTER TABLE campaigns ADD COLUMN start_at TEXT;
+      ALTER TABLE campaigns ADD COLUMN end_at TEXT;
+      ALTER TABLE campaigns ADD COLUMN review_cadence TEXT;
+      ALTER TABLE campaigns ADD COLUMN completion_criteria TEXT;
+      ALTER TABLE campaigns ADD COLUMN brand_voice TEXT;
+      ALTER TABLE campaigns ADD COLUMN publishing_rhythm TEXT;
+      ALTER TABLE campaigns ADD COLUMN engineering_domain TEXT;
+      ALTER TABLE campaigns ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'
+        CHECK (json_valid(tags));
+      ALTER TABLE campaigns ADD COLUMN color TEXT;
+      ALTER TABLE campaigns ADD COLUMN banner_asset_id INTEGER
+        REFERENCES assets(id) ON DELETE SET NULL;
+      ALTER TABLE campaigns ADD COLUMN cover_asset_id INTEGER
+        REFERENCES assets(id) ON DELETE SET NULL;
+      ALTER TABLE campaigns ADD COLUMN target_story_count INTEGER NOT NULL DEFAULT 0
+        CHECK (target_story_count >= 0);
+      ALTER TABLE campaigns ADD COLUMN target_publication_count INTEGER NOT NULL DEFAULT 0
+        CHECK (target_publication_count >= 0);
+      ALTER TABLE campaigns ADD COLUMN version INTEGER NOT NULL DEFAULT 1;
+      ALTER TABLE campaigns ADD COLUMN pause_reason TEXT;
+      ALTER TABLE campaigns ADD COLUMN completion_note TEXT;
+      ALTER TABLE campaigns ADD COLUMN success_assessment TEXT
+        CHECK (success_assessment IS NULL OR success_assessment IN (
+          'Achieved', 'PartiallyAchieved', 'NotAchieved'
+        ));
+      ALTER TABLE campaigns ADD COLUMN completed_at TEXT;
+      ALTER TABLE campaigns ADD COLUMN archived_at TEXT;
+      ALTER TABLE campaigns ADD COLUMN archived_from_status TEXT
+        CHECK (archived_from_status IS NULL OR archived_from_status IN (
+          'Planning', 'Active', 'Paused', 'Completed'
+        ));
+
+      UPDATE campaigns
+      SET lifecycle_status = CASE status
+        WHEN 'Planning' THEN 'Planning'
+        WHEN 'Active' THEN 'Active'
+        WHEN 'Paused' THEN 'Paused'
+        WHEN 'Completed' THEN 'Completed'
+        WHEN 'Archived' THEN 'Archived'
+        ELSE 'Planning'
+      END;
+
+      CREATE TABLE campaign_versions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+        version INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        mission_statement TEXT,
+        success_definition TEXT,
+        metadata TEXT NOT NULL DEFAULT '{}'
+          CHECK (json_valid(metadata)),
+        change_summary TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        UNIQUE (campaign_id, version)
+      );
+
+      CREATE TABLE campaign_migration_audit (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+        issue_code TEXT NOT NULL,
+        severity TEXT NOT NULL CHECK (severity IN ('Info', 'Warning', 'ActionRequired')),
+        detail TEXT NOT NULL,
+        resolved_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        UNIQUE (campaign_id, issue_code, detail)
+      );
+
+      INSERT INTO campaign_versions (
+        campaign_id, version, title, mission_statement, success_definition,
+        metadata, change_summary
+      )
+      SELECT id, 1, title, NULL, NULL,
+        json_object(
+          'objective', objective,
+          'legacyStatus', status,
+          'lifecycleStatus', lifecycle_status,
+          'platforms', json(platforms),
+          'durationWeeks', duration_weeks
+        ),
+        'Legacy Campaign migration'
+      FROM campaigns;
+
+      INSERT OR IGNORE INTO campaign_migration_audit (
+        campaign_id, issue_code, severity, detail
+      )
+      SELECT id, 'UnassignedWorkspace', 'ActionRequired',
+        'Assign this Campaign to a Workspace before canonical mutation.'
+      FROM campaigns WHERE project_id IS NULL;
+
+      INSERT OR IGNORE INTO campaign_migration_audit (
+        campaign_id, issue_code, severity, detail
+      )
+      SELECT id, 'UnknownLegacyStatus', 'Warning',
+        'Legacy status "' || coalesce(status, '') ||
+        '" was preserved in the compatibility field; canonical lifecycle starts at Planning.'
+      FROM campaigns
+      WHERE status NOT IN ('Planning', 'Active', 'Paused', 'Completed', 'Archived');
+
+      INSERT OR IGNORE INTO campaign_migration_audit (
+        campaign_id, issue_code, severity, detail
+      )
+      SELECT id, 'LegacyPlatformsPresent', 'Info',
+        'Legacy platform strings remain compatibility data and were not converted into Channels.'
+      FROM campaigns WHERE platforms != '[]';
+
+      INSERT OR IGNORE INTO campaign_migration_audit (
+        campaign_id, issue_code, severity, detail
+      )
+      SELECT campaign.id, 'InvalidStoryMembership', 'ActionRequired',
+        'Story ' || story.id ||
+        ' membership is unowned or crosses the Campaign Workspace boundary.'
+      FROM story_campaigns membership
+      JOIN campaigns campaign ON campaign.id = membership.campaign_id
+      JOIN stories story ON story.id = membership.story_id
+      WHERE campaign.project_id IS NULL
+        OR story.project_id IS NULL
+        OR campaign.project_id != story.project_id;
+
+      CREATE INDEX campaigns_workspace_lifecycle_idx
+        ON campaigns(project_id, lifecycle_status, updated_at DESC);
+      CREATE INDEX campaigns_type_owner_idx
+        ON campaigns(campaign_type, owner);
+      CREATE INDEX campaign_versions_subject_idx
+        ON campaign_versions(campaign_id, version DESC);
+      CREATE INDEX campaign_audit_open_idx
+        ON campaign_migration_audit(campaign_id, resolved_at);
+
+      DROP TRIGGER IF EXISTS campaigns_search_insert;
+      DROP TRIGGER IF EXISTS campaigns_search_update;
+      DROP TRIGGER IF EXISTS campaigns_search_delete;
+      DELETE FROM global_search WHERE entity_type = 'campaign';
+      INSERT INTO global_search(entity_type, entity_id, title, body, tags)
+        SELECT 'campaign', id, title,
+          coalesce(mission_statement, '') || ' ' ||
+          coalesce(success_definition, '') || ' ' || coalesce(objective, ''),
+          tags
+        FROM campaigns WHERE lifecycle_status != 'Archived';
+
+      CREATE TRIGGER campaigns_search_insert AFTER INSERT ON campaigns
+      WHEN new.lifecycle_status != 'Archived'
+      BEGIN
+        INSERT INTO global_search VALUES (
+          'campaign', new.id, new.title,
+          coalesce(new.mission_statement, '') || ' ' ||
+          coalesce(new.success_definition, '') || ' ' || coalesce(new.objective, ''),
+          new.tags
+        );
+      END;
+      CREATE TRIGGER campaigns_search_update AFTER UPDATE ON campaigns
+      BEGIN
+        DELETE FROM global_search WHERE entity_type = 'campaign' AND entity_id = old.id;
+        INSERT INTO global_search(entity_type, entity_id, title, body, tags)
+          SELECT 'campaign', new.id, new.title,
+            coalesce(new.mission_statement, '') || ' ' ||
+            coalesce(new.success_definition, '') || ' ' || coalesce(new.objective, ''),
+            new.tags
+          WHERE new.lifecycle_status != 'Archived';
+      END;
+      CREATE TRIGGER campaigns_search_delete AFTER DELETE ON campaigns
+      BEGIN
+        DELETE FROM global_search WHERE entity_type = 'campaign' AND entity_id = old.id;
+      END;
+    `,
+  },
+  {
+    version: 13,
+    name: "governed_campaign_portfolio_and_milestones",
+    sql: `
+      ALTER TABLE story_campaigns ADD COLUMN role TEXT NOT NULL DEFAULT 'Supporting'
+        CHECK (role IN ('Anchor', 'Supporting', 'FollowUp', 'Reference'));
+      ALTER TABLE story_campaigns ADD COLUMN position INTEGER NOT NULL DEFAULT 0
+        CHECK (position >= 0);
+      ALTER TABLE story_campaigns ADD COLUMN contribution_note TEXT;
+      ALTER TABLE story_campaigns ADD COLUMN created_by TEXT NOT NULL DEFAULT 'Local Owner';
+      ALTER TABLE story_campaigns ADD COLUMN version INTEGER NOT NULL DEFAULT 1
+        CHECK (version >= 1);
+
+      UPDATE story_campaigns
+      SET role = CASE WHEN is_primary = 1 THEN 'Anchor' ELSE 'Supporting' END;
+
+      INSERT OR IGNORE INTO campaign_migration_audit (
+        campaign_id, issue_code, severity, detail
+      )
+      SELECT membership.campaign_id, 'MultiplePrimaryStoryMembership', 'Warning',
+        'Story ' || membership.story_id ||
+        ' had multiple legacy primary Campaigns; the lowest Campaign ID remained primary.'
+      FROM story_campaigns membership
+      WHERE membership.is_primary = 1
+        AND EXISTS (
+          SELECT 1 FROM story_campaigns preceding
+          WHERE preceding.story_id = membership.story_id
+            AND preceding.is_primary = 1
+            AND preceding.campaign_id < membership.campaign_id
+        );
+
+      UPDATE story_campaigns
+      SET is_primary = 0
+      WHERE is_primary = 1
+        AND EXISTS (
+          SELECT 1 FROM story_campaigns preceding
+          WHERE preceding.story_id = story_campaigns.story_id
+            AND preceding.is_primary = 1
+            AND preceding.campaign_id < story_campaigns.campaign_id
+        );
+
+      UPDATE story_campaigns
+      SET position = (
+        SELECT count(*)
+        FROM story_campaigns preceding
+        WHERE preceding.campaign_id = story_campaigns.campaign_id
+          AND (
+            preceding.linked_at < story_campaigns.linked_at
+            OR (
+              preceding.linked_at = story_campaigns.linked_at
+              AND preceding.story_id < story_campaigns.story_id
+            )
+          )
+      );
+
+      CREATE UNIQUE INDEX story_campaigns_one_primary_per_story_idx
+        ON story_campaigns(story_id) WHERE is_primary = 1;
+      CREATE UNIQUE INDEX story_campaigns_campaign_position_idx
+        ON story_campaigns(campaign_id, position);
+      CREATE INDEX story_campaigns_story_backlink_idx
+        ON story_campaigns(story_id, linked_at DESC);
+
+      CREATE TABLE campaign_milestones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        description TEXT,
+        position INTEGER NOT NULL DEFAULT 0 CHECK (position >= 0),
+        target_date TEXT,
+        status TEXT NOT NULL DEFAULT 'Planned'
+          CHECK (status IN ('Planned', 'InProgress', 'Completed', 'Skipped')),
+        completion_note TEXT,
+        completed_at TEXT,
+        version INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+        UNIQUE (campaign_id, position)
+      );
+
+      CREATE INDEX campaign_milestones_campaign_status_idx
+        ON campaign_milestones(campaign_id, status, position);
+    `,
+  },
 ];
 
 export function runMigrations(database: DatabaseSync): number[] {
@@ -971,23 +1239,29 @@ export function runMigrations(database: DatabaseSync): number[] {
     );
   `);
   const applied = new Set(
-    (database.prepare('SELECT version FROM schema_migrations').all() as Array<{ version: number }>)
-      .map((row) => Number(row.version)),
+    (
+      database.prepare("SELECT version FROM schema_migrations").all() as Array<{
+        version: number;
+      }>
+    ).map((row) => Number(row.version)),
   );
   const completed: number[] = [];
   for (const migration of migrations) {
     if (applied.has(migration.version)) continue;
-    database.exec('BEGIN IMMEDIATE');
+    database.exec("BEGIN IMMEDIATE");
     try {
       database.exec(migration.sql);
-      database.prepare(
-        'INSERT INTO schema_migrations (version, name) VALUES (?, ?)',
-      ).run(migration.version, migration.name);
-      database.exec('COMMIT');
+      database
+        .prepare("INSERT INTO schema_migrations (version, name) VALUES (?, ?)")
+        .run(migration.version, migration.name);
+      database.exec("COMMIT");
       completed.push(migration.version);
     } catch (error) {
-      database.exec('ROLLBACK');
-      throw new Error(`SQLite migration ${migration.version} (${migration.name}) failed`, { cause: error });
+      database.exec("ROLLBACK");
+      throw new Error(
+        `SQLite migration ${migration.version} (${migration.name}) failed`,
+        { cause: error },
+      );
     }
   }
   return completed;

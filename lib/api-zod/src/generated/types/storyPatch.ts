@@ -31,8 +31,6 @@ export interface StoryPatch {
   projectId?: number | null;
   /** @nullable */
   workspaceId?: number | null;
-  /** @nullable */
-  campaignId?: number | null;
   storyType?: StoryPatchStoryType;
   /** @nullable */
   author?: string | null;

@@ -25,8 +25,23 @@ import type {
   AssetInput,
   AssetPatch,
   Campaign,
+  CampaignCompletionInput,
   CampaignInput,
+  CampaignMilestone,
+  CampaignMilestoneInput,
+  CampaignMilestoneOrderInput,
+  CampaignMilestonePatch,
   CampaignPatch,
+  CampaignPhaseInput,
+  CampaignReasonInput,
+  CampaignStoryBacklink,
+  CampaignStoryInput,
+  CampaignStoryMembership,
+  CampaignStoryOrderInput,
+  CampaignStoryPatch,
+  CampaignTransitionInput,
+  CampaignVersion,
+  CampaignVersionInput,
   DashboardStats,
   Evidence,
   EvidenceIngest,
@@ -59,6 +74,7 @@ import type {
   KnowledgeVersion,
   KnowledgeVersionInput,
   ListAssetsParams,
+  ListCampaignsParams,
   ListEvidenceParams,
   ListKnowledgeParams,
   ListStoriesParams,
@@ -2605,20 +2621,27 @@ export const useArchiveStory = <TError = ErrorType<unknown>,
       return useMutation(getArchiveStoryMutationOptions(options));
     }
 
-export const getListCampaignsUrl = () => {
+export const getListCampaignsUrl = (params?: ListCampaignsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/campaigns`
+  return stringifiedParams.length > 0 ? `/api/campaigns?${stringifiedParams}` : `/api/campaigns`
 }
 
 /**
  * @summary List campaigns
  */
-export const listCampaigns = async ( options?: Parameters<typeof customFetch>[1]): Promise<Campaign[]> => {
+export const listCampaigns = async (params?: ListCampaignsParams, options?: Parameters<typeof customFetch>[1]): Promise<Campaign[]> => {
 
-  return customFetch<Campaign[]>(getListCampaignsUrl(),
+  return customFetch<Campaign[]>(getListCampaignsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2631,23 +2654,23 @@ export const listCampaigns = async ( options?: Parameters<typeof customFetch>[1]
 
 
 
-export const getListCampaignsQueryKey = () => {
+export const getListCampaignsQueryKey = (params?: ListCampaignsParams,) => {
     return [
-    `/api/campaigns`
+    `/api/campaigns`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListCampaignsQueryOptions = <TData = Awaited<ReturnType<typeof listCampaigns>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCampaigns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListCampaignsQueryOptions = <TData = Awaited<ReturnType<typeof listCampaigns>>, TError = ErrorType<unknown>>(params?: ListCampaignsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCampaigns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListCampaignsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListCampaignsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCampaigns>>> = ({ signal }) => listCampaigns({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCampaigns>>> = ({ signal }) => listCampaigns(params, { signal, ...requestOptions });
 
 
 
@@ -2665,11 +2688,11 @@ export type ListCampaignsQueryError = ErrorType<unknown>
  */
 
 export function useListCampaigns<TData = Awaited<ReturnType<typeof listCampaigns>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCampaigns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListCampaignsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCampaigns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListCampaignsQueryOptions(options)
+  const queryOptions = getListCampaignsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -2911,11 +2934,12 @@ export const getDeleteCampaignUrl = (id: number,) => {
 }
 
 /**
- * @summary Delete a campaign
+ * @deprecated
+ * @summary Deprecated; archive Campaigns instead
  */
-export const deleteCampaign = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const deleteCampaign = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<unknown> => {
 
-  return customFetch<void>(getDeleteCampaignUrl(id),
+  return customFetch<unknown>(getDeleteCampaignUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -2960,7 +2984,8 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteCampaignMutationError = ErrorType<void>
 
     /**
- * @summary Delete a campaign
+ * @deprecated
+ * @summary Deprecated; archive Campaigns instead
  */
 export const useDeleteCampaign = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCampaign>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -2971,6 +2996,1222 @@ export const useDeleteCampaign = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getDeleteCampaignMutationOptions(options));
+    }
+
+export const getTransitionCampaignUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/transition`
+}
+
+export const transitionCampaign = async (id: number,
+    campaignTransitionInput: CampaignTransitionInput, options?: Parameters<typeof customFetch>[1]): Promise<Campaign> => {
+
+  return customFetch<Campaign>(getTransitionCampaignUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(campaignTransitionInput)
+  }
+);}
+
+
+
+
+
+export const getTransitionCampaignMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof transitionCampaign>>, TError,{id: number;data: BodyType<CampaignTransitionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof transitionCampaign>>, TError,{id: number;data: BodyType<CampaignTransitionInput>}, TContext> => {
+
+const mutationKey = ['transitionCampaign'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof transitionCampaign>>, {id: number;data: BodyType<CampaignTransitionInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  transitionCampaign(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TransitionCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof transitionCampaign>>>
+    export type TransitionCampaignMutationBody = BodyType<CampaignTransitionInput>
+    export type TransitionCampaignMutationError = ErrorType<void>
+
+    export const useTransitionCampaign = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof transitionCampaign>>, TError,{id: number;data: BodyType<CampaignTransitionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof transitionCampaign>>,
+        TError,
+        {id: number;data: BodyType<CampaignTransitionInput>},
+        TContext
+      > => {
+      return useMutation(getTransitionCampaignMutationOptions(options));
+    }
+
+export const getCompleteCampaignUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/complete`
+}
+
+export const completeCampaign = async (id: number,
+    campaignCompletionInput: CampaignCompletionInput, options?: Parameters<typeof customFetch>[1]): Promise<Campaign> => {
+
+  return customFetch<Campaign>(getCompleteCampaignUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(campaignCompletionInput)
+  }
+);}
+
+
+
+
+
+export const getCompleteCampaignMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeCampaign>>, TError,{id: number;data: BodyType<CampaignCompletionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeCampaign>>, TError,{id: number;data: BodyType<CampaignCompletionInput>}, TContext> => {
+
+const mutationKey = ['completeCampaign'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeCampaign>>, {id: number;data: BodyType<CampaignCompletionInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  completeCampaign(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof completeCampaign>>>
+    export type CompleteCampaignMutationBody = BodyType<CampaignCompletionInput>
+    export type CompleteCampaignMutationError = ErrorType<void>
+
+    export const useCompleteCampaign = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeCampaign>>, TError,{id: number;data: BodyType<CampaignCompletionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof completeCampaign>>,
+        TError,
+        {id: number;data: BodyType<CampaignCompletionInput>},
+        TContext
+      > => {
+      return useMutation(getCompleteCampaignMutationOptions(options));
+    }
+
+export const getChangeCampaignPhaseUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/phase`
+}
+
+export const changeCampaignPhase = async (id: number,
+    campaignPhaseInput: CampaignPhaseInput, options?: Parameters<typeof customFetch>[1]): Promise<Campaign> => {
+
+  return customFetch<Campaign>(getChangeCampaignPhaseUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(campaignPhaseInput)
+  }
+);}
+
+
+
+
+
+export const getChangeCampaignPhaseMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeCampaignPhase>>, TError,{id: number;data: BodyType<CampaignPhaseInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof changeCampaignPhase>>, TError,{id: number;data: BodyType<CampaignPhaseInput>}, TContext> => {
+
+const mutationKey = ['changeCampaignPhase'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof changeCampaignPhase>>, {id: number;data: BodyType<CampaignPhaseInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  changeCampaignPhase(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ChangeCampaignPhaseMutationResult = NonNullable<Awaited<ReturnType<typeof changeCampaignPhase>>>
+    export type ChangeCampaignPhaseMutationBody = BodyType<CampaignPhaseInput>
+    export type ChangeCampaignPhaseMutationError = ErrorType<void>
+
+    export const useChangeCampaignPhase = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeCampaignPhase>>, TError,{id: number;data: BodyType<CampaignPhaseInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof changeCampaignPhase>>,
+        TError,
+        {id: number;data: BodyType<CampaignPhaseInput>},
+        TContext
+      > => {
+      return useMutation(getChangeCampaignPhaseMutationOptions(options));
+    }
+
+export const getReopenCampaignUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/reopen`
+}
+
+export const reopenCampaign = async (id: number,
+    campaignReasonInput: CampaignReasonInput, options?: Parameters<typeof customFetch>[1]): Promise<Campaign> => {
+
+  return customFetch<Campaign>(getReopenCampaignUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(campaignReasonInput)
+  }
+);}
+
+
+
+
+
+export const getReopenCampaignMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reopenCampaign>>, TError,{id: number;data: BodyType<CampaignReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reopenCampaign>>, TError,{id: number;data: BodyType<CampaignReasonInput>}, TContext> => {
+
+const mutationKey = ['reopenCampaign'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reopenCampaign>>, {id: number;data: BodyType<CampaignReasonInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reopenCampaign(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReopenCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof reopenCampaign>>>
+    export type ReopenCampaignMutationBody = BodyType<CampaignReasonInput>
+    export type ReopenCampaignMutationError = ErrorType<void>
+
+    export const useReopenCampaign = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reopenCampaign>>, TError,{id: number;data: BodyType<CampaignReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reopenCampaign>>,
+        TError,
+        {id: number;data: BodyType<CampaignReasonInput>},
+        TContext
+      > => {
+      return useMutation(getReopenCampaignMutationOptions(options));
+    }
+
+export const getArchiveCampaignUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/archive`
+}
+
+export const archiveCampaign = async (id: number,
+    campaignVersionInput: CampaignVersionInput, options?: Parameters<typeof customFetch>[1]): Promise<Campaign> => {
+
+  return customFetch<Campaign>(getArchiveCampaignUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(campaignVersionInput)
+  }
+);}
+
+
+
+
+
+export const getArchiveCampaignMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archiveCampaign>>, TError,{id: number;data: BodyType<CampaignVersionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof archiveCampaign>>, TError,{id: number;data: BodyType<CampaignVersionInput>}, TContext> => {
+
+const mutationKey = ['archiveCampaign'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof archiveCampaign>>, {id: number;data: BodyType<CampaignVersionInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  archiveCampaign(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ArchiveCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof archiveCampaign>>>
+    export type ArchiveCampaignMutationBody = BodyType<CampaignVersionInput>
+    export type ArchiveCampaignMutationError = ErrorType<void>
+
+    export const useArchiveCampaign = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archiveCampaign>>, TError,{id: number;data: BodyType<CampaignVersionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof archiveCampaign>>,
+        TError,
+        {id: number;data: BodyType<CampaignVersionInput>},
+        TContext
+      > => {
+      return useMutation(getArchiveCampaignMutationOptions(options));
+    }
+
+export const getRestoreCampaignUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/restore`
+}
+
+export const restoreCampaign = async (id: number,
+    campaignVersionInput: CampaignVersionInput, options?: Parameters<typeof customFetch>[1]): Promise<Campaign> => {
+
+  return customFetch<Campaign>(getRestoreCampaignUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(campaignVersionInput)
+  }
+);}
+
+
+
+
+
+export const getRestoreCampaignMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreCampaign>>, TError,{id: number;data: BodyType<CampaignVersionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof restoreCampaign>>, TError,{id: number;data: BodyType<CampaignVersionInput>}, TContext> => {
+
+const mutationKey = ['restoreCampaign'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restoreCampaign>>, {id: number;data: BodyType<CampaignVersionInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  restoreCampaign(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestoreCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof restoreCampaign>>>
+    export type RestoreCampaignMutationBody = BodyType<CampaignVersionInput>
+    export type RestoreCampaignMutationError = ErrorType<void>
+
+    export const useRestoreCampaign = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreCampaign>>, TError,{id: number;data: BodyType<CampaignVersionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof restoreCampaign>>,
+        TError,
+        {id: number;data: BodyType<CampaignVersionInput>},
+        TContext
+      > => {
+      return useMutation(getRestoreCampaignMutationOptions(options));
+    }
+
+export const getListCampaignVersionsUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/versions`
+}
+
+export const listCampaignVersions = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<CampaignVersion[]> => {
+
+  return customFetch<CampaignVersion[]>(getListCampaignVersionsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCampaignVersionsQueryKey = (id: number,) => {
+    return [
+    `/api/campaigns/${id}/versions`
+    ] as const;
+    }
+
+
+export const getListCampaignVersionsQueryOptions = <TData = Awaited<ReturnType<typeof listCampaignVersions>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCampaignVersions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCampaignVersionsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCampaignVersions>>> = ({ signal }) => listCampaignVersions(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCampaignVersions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCampaignVersionsQueryResult = NonNullable<Awaited<ReturnType<typeof listCampaignVersions>>>
+export type ListCampaignVersionsQueryError = ErrorType<unknown>
+
+
+
+export function useListCampaignVersions<TData = Awaited<ReturnType<typeof listCampaignVersions>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCampaignVersions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCampaignVersionsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListCampaignStoriesUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/stories`
+}
+
+export const listCampaignStories = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<CampaignStoryMembership[]> => {
+
+  return customFetch<CampaignStoryMembership[]>(getListCampaignStoriesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCampaignStoriesQueryKey = (id: number,) => {
+    return [
+    `/api/campaigns/${id}/stories`
+    ] as const;
+    }
+
+
+export const getListCampaignStoriesQueryOptions = <TData = Awaited<ReturnType<typeof listCampaignStories>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCampaignStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCampaignStoriesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCampaignStories>>> = ({ signal }) => listCampaignStories(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCampaignStories>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCampaignStoriesQueryResult = NonNullable<Awaited<ReturnType<typeof listCampaignStories>>>
+export type ListCampaignStoriesQueryError = ErrorType<unknown>
+
+
+
+export function useListCampaignStories<TData = Awaited<ReturnType<typeof listCampaignStories>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCampaignStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCampaignStoriesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAddCampaignStoryUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/stories`
+}
+
+export const addCampaignStory = async (id: number,
+    campaignStoryInput: CampaignStoryInput, options?: Parameters<typeof customFetch>[1]): Promise<CampaignStoryMembership> => {
+
+  return customFetch<CampaignStoryMembership>(getAddCampaignStoryUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(campaignStoryInput)
+  }
+);}
+
+
+
+
+
+export const getAddCampaignStoryMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCampaignStory>>, TError,{id: number;data: BodyType<CampaignStoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addCampaignStory>>, TError,{id: number;data: BodyType<CampaignStoryInput>}, TContext> => {
+
+const mutationKey = ['addCampaignStory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addCampaignStory>>, {id: number;data: BodyType<CampaignStoryInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  addCampaignStory(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddCampaignStoryMutationResult = NonNullable<Awaited<ReturnType<typeof addCampaignStory>>>
+    export type AddCampaignStoryMutationBody = BodyType<CampaignStoryInput>
+    export type AddCampaignStoryMutationError = ErrorType<void>
+
+    export const useAddCampaignStory = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCampaignStory>>, TError,{id: number;data: BodyType<CampaignStoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addCampaignStory>>,
+        TError,
+        {id: number;data: BodyType<CampaignStoryInput>},
+        TContext
+      > => {
+      return useMutation(getAddCampaignStoryMutationOptions(options));
+    }
+
+export const getReorderCampaignStoriesUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/stories/order`
+}
+
+export const reorderCampaignStories = async (id: number,
+    campaignStoryOrderInput: CampaignStoryOrderInput, options?: Parameters<typeof customFetch>[1]): Promise<CampaignStoryMembership[]> => {
+
+  return customFetch<CampaignStoryMembership[]>(getReorderCampaignStoriesUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(campaignStoryOrderInput)
+  }
+);}
+
+
+
+
+
+export const getReorderCampaignStoriesMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reorderCampaignStories>>, TError,{id: number;data: BodyType<CampaignStoryOrderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reorderCampaignStories>>, TError,{id: number;data: BodyType<CampaignStoryOrderInput>}, TContext> => {
+
+const mutationKey = ['reorderCampaignStories'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reorderCampaignStories>>, {id: number;data: BodyType<CampaignStoryOrderInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reorderCampaignStories(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReorderCampaignStoriesMutationResult = NonNullable<Awaited<ReturnType<typeof reorderCampaignStories>>>
+    export type ReorderCampaignStoriesMutationBody = BodyType<CampaignStoryOrderInput>
+    export type ReorderCampaignStoriesMutationError = ErrorType<void>
+
+    export const useReorderCampaignStories = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reorderCampaignStories>>, TError,{id: number;data: BodyType<CampaignStoryOrderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reorderCampaignStories>>,
+        TError,
+        {id: number;data: BodyType<CampaignStoryOrderInput>},
+        TContext
+      > => {
+      return useMutation(getReorderCampaignStoriesMutationOptions(options));
+    }
+
+export const getUpdateCampaignStoryUrl = (id: number,
+    storyId: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/stories/${storyId}`
+}
+
+export const updateCampaignStory = async (id: number,
+    storyId: number,
+    campaignStoryPatch: CampaignStoryPatch, options?: Parameters<typeof customFetch>[1]): Promise<CampaignStoryMembership> => {
+
+  return customFetch<CampaignStoryMembership>(getUpdateCampaignStoryUrl(id,storyId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(campaignStoryPatch)
+  }
+);}
+
+
+
+
+
+export const getUpdateCampaignStoryMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCampaignStory>>, TError,{id: number;storyId: number;data: BodyType<CampaignStoryPatch>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateCampaignStory>>, TError,{id: number;storyId: number;data: BodyType<CampaignStoryPatch>}, TContext> => {
+
+const mutationKey = ['updateCampaignStory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCampaignStory>>, {id: number;storyId: number;data: BodyType<CampaignStoryPatch>}> = (props) => {
+          const {id,storyId,data} = props ?? {};
+
+          return  updateCampaignStory(id,storyId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCampaignStoryMutationResult = NonNullable<Awaited<ReturnType<typeof updateCampaignStory>>>
+    export type UpdateCampaignStoryMutationBody = BodyType<CampaignStoryPatch>
+    export type UpdateCampaignStoryMutationError = ErrorType<void>
+
+    export const useUpdateCampaignStory = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCampaignStory>>, TError,{id: number;storyId: number;data: BodyType<CampaignStoryPatch>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateCampaignStory>>,
+        TError,
+        {id: number;storyId: number;data: BodyType<CampaignStoryPatch>},
+        TContext
+      > => {
+      return useMutation(getUpdateCampaignStoryMutationOptions(options));
+    }
+
+export const getRemoveCampaignStoryUrl = (id: number,
+    storyId: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/stories/${storyId}`
+}
+
+export const removeCampaignStory = async (id: number,
+    storyId: number,
+    campaignVersionInput: CampaignVersionInput, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getRemoveCampaignStoryUrl(id,storyId),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(campaignVersionInput)
+  }
+);}
+
+
+
+
+
+export const getRemoveCampaignStoryMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeCampaignStory>>, TError,{id: number;storyId: number;data: BodyType<CampaignVersionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeCampaignStory>>, TError,{id: number;storyId: number;data: BodyType<CampaignVersionInput>}, TContext> => {
+
+const mutationKey = ['removeCampaignStory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeCampaignStory>>, {id: number;storyId: number;data: BodyType<CampaignVersionInput>}> = (props) => {
+          const {id,storyId,data} = props ?? {};
+
+          return  removeCampaignStory(id,storyId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveCampaignStoryMutationResult = NonNullable<Awaited<ReturnType<typeof removeCampaignStory>>>
+    export type RemoveCampaignStoryMutationBody = BodyType<CampaignVersionInput>
+    export type RemoveCampaignStoryMutationError = ErrorType<void>
+
+    export const useRemoveCampaignStory = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeCampaignStory>>, TError,{id: number;storyId: number;data: BodyType<CampaignVersionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeCampaignStory>>,
+        TError,
+        {id: number;storyId: number;data: BodyType<CampaignVersionInput>},
+        TContext
+      > => {
+      return useMutation(getRemoveCampaignStoryMutationOptions(options));
+    }
+
+export const getListStoryCampaignBacklinksUrl = (id: number,) => {
+
+
+
+
+  return `/api/stories/${id}/campaigns`
+}
+
+export const listStoryCampaignBacklinks = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<CampaignStoryBacklink[]> => {
+
+  return customFetch<CampaignStoryBacklink[]>(getListStoryCampaignBacklinksUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListStoryCampaignBacklinksQueryKey = (id: number,) => {
+    return [
+    `/api/stories/${id}/campaigns`
+    ] as const;
+    }
+
+
+export const getListStoryCampaignBacklinksQueryOptions = <TData = Awaited<ReturnType<typeof listStoryCampaignBacklinks>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStoryCampaignBacklinks>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListStoryCampaignBacklinksQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listStoryCampaignBacklinks>>> = ({ signal }) => listStoryCampaignBacklinks(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listStoryCampaignBacklinks>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListStoryCampaignBacklinksQueryResult = NonNullable<Awaited<ReturnType<typeof listStoryCampaignBacklinks>>>
+export type ListStoryCampaignBacklinksQueryError = ErrorType<unknown>
+
+
+
+export function useListStoryCampaignBacklinks<TData = Awaited<ReturnType<typeof listStoryCampaignBacklinks>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStoryCampaignBacklinks>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListStoryCampaignBacklinksQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListCampaignMilestonesUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/milestones`
+}
+
+export const listCampaignMilestones = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<CampaignMilestone[]> => {
+
+  return customFetch<CampaignMilestone[]>(getListCampaignMilestonesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCampaignMilestonesQueryKey = (id: number,) => {
+    return [
+    `/api/campaigns/${id}/milestones`
+    ] as const;
+    }
+
+
+export const getListCampaignMilestonesQueryOptions = <TData = Awaited<ReturnType<typeof listCampaignMilestones>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCampaignMilestones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCampaignMilestonesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCampaignMilestones>>> = ({ signal }) => listCampaignMilestones(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCampaignMilestones>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCampaignMilestonesQueryResult = NonNullable<Awaited<ReturnType<typeof listCampaignMilestones>>>
+export type ListCampaignMilestonesQueryError = ErrorType<unknown>
+
+
+
+export function useListCampaignMilestones<TData = Awaited<ReturnType<typeof listCampaignMilestones>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCampaignMilestones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCampaignMilestonesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateCampaignMilestoneUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/milestones`
+}
+
+export const createCampaignMilestone = async (id: number,
+    campaignMilestoneInput: CampaignMilestoneInput, options?: Parameters<typeof customFetch>[1]): Promise<CampaignMilestone> => {
+
+  return customFetch<CampaignMilestone>(getCreateCampaignMilestoneUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(campaignMilestoneInput)
+  }
+);}
+
+
+
+
+
+export const getCreateCampaignMilestoneMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCampaignMilestone>>, TError,{id: number;data: BodyType<CampaignMilestoneInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCampaignMilestone>>, TError,{id: number;data: BodyType<CampaignMilestoneInput>}, TContext> => {
+
+const mutationKey = ['createCampaignMilestone'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCampaignMilestone>>, {id: number;data: BodyType<CampaignMilestoneInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createCampaignMilestone(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCampaignMilestoneMutationResult = NonNullable<Awaited<ReturnType<typeof createCampaignMilestone>>>
+    export type CreateCampaignMilestoneMutationBody = BodyType<CampaignMilestoneInput>
+    export type CreateCampaignMilestoneMutationError = ErrorType<void>
+
+    export const useCreateCampaignMilestone = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCampaignMilestone>>, TError,{id: number;data: BodyType<CampaignMilestoneInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCampaignMilestone>>,
+        TError,
+        {id: number;data: BodyType<CampaignMilestoneInput>},
+        TContext
+      > => {
+      return useMutation(getCreateCampaignMilestoneMutationOptions(options));
+    }
+
+export const getReorderCampaignMilestonesUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/milestones/order`
+}
+
+export const reorderCampaignMilestones = async (id: number,
+    campaignMilestoneOrderInput: CampaignMilestoneOrderInput, options?: Parameters<typeof customFetch>[1]): Promise<CampaignMilestone[]> => {
+
+  return customFetch<CampaignMilestone[]>(getReorderCampaignMilestonesUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(campaignMilestoneOrderInput)
+  }
+);}
+
+
+
+
+
+export const getReorderCampaignMilestonesMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reorderCampaignMilestones>>, TError,{id: number;data: BodyType<CampaignMilestoneOrderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reorderCampaignMilestones>>, TError,{id: number;data: BodyType<CampaignMilestoneOrderInput>}, TContext> => {
+
+const mutationKey = ['reorderCampaignMilestones'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reorderCampaignMilestones>>, {id: number;data: BodyType<CampaignMilestoneOrderInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reorderCampaignMilestones(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReorderCampaignMilestonesMutationResult = NonNullable<Awaited<ReturnType<typeof reorderCampaignMilestones>>>
+    export type ReorderCampaignMilestonesMutationBody = BodyType<CampaignMilestoneOrderInput>
+    export type ReorderCampaignMilestonesMutationError = ErrorType<void>
+
+    export const useReorderCampaignMilestones = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reorderCampaignMilestones>>, TError,{id: number;data: BodyType<CampaignMilestoneOrderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reorderCampaignMilestones>>,
+        TError,
+        {id: number;data: BodyType<CampaignMilestoneOrderInput>},
+        TContext
+      > => {
+      return useMutation(getReorderCampaignMilestonesMutationOptions(options));
+    }
+
+export const getUpdateCampaignMilestoneUrl = (id: number,
+    milestoneId: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/milestones/${milestoneId}`
+}
+
+export const updateCampaignMilestone = async (id: number,
+    milestoneId: number,
+    campaignMilestonePatch: CampaignMilestonePatch, options?: Parameters<typeof customFetch>[1]): Promise<CampaignMilestone> => {
+
+  return customFetch<CampaignMilestone>(getUpdateCampaignMilestoneUrl(id,milestoneId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(campaignMilestonePatch)
+  }
+);}
+
+
+
+
+
+export const getUpdateCampaignMilestoneMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCampaignMilestone>>, TError,{id: number;milestoneId: number;data: BodyType<CampaignMilestonePatch>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateCampaignMilestone>>, TError,{id: number;milestoneId: number;data: BodyType<CampaignMilestonePatch>}, TContext> => {
+
+const mutationKey = ['updateCampaignMilestone'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCampaignMilestone>>, {id: number;milestoneId: number;data: BodyType<CampaignMilestonePatch>}> = (props) => {
+          const {id,milestoneId,data} = props ?? {};
+
+          return  updateCampaignMilestone(id,milestoneId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCampaignMilestoneMutationResult = NonNullable<Awaited<ReturnType<typeof updateCampaignMilestone>>>
+    export type UpdateCampaignMilestoneMutationBody = BodyType<CampaignMilestonePatch>
+    export type UpdateCampaignMilestoneMutationError = ErrorType<void>
+
+    export const useUpdateCampaignMilestone = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCampaignMilestone>>, TError,{id: number;milestoneId: number;data: BodyType<CampaignMilestonePatch>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateCampaignMilestone>>,
+        TError,
+        {id: number;milestoneId: number;data: BodyType<CampaignMilestonePatch>},
+        TContext
+      > => {
+      return useMutation(getUpdateCampaignMilestoneMutationOptions(options));
+    }
+
+export const getRemoveCampaignMilestoneUrl = (id: number,
+    milestoneId: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/milestones/${milestoneId}`
+}
+
+export const removeCampaignMilestone = async (id: number,
+    milestoneId: number,
+    campaignVersionInput: CampaignVersionInput, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getRemoveCampaignMilestoneUrl(id,milestoneId),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(campaignVersionInput)
+  }
+);}
+
+
+
+
+
+export const getRemoveCampaignMilestoneMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeCampaignMilestone>>, TError,{id: number;milestoneId: number;data: BodyType<CampaignVersionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeCampaignMilestone>>, TError,{id: number;milestoneId: number;data: BodyType<CampaignVersionInput>}, TContext> => {
+
+const mutationKey = ['removeCampaignMilestone'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeCampaignMilestone>>, {id: number;milestoneId: number;data: BodyType<CampaignVersionInput>}> = (props) => {
+          const {id,milestoneId,data} = props ?? {};
+
+          return  removeCampaignMilestone(id,milestoneId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveCampaignMilestoneMutationResult = NonNullable<Awaited<ReturnType<typeof removeCampaignMilestone>>>
+    export type RemoveCampaignMilestoneMutationBody = BodyType<CampaignVersionInput>
+    export type RemoveCampaignMilestoneMutationError = ErrorType<void>
+
+    export const useRemoveCampaignMilestone = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeCampaignMilestone>>, TError,{id: number;milestoneId: number;data: BodyType<CampaignVersionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeCampaignMilestone>>,
+        TError,
+        {id: number;milestoneId: number;data: BodyType<CampaignVersionInput>},
+        TContext
+      > => {
+      return useMutation(getRemoveCampaignMilestoneMutationOptions(options));
     }
 
 export const getListEvidenceUrl = (params?: ListEvidenceParams,) => {

@@ -187,3 +187,112 @@ test("authors, governs, versions, and archives Workspace Knowledge", async ({
   expect(record.owner).toBe("Browser Owner");
   expect(record.version).toBeGreaterThan(1);
 });
+
+test("defines, activates, versions, archives, and restores a governed Campaign", async ({
+  page,
+}) => {
+  const suffix = Date.now();
+  const workspace = await page.request.post("/api/workspaces", {
+    data: { name: `Campaign Workspace ${suffix}`, purpose: "Product" },
+  });
+  expect(workspace.ok()).toBeTruthy();
+  const workspaceRecord = await workspace.json();
+  const created = await page.request.post("/api/campaigns", {
+    data: {
+      title: `Governed Campaign ${suffix}`,
+      workspaceId: workspaceRecord.id,
+      campaignType: "ProductDevelopment",
+    },
+  });
+  expect(created.ok()).toBeTruthy();
+  const campaign = await created.json();
+  const storyResponse = await page.request.post("/api/stories", {
+    data: {
+      title: `Campaign Portfolio Story ${suffix}`,
+      workspaceId: workspaceRecord.id,
+      status: "Draft",
+    },
+  });
+  expect(storyResponse.ok()).toBeTruthy();
+  const story = await storyResponse.json();
+
+  const started = performance.now();
+  await page.goto(`/campaigns/${campaign.id}`);
+  await expect(page.getByLabel("Campaign title")).toHaveValue(campaign.title);
+  expect(performance.now() - started).toBeLessThan(5000);
+  await expect(
+    page.getByRole("heading", { name: "Mission contract" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Version trail" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Story portfolio" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Milestone plan" }),
+  ).toBeVisible();
+
+  await page
+    .getByPlaceholder("Mission statement")
+    .fill("Coordinate an evidence-backed engineering narrative.");
+  await page
+    .getByPlaceholder("Success definition")
+    .fill("A reviewable Campaign mission is active.");
+  await page.getByPlaceholder("Accountable owner").fill("Browser Owner");
+  await page.getByLabel("Target Story count").fill("1");
+  await page.getByRole("button", { name: "Save checkpoint" }).click();
+  await expect(
+    page.getByText("Campaign mission edited", { exact: false }),
+  ).toBeVisible();
+  await page.getByLabel("Story to add").selectOption(String(story.id));
+  await page.getByLabel("Story role").selectOption("Anchor");
+  await page
+    .getByPlaceholder("Contribution note")
+    .fill("Carries the Campaign thesis");
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(page.getByText(story.title, { exact: true })).toBeVisible();
+  await page.getByPlaceholder("Milestone title").fill("Portfolio accepted");
+  await page.getByRole("button", { name: "Add milestone" }).click();
+  await expect(
+    page.getByText("Portfolio accepted", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Activate" }).focus();
+  await expect(page.getByRole("button", { name: "Activate" })).toBeFocused();
+  await page.getByRole("button", { name: "Activate" }).click();
+  await expect(page.getByText("Active", { exact: true }).first()).toBeVisible();
+
+  await page.getByRole("button", { name: "Archive", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Restore" })).toBeVisible();
+  await expect(page.getByLabel("Campaign title")).toBeDisabled();
+  await page.getByRole("button", { name: "Restore" }).click();
+  await expect(
+    page.getByRole("button", { name: "Archive", exact: true }),
+  ).toBeVisible();
+
+  const persisted = await page.request.get(`/api/campaigns/${campaign.id}`);
+  const record = await persisted.json();
+  expect(record.missionStatement).toContain("evidence-backed");
+  expect(record.owner).toBe("Browser Owner");
+  expect(record.lifecycleStatus).toBe("Active");
+  expect(record.version).toBeGreaterThan(1);
+  const backlinks = await page.request.get(
+    `/api/stories/${story.id}/campaigns`,
+  );
+  expect(backlinks.ok()).toBeTruthy();
+  expect((await backlinks.json())[0].campaignId).toBe(campaign.id);
+
+  const concurrent = await page.request.patch(`/api/campaigns/${campaign.id}`, {
+    data: {
+      expectedVersion: record.version,
+      owner: "Concurrent Browser Writer",
+      changeSummary: "Conformance conflict fixture",
+    },
+  });
+  expect(concurrent.ok()).toBeTruthy();
+  await page.getByPlaceholder("Accountable owner").fill("Stale Browser Writer");
+  await page.getByRole("button", { name: "Save checkpoint" }).click();
+  await expect(page.getByRole("alert")).toContainText(
+    "Campaign version conflict",
+  );
+});

@@ -17,6 +17,8 @@ export function entityWorkspaceId(table: string, id: number) {
 
 export function guardWorkspaceMutations(table: string): RequestHandler {
   return (req, res, next) => {
+    const routeSegment = req.path.split('/').find(Boolean);
+    if (routeSegment !== table) return next();
     if (req.method === 'GET') return next();
     const entityId = Number(req.path.split('/').find((part) => /^\d+$/.test(part)));
     const workspaceId = req.body?.workspaceId ?? req.body?.projectId

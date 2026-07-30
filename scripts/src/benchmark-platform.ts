@@ -51,6 +51,7 @@ const storiesPerWorkspace = Number(
 );
 const evidenceCount = Number(process.env.NTC3_BENCHMARK_EVIDENCE ?? 10_000);
 const knowledgeCount = Number(process.env.NTC3_BENCHMARK_KNOWLEDGE ?? 10_000);
+const campaignCount = Number(process.env.NTC3_BENCHMARK_CAMPAIGNS ?? 10_000);
 
 for (let index = 0; index < workspaceCount; index += 1) {
   const workspace = database.run(
@@ -96,6 +97,50 @@ for (let index = 0; index < knowledgeCount; index += 1) {
     ],
   );
 }
+
+database.transaction(() => {
+  for (let index = 0; index < campaignCount; index += 1) {
+    const campaign = database.run(
+      `INSERT INTO campaigns (
+        title, objective, project_id, mission_statement, success_definition,
+        campaign_type, lifecycle_status, phase, owner, target_story_count
+      ) VALUES (?, ?, ?, ?, ?, 'ProductDevelopment', 'Planning', 'Planning',
+        'Benchmark Owner', 1)`,
+      [
+        `Campaign ${index}`,
+        `architecture Campaign objective ${index}`,
+        (index % workspaceCount) + 1,
+        `deterministic Campaign mission ${index}`,
+        `measurable Campaign outcome ${index}`,
+      ],
+    );
+    const workspaceIndex = index % workspaceCount;
+    const storyIndex = Math.floor(index / workspaceCount) % storiesPerWorkspace;
+    const storyId = workspaceIndex * storiesPerWorkspace + storyIndex + 1;
+    database.run(
+      `INSERT INTO story_campaigns (
+        story_id, campaign_id, role, position, contribution_note
+      ) VALUES (?, ?, 'Supporting', 0, 'Benchmark portfolio membership')`,
+      [storyId, campaign.lastInsertRowid],
+    );
+  }
+  for (let position = 1; position < 200; position += 1) {
+    database.run(
+      `INSERT INTO story_campaigns (
+        story_id, campaign_id, role, position, contribution_note
+      ) VALUES (?, 1, 'Reference', ?, 'Representative large portfolio')`,
+      [position + 1, position],
+    );
+  }
+  for (let position = 0; position < 50; position += 1) {
+    database.run(
+      `INSERT INTO campaign_milestones (
+        campaign_id, title, description, position, status
+      ) VALUES (1, ?, 'Representative governed milestone', ?, 'Planned')`,
+      [`Milestone ${position}`, position],
+    );
+  }
+});
 
 const save = await samples(100, (index) => {
   database.transaction(() => {
@@ -221,6 +266,83 @@ const knowledgeCitation = await samples(100, (index) => {
     );
   });
 });
+const campaignCatalogue = await samples(100, () => {
+  database.all(`SELECT id, title, lifecycle_status, phase, owner, version
+    FROM campaigns WHERE project_id = 1 AND lifecycle_status != 'Archived'
+    ORDER BY updated_at DESC LIMIT 50`);
+});
+const campaignSearch = await samples(100, () => {
+  database.all(
+    "SELECT entity_id FROM global_search WHERE global_search MATCH 'architecture' AND entity_type = 'campaign' LIMIT 50",
+  );
+});
+const campaignDetail = await samples(100, () => {
+  database.get("SELECT * FROM campaigns WHERE id = 1");
+  database.all(
+    "SELECT * FROM story_campaigns WHERE campaign_id = 1 ORDER BY position",
+  );
+  database.all(
+    "SELECT * FROM campaign_milestones WHERE campaign_id = 1 ORDER BY position",
+  );
+  database.all(
+    "SELECT * FROM campaign_versions WHERE campaign_id = 1 ORDER BY version DESC",
+  );
+});
+const campaignSave = await samples(100, (index) => {
+  database.transaction(() => {
+    database.run(
+      `UPDATE campaigns SET objective = ?, version = version + 1,
+      updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = 1`,
+      [`Campaign save benchmark ${index}`],
+    );
+    database.run(`INSERT INTO campaign_versions (
+      campaign_id, version, title, mission_statement, success_definition,
+      metadata, change_summary
+    ) SELECT id, version, title, mission_statement, success_definition,
+      '{}', 'Benchmark save' FROM campaigns WHERE id = 1`);
+  });
+});
+const campaignPortfolio = await samples(100, () => {
+  database.all(`SELECT membership.*, story.title, story.status
+    FROM story_campaigns membership
+    JOIN stories story ON story.id = membership.story_id
+    WHERE membership.campaign_id = 1
+    ORDER BY membership.position`);
+});
+const campaignMilestones = await samples(100, (index) => {
+  database.transaction(() => {
+    database.run(
+      `UPDATE campaign_milestones SET target_date = ?, version = version + 1,
+      updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+      WHERE campaign_id = 1 AND id = 1`,
+      [`2026-12-${String((index % 28) + 1).padStart(2, "0")}`],
+    );
+  });
+});
+const campaignReorder = await samples(100, () => {
+  database.transaction(() => {
+    const rows = database.all(
+      `SELECT story_id, position FROM story_campaigns
+       WHERE campaign_id = 1 AND position IN (0, 1) ORDER BY position`,
+    ) as Array<{ story_id: number; position: number }>;
+    database.run(
+      "UPDATE story_campaigns SET position = 100000 WHERE campaign_id = 1 AND story_id = ?",
+      [rows[0].story_id],
+    );
+    database.run(
+      "UPDATE story_campaigns SET position = 100001 WHERE campaign_id = 1 AND story_id = ?",
+      [rows[1].story_id],
+    );
+    database.run(
+      "UPDATE story_campaigns SET position = 1, version = version + 1 WHERE campaign_id = 1 AND story_id = ?",
+      [rows[0].story_id],
+    );
+    database.run(
+      "UPDATE story_campaigns SET position = 0, version = version + 1 WHERE campaign_id = 1 AND story_id = ?",
+      [rows[1].story_id],
+    );
+  });
+});
 const largeFiles = [];
 for (const sizeMiB of [20, 100]) {
   const source = path.join(sourceDirectory, `attachment-${sizeMiB}mib.bin`);
@@ -251,6 +373,9 @@ const report = {
     stories: workspaceCount * storiesPerWorkspace,
     evidence: evidenceCount,
     knowledge: knowledgeCount,
+    campaigns: campaignCount,
+    campaignPortfolioMemberships: 200,
+    campaignMilestones: 50,
     attachmentBytes: 1024 * 1024,
     measuredIterations: 100,
   },
@@ -278,6 +403,13 @@ const report = {
     knowledgeDetail,
     knowledgeSave,
     knowledgeCitation,
+    campaignCatalogue,
+    campaignSearch,
+    campaignDetail,
+    campaignSave,
+    campaignPortfolio,
+    campaignMilestones,
+    campaignReorder,
     largeFiles,
   },
 };

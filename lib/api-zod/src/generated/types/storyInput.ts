@@ -24,8 +24,6 @@ export interface StoryInput {
   /** @nullable */
   projectId?: number | null;
   workspaceId: number;
-  /** @nullable */
-  campaignId?: number | null;
   storyType?: StoryInputStoryType;
   author?: string;
   objective?: string;

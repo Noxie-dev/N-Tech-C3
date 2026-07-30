@@ -47,7 +47,12 @@ router.get('/stories', (req, res) => {
   const conditions: string[] = [];
   const params: Array<string | number> = [];
   if (query.data.status) { conditions.push('status = ?'); params.push(query.data.status); }
-  if (query.data.campaignId != null) { conditions.push('campaign_id = ?'); params.push(query.data.campaignId); }
+  if (query.data.campaignId != null) {
+    conditions.push(
+      'id IN (SELECT story_id FROM story_campaigns WHERE campaign_id = ?)',
+    );
+    params.push(query.data.campaignId);
+  }
   if (query.data.workspaceId != null) { conditions.push('project_id = ?'); params.push(query.data.workspaceId); }
   if (query.data.storyType) { conditions.push('story_type = ?'); params.push(query.data.storyType); }
   if (query.data.search) { conditions.push('title LIKE ?'); params.push(`%${query.data.search}%`); }
@@ -251,8 +256,10 @@ router.post('/stories/:id/links', (req, res) => {
       run('INSERT OR REPLACE INTO story_assets (story_id, asset_id, role) VALUES (?, ?, ?)',
         [params.data.id, body.data.entityId, body.data.relationshipType ?? 'Supporting']);
     } else {
-      run('INSERT OR REPLACE INTO story_campaigns (story_id, campaign_id, is_primary) VALUES (?, ?, ?)',
-        [params.data.id, body.data.entityId, body.data.relationshipType === 'Primary' ? 1 : 0]);
+      return void res.status(409).json({
+        error:
+          "Campaign membership is governed from Campaign Mission Control",
+      });
     }
   }
   storyEvent(params.data.id, 'entity_linked', body.data);
@@ -263,6 +270,11 @@ router.post('/stories/:id/links', (req, res) => {
 router.delete('/stories/:id/links/:entityType/:entityId', (req, res) => {
   const params = UnlinkStoryEntityParams.safeParse(req.params);
   if (!params.success) return void res.status(400).json({ error: params.error.message });
+  if (params.data.entityType === 'campaign') {
+    return void res.status(409).json({
+      error: 'Campaign membership is governed from Campaign Mission Control',
+    });
+  }
   if (params.data.entityType === 'story') {
     run('DELETE FROM story_relations WHERE source_story_id = ? AND target_story_id = ?', [params.data.id, params.data.entityId]);
   } else {

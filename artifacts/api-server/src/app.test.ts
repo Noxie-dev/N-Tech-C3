@@ -984,4 +984,457 @@ describe("local API", () => {
       ),
     ).toBeGreaterThan(0);
   });
+
+  it("governs Campaign mission, lifecycle, phase, versions, archive, and Activity projection", async () => {
+    const workspace = await request(app)
+      .post("/api/workspaces")
+      .send({ name: "Campaign Governance", purpose: "Product" })
+      .expect(201);
+
+    await request(app)
+      .post("/api/campaigns")
+      .send({ title: "Unowned Campaign" })
+      .expect(400);
+
+    const created = await request(app)
+      .post("/api/campaigns")
+      .send({
+        title: "Route 05 governed narrative",
+        workspaceId: workspace.body.id,
+        campaignType: "ProductDevelopment",
+      })
+      .expect(201);
+    expect(created.body).toMatchObject({
+      workspaceId: workspace.body.id,
+      lifecycleStatus: "Planning",
+      phase: "Planning",
+      version: 1,
+      storyCount: 0,
+    });
+
+    await request(app)
+      .patch(`/api/campaigns/${created.body.id}`)
+      .send({ expectedVersion: 99, owner: "Wrong writer" })
+      .expect(409);
+    const defined = await request(app)
+      .patch(`/api/campaigns/${created.body.id}`)
+      .send({
+        expectedVersion: 1,
+        missionStatement: "Make Campaign governance visible.",
+        successDefinition: "The mission has an auditable outcome.",
+        owner: "Editorial Engineering",
+        targetStoryCount: 1,
+        changeSummary: "Activation contract completed",
+      })
+      .expect(200);
+    expect(defined.body.version).toBe(2);
+
+    const active = await request(app)
+      .post(`/api/campaigns/${created.body.id}/transition`)
+      .send({
+        expectedVersion: defined.body.version,
+        lifecycleStatus: "Active",
+      })
+      .expect(200);
+    expect(active.body.lifecycleStatus).toBe("Active");
+
+    const phased = await request(app)
+      .post(`/api/campaigns/${created.body.id}/phase`)
+      .send({ expectedVersion: active.body.version, phase: "Research" })
+      .expect(200);
+    expect(phased.body.phase).toBe("Research");
+
+    await request(app)
+      .post(`/api/campaigns/${created.body.id}/transition`)
+      .send({ expectedVersion: phased.body.version, lifecycleStatus: "Paused" })
+      .expect(409);
+    const paused = await request(app)
+      .post(`/api/campaigns/${created.body.id}/transition`)
+      .send({
+        expectedVersion: phased.body.version,
+        lifecycleStatus: "Paused",
+        reason: "Awaiting evidence review",
+      })
+      .expect(200);
+    expect(paused.body.pauseReason).toBe("Awaiting evidence review");
+
+    const completed = await request(app)
+      .post(`/api/campaigns/${created.body.id}/complete`)
+      .send({
+        expectedVersion: paused.body.version,
+        completionNote: "The governed Campaign contract is operational.",
+        successAssessment: "Achieved",
+      })
+      .expect(200);
+    expect(completed.body.lifecycleStatus).toBe("Completed");
+
+    const reopened = await request(app)
+      .post(`/api/campaigns/${created.body.id}/reopen`)
+      .send({
+        expectedVersion: completed.body.version,
+        reason: "A new correction requires active work",
+      })
+      .expect(200);
+    expect(reopened.body.lifecycleStatus).toBe("Active");
+
+    await request(app)
+      .post(`/api/campaigns/${created.body.id}/archive`)
+      .send({ expectedVersion: 1 })
+      .expect(409);
+    const archived = await request(app)
+      .post(`/api/campaigns/${created.body.id}/archive`)
+      .send({ expectedVersion: reopened.body.version })
+      .expect(200);
+    expect(archived.body.lifecycleStatus).toBe("Archived");
+    await request(app)
+      .patch(`/api/campaigns/${created.body.id}`)
+      .send({ expectedVersion: archived.body.version, title: "Forbidden" })
+      .expect(409);
+    await request(app).delete(`/api/campaigns/${created.body.id}`).expect(409);
+    await request(app)
+      .get("/api/campaigns")
+      .query({ search: "Route 05 governed narrative" })
+      .expect(200)
+      .expect(({ body }) => expect(body).toHaveLength(0));
+
+    const restored = await request(app)
+      .post(`/api/campaigns/${created.body.id}/restore`)
+      .send({ expectedVersion: archived.body.version })
+      .expect(200);
+    expect(restored.body.lifecycleStatus).toBe("Active");
+    const versions = await request(app)
+      .get(`/api/campaigns/${created.body.id}/versions`)
+      .expect(200);
+    expect(versions.body.length).toBeGreaterThanOrEqual(9);
+
+    expect(
+      Number(
+        database.get(
+          `SELECT count(*) count FROM domain_events
+          WHERE aggregate_type = 'campaign' AND aggregate_id = ?`,
+          [created.body.id],
+        )?.count,
+      ),
+    ).toBeGreaterThan(0);
+    expect(
+      Number(
+        database.get(
+          `SELECT count(*) count FROM activity
+          WHERE entity_type = 'campaign' AND entity_id = ? AND source_event_id IS NOT NULL`,
+          [created.body.id],
+        )?.count,
+      ),
+    ).toBeGreaterThan(0);
+  });
+
+  it("governs Campaign Story portfolios, backlinks, ordering, and milestones", async () => {
+    const workspace = await request(app)
+      .post("/api/workspaces")
+      .send({ name: "Campaign Portfolio Workspace", purpose: "Product" })
+      .expect(201);
+    const otherWorkspace = await request(app)
+      .post("/api/workspaces")
+      .send({ name: "Other Campaign Workspace", purpose: "Product" })
+      .expect(201);
+    const campaign = await request(app)
+      .post("/api/campaigns")
+      .send({
+        title: "Portfolio Campaign",
+        workspaceId: workspace.body.id,
+      })
+      .expect(201);
+    const secondCampaign = await request(app)
+      .post("/api/campaigns")
+      .send({
+        title: "Secondary Portfolio Campaign",
+        workspaceId: workspace.body.id,
+      })
+      .expect(201);
+    const anchorStory = await request(app)
+      .post("/api/stories")
+      .send({
+        title: "Anchor portfolio Story",
+        workspaceId: workspace.body.id,
+        status: "Draft",
+      })
+      .expect(201);
+    const supportingStory = await request(app)
+      .post("/api/stories")
+      .send({
+        title: "Supporting portfolio Story",
+        workspaceId: workspace.body.id,
+        status: "Draft",
+      })
+      .expect(201);
+    const legacyPointerAttempt = await request(app)
+      .post("/api/stories")
+      .send({
+        title: "Legacy singular Campaign pointer attempt",
+        workspaceId: workspace.body.id,
+        status: "Draft",
+        campaignId: campaign.body.id,
+      })
+      .expect(201);
+    expect(
+      database.get("SELECT campaign_id FROM stories WHERE id = ?", [
+        legacyPointerAttempt.body.id,
+      ])?.campaign_id,
+    ).toBeNull();
+    const crossWorkspaceStory = await request(app)
+      .post("/api/stories")
+      .send({
+        title: "Cross Workspace Story",
+        workspaceId: otherWorkspace.body.id,
+        status: "Draft",
+      })
+      .expect(201);
+
+    const anchor = await request(app)
+      .post(`/api/campaigns/${campaign.body.id}/stories`)
+      .send({
+        expectedVersion: 1,
+        storyId: anchorStory.body.id,
+        role: "Anchor",
+        isPrimary: true,
+      })
+      .expect(201);
+    expect(anchor.body).toMatchObject({
+      position: 0,
+      role: "Anchor",
+      isPrimary: true,
+      version: 1,
+    });
+    await request(app)
+      .post(`/api/campaigns/${campaign.body.id}/stories`)
+      .send({
+        expectedVersion: 1,
+        storyId: supportingStory.body.id,
+        role: "Supporting",
+      })
+      .expect(409);
+    const supporting = await request(app)
+      .post(`/api/campaigns/${campaign.body.id}/stories`)
+      .send({
+        expectedVersion: 2,
+        storyId: supportingStory.body.id,
+        role: "Supporting",
+        contributionNote: "Explains the implementation boundary",
+      })
+      .expect(201);
+    expect(supporting.body.position).toBe(1);
+    await request(app)
+      .post(`/api/campaigns/${campaign.body.id}/stories`)
+      .send({
+        expectedVersion: 3,
+        storyId: crossWorkspaceStory.body.id,
+        role: "Reference",
+      })
+      .expect(409);
+    await request(app)
+      .post(`/api/campaigns/${secondCampaign.body.id}/stories`)
+      .send({
+        expectedVersion: 1,
+        storyId: anchorStory.body.id,
+        role: "Anchor",
+        isPrimary: true,
+      })
+      .expect(409);
+    await request(app)
+      .post(`/api/stories/${supportingStory.body.id}/links`)
+      .send({
+        entityType: "campaign",
+        entityId: campaign.body.id,
+      })
+      .expect(409);
+
+    const updatedMembership = await request(app)
+      .patch(
+        `/api/campaigns/${campaign.body.id}/stories/${supportingStory.body.id}`,
+      )
+      .send({
+        expectedCampaignVersion: 3,
+        expectedMembershipVersion: 1,
+        role: "FollowUp",
+      })
+      .expect(200);
+    expect(updatedMembership.body).toMatchObject({
+      role: "FollowUp",
+      version: 2,
+    });
+    const reorderedStories = await request(app)
+      .put(`/api/campaigns/${campaign.body.id}/stories/order`)
+      .send({
+        expectedVersion: 4,
+        storyIds: [supportingStory.body.id, anchorStory.body.id],
+      })
+      .expect(200);
+    expect(
+      reorderedStories.body.map((item: { storyId: number }) => item.storyId),
+    ).toEqual([supportingStory.body.id, anchorStory.body.id]);
+
+    const backlinks = await request(app)
+      .get(`/api/stories/${anchorStory.body.id}/campaigns`)
+      .expect(200);
+    expect(backlinks.body).toContainEqual(
+      expect.objectContaining({
+        campaignId: campaign.body.id,
+        role: "Anchor",
+        isPrimary: true,
+      }),
+    );
+
+    const discovery = await request(app)
+      .post(`/api/campaigns/${campaign.body.id}/milestones`)
+      .send({
+        expectedVersion: 5,
+        title: "Discovery accepted",
+        targetDate: "2026-08-01",
+      })
+      .expect(201);
+    const delivery = await request(app)
+      .post(`/api/campaigns/${campaign.body.id}/milestones`)
+      .send({
+        expectedVersion: 6,
+        title: "Portfolio operational",
+      })
+      .expect(201);
+    await request(app)
+      .patch(
+        `/api/campaigns/${campaign.body.id}/milestones/${discovery.body.id}`,
+      )
+      .send({
+        expectedCampaignVersion: 7,
+        expectedMilestoneVersion: 1,
+        status: "Completed",
+      })
+      .expect(409);
+    const completed = await request(app)
+      .patch(
+        `/api/campaigns/${campaign.body.id}/milestones/${discovery.body.id}`,
+      )
+      .send({
+        expectedCampaignVersion: 7,
+        expectedMilestoneVersion: 1,
+        status: "Completed",
+        completionNote: "The portfolio contract was reviewed.",
+      })
+      .expect(200);
+    expect(completed.body).toMatchObject({
+      status: "Completed",
+      version: 2,
+    });
+    const reorderedMilestones = await request(app)
+      .put(`/api/campaigns/${campaign.body.id}/milestones/order`)
+      .send({
+        expectedVersion: 8,
+        milestoneIds: [delivery.body.id, discovery.body.id],
+      })
+      .expect(200);
+    expect(
+      reorderedMilestones.body.map((item: { id: number }) => item.id),
+    ).toEqual([delivery.body.id, discovery.body.id]);
+
+    await request(app)
+      .delete(
+        `/api/campaigns/${campaign.body.id}/milestones/${delivery.body.id}`,
+      )
+      .send({ expectedVersion: 9 })
+      .expect(204);
+    const remainingMilestones = await request(app)
+      .get(`/api/campaigns/${campaign.body.id}/milestones`)
+      .expect(200);
+    expect(remainingMilestones.body).toHaveLength(1);
+    expect(remainingMilestones.body[0]).toMatchObject({
+      id: discovery.body.id,
+      position: 0,
+    });
+
+    await request(app)
+      .delete(
+        `/api/campaigns/${campaign.body.id}/stories/${supportingStory.body.id}`,
+      )
+      .send({ expectedVersion: 10 })
+      .expect(204);
+    await request(app)
+      .get(`/api/stories/${supportingStory.body.id}`)
+      .expect(200);
+    const archived = await request(app)
+      .post(`/api/campaigns/${campaign.body.id}/archive`)
+      .send({ expectedVersion: 11 })
+      .expect(200);
+    await request(app)
+      .post(`/api/campaigns/${campaign.body.id}/milestones`)
+      .send({
+        expectedVersion: archived.body.version,
+        title: "Forbidden archived mutation",
+      })
+      .expect(409);
+
+    expect(
+      Number(
+        database.get(
+          `SELECT count(*) count FROM domain_events
+          WHERE aggregate_type = 'campaign' AND aggregate_id = ?
+            AND event_type IN (
+              'StoryAddedToCampaign', 'CampaignStoryMembershipUpdated',
+              'CampaignMilestoneCreated', 'CampaignMilestoneCompleted',
+              'CampaignMilestonesReordered'
+            )`,
+          [campaign.body.id],
+        )?.count,
+      ),
+    ).toBeGreaterThanOrEqual(5);
+  });
+
+  it("rolls back Campaign state and checkpoints when durable event append fails", async () => {
+    const workspace = await request(app)
+      .post("/api/workspaces")
+      .send({ name: "Campaign Recovery Workspace", purpose: "Product" })
+      .expect(201);
+    const campaign = await request(app)
+      .post("/api/campaigns")
+      .send({
+        title: "Atomic Recovery Campaign",
+        workspaceId: workspace.body.id,
+      })
+      .expect(201);
+
+    database.run(`
+      CREATE TRIGGER reject_campaign_milestone_event
+      BEFORE INSERT ON domain_events
+      WHEN new.aggregate_type = 'campaign'
+        AND new.event_type = 'CampaignMilestoneCreated'
+      BEGIN
+        SELECT RAISE(ABORT, 'forced Campaign event failure');
+      END
+    `);
+    try {
+      await request(app)
+        .post(`/api/campaigns/${campaign.body.id}/milestones`)
+        .send({
+          expectedVersion: 1,
+          title: "Must roll back",
+        })
+        .expect(500);
+    } finally {
+      database.run("DROP TRIGGER reject_campaign_milestone_event");
+    }
+
+    const unchanged = await request(app)
+      .get(`/api/campaigns/${campaign.body.id}`)
+      .expect(200);
+    expect(unchanged.body.version).toBe(1);
+    const milestones = await request(app)
+      .get(`/api/campaigns/${campaign.body.id}/milestones`)
+      .expect(200);
+    expect(milestones.body).toEqual([]);
+    expect(
+      Number(
+        database.get(
+          "SELECT count(*) count FROM campaign_versions WHERE campaign_id = ?",
+          [campaign.body.id],
+        )?.count,
+      ),
+    ).toBe(1);
+  });
 });

@@ -28,7 +28,11 @@ favicon set from `artifacts/ntech-c3/public`.
 - **Knowledge (Route 04):** Workspace-owned catalogue and Studio with governed
   lifecycle/review, TipTap authoring, optimistic versions, source-level Evidence
   citations, claims, typed relationships/backlinks, and archive/restore.
-- **Campaigns, Assets, and Templates:** core CRUD/catalog workflows.
+- **Campaigns (Route 05, L3 Integrated):** Workspace-owned mission catalogue and
+  control studio with governed lifecycle/phase, optimistic checkpoints, ordered
+  Story roles/backlinks, milestones, transactional events, projection audit,
+  named performance evidence, and archive/restore.
+- **Assets and Templates:** core catalogue workflows.
 - **Global Search:** trigger-maintained SQLite FTS5 index across the core domains.
 - **Desktop operations:** portable vault, backup/restore, safe file reveal,
   repository analysis, and Electron packaging.
@@ -51,7 +55,7 @@ and executable code mark them as implemented.
 | `/evidence`                        | Evidence explorer, governed capture, and filters            |
 | `/evidence/:id`                    | Evidence inspector, provenance, locators, and lifecycle     |
 | `/knowledge`, `/knowledge/:id`     | Governed Knowledge catalogue, claims, citations, and Studio |
-| `/campaigns`, `/campaigns/:id`     | Campaign catalogue and detail                               |
+| `/campaigns`, `/campaigns/:id`     | Governed Campaign library and mission control               |
 | `/assets`                          | Asset catalogue                                             |
 | `/templates`                       | Template catalogue                                          |
 | `/search`                          | Global full-text search                                     |
@@ -447,12 +451,12 @@ pnpm package:mac
 - Story versions are stored and visible on the timeline, but compare/restore UI is
   deferred.
 - Calendar and full export pipeline routes are planned.
-- Entity version history, collaboration, cloud sync, and AI providers are not
-  implemented.
+- Cross-domain entity version history, collaboration, cloud sync, and AI
+  providers are not implemented; Campaign and Knowledge checkpoints are visible.
 - Native Electron restore/reveal/dialog workflows need deeper desktop automation.
 - Durable events and EIE provenance cover Workspace creation, core Story/Evidence/
-  Knowledge mutations, and both Workspace and Story Health. Story link/delete and
-  the Campaign, Asset, and Template mutation paths still need migration.
+  Knowledge/Campaign mutations, and both Workspace and Story Health. Story
+  link/delete plus Asset and Template mutation paths still need migration.
 - Outputs are safely created as Draft, but their validated Review/Ready/Published
   transition API remains future corrective work.
 
@@ -468,6 +472,9 @@ The following are documented product direction, **not current functionality**:
 - **Route 04 Knowledge Intelligence (future):** Route 04’s governed Knowledge
   domain is L3 Integrated. Pass 4 may later add deterministic freshness, coverage,
   contradiction, duplicate, relationship-suggestion, and query capabilities.
+- **Route 05 Campaign expansion (future):** Separately authorized later passes may
+  integrate first-class Publications and Channels or Campaign Intelligence.
+  Scheduling and analytics are not current capabilities.
 - **Knowledge Query:** an information-first EIE capability that answers from
   authorized sources with citations or abstains when evidence is insufficient.
 - **Knowledge Evolution Explorer:** distinct relationship, version, lineage, and

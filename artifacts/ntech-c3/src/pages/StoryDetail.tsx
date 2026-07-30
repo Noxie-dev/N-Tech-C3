@@ -3,7 +3,7 @@ import {
   getGetStoryQueryKey, useArchiveStory, useCreateStoryOutput, useGetStory,
   useGetStoryHealth, useGetStoryLinks, useGetStoryOutline, useGetStoryOutputs,
   useGetStoryTimeline, useLinkStoryEntity, useListAssets, useListCampaigns,
-  useListEvidence, useListKnowledge, useListStories, useReplaceStoryOutline,
+  useListEvidence, useListKnowledge, useListStories, useListStoryCampaignBacklinks, useReplaceStoryOutline,
   useTransitionStory, useUpdateStory,
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -47,6 +47,7 @@ export function StoryDetail() {
   const { data: links } = useGetStoryLinks(id);
   const { data: outputs = [] } = useGetStoryOutputs(id);
   const { data: timeline = [] } = useGetStoryTimeline(id);
+  const { data: campaignBacklinks = [] } = useListStoryCampaignBacklinks(id);
   const { data: evidence = [] } = useListEvidence({ workspaceId: story?.workspaceId ?? undefined });
   const { data: knowledge = [] } = useListKnowledge();
   const { data: assets = [] } = useListAssets();
@@ -175,7 +176,7 @@ export function StoryDetail() {
         {section === 'editor' && <Card className="min-h-[560px] overflow-hidden"><RichTextEditor value={content} onChange={(html) => { setContent(html); setIsDirty(true); }} placeholder="Develop the engineering narrative…" /></Card>}
         {section === 'evidence' && <Card><CardHeader><CardTitle>Evidence</CardTitle></CardHeader><CardContent>{linkPanel('evidence', links?.evidence || [])}</CardContent></Card>}
         {section === 'assets' && <Card><CardHeader><CardTitle>Assets</CardTitle></CardHeader><CardContent>{linkPanel('asset', links?.assets || [])}</CardContent></Card>}
-        {section === 'references' && <div className="space-y-4"><Card><CardHeader><CardTitle>Knowledge References</CardTitle></CardHeader><CardContent>{linkPanel('knowledge', links?.knowledge || [])}</CardContent></Card><Card><CardHeader><CardTitle>Campaigns</CardTitle></CardHeader><CardContent>{linkPanel('campaign', links?.campaigns || [])}</CardContent></Card><Card><CardHeader><CardTitle>Related Stories</CardTitle></CardHeader><CardContent>{linkPanel('story', links?.stories || [])}</CardContent></Card></div>}
+        {section === 'references' && <div className="space-y-4"><Card><CardHeader><CardTitle>Knowledge References</CardTitle></CardHeader><CardContent>{linkPanel('knowledge', links?.knowledge || [])}</CardContent></Card><Card><CardHeader><CardTitle>Campaign backlinks</CardTitle></CardHeader><CardContent className="space-y-3">{campaignBacklinks.length ? campaignBacklinks.map((backlink) => <Link key={backlink.campaignId} href={`/campaigns/${backlink.campaignId}`} className="block rounded-lg border p-3 hover:border-primary/50"><div className="flex items-center justify-between gap-2"><p className="font-medium">{backlink.title}</p>{backlink.isPrimary && <Badge variant="outline">Primary</Badge>}</div><p className="text-xs text-muted-foreground">{backlink.role} · {backlink.lifecycleStatus}{backlink.contributionNote ? ` · ${backlink.contributionNote}` : ''}</p></Link>) : <p className="text-sm text-muted-foreground">No Campaign memberships. Add this Story from Campaign Mission Control.</p>}</CardContent></Card><Card><CardHeader><CardTitle>Related Stories</CardTitle></CardHeader><CardContent>{linkPanel('story', links?.stories || [])}</CardContent></Card></div>}
         {section === 'outputs' && <Card><CardHeader><CardTitle>Story Outputs</CardTitle></CardHeader><CardContent className="space-y-3"><form className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]" onSubmit={(event) => { event.preventDefault(); const form = new FormData(event.currentTarget); createOutput.mutate({ id, data: { title: String(form.get('title')), type: String(form.get('type')) } }, { onSuccess: refreshStoryEngine }); }}><Input name="title" placeholder="Output title" required /><Select name="type"><option>Blog</option><option>LinkedIn</option><option>PDF</option><option>Markdown</option><option>Presentation</option></Select><Button disabled={archived}><Plus className="mr-1 h-4 w-4" /> Output</Button></form>{outputs.map((output) => <div key={output.id} className="flex justify-between rounded-lg border p-3"><div><p className="font-medium">{output.title}</p><p className="text-xs text-muted-foreground">{output.type}</p></div><Badge>{output.status}</Badge></div>)}</CardContent></Card>}
         {section === 'timeline' && <Card><CardHeader><CardTitle>Story Timeline</CardTitle></CardHeader><CardContent className="space-y-2">{timeline.map((event) => <div key={event.id} className="flex justify-between gap-3 rounded-lg border p-3 text-sm"><div><p className="font-medium">{event.eventType.replaceAll('_', ' ')}</p><p className="text-xs text-muted-foreground">{event.actor}</p></div><span className="text-xs text-muted-foreground">{formatShortDate(event.createdAt)}</span></div>)}</CardContent></Card>}
       </main>

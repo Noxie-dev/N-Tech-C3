@@ -5,18 +5,63 @@
  * N-Tech C³ Engineering Intelligence Operating System API
  * OpenAPI spec version: 0.1.0
  */
-import type { CampaignStatus } from './campaignStatus';
+import type { CampaignLifecycleStatus } from './campaignLifecycleStatus';
+import type { CampaignPhase } from './campaignPhase';
+import type { CampaignSuccessAssessment } from './campaignSuccessAssessment';
+import type { CampaignType } from './campaignType';
 
 export interface Campaign {
   id: number;
+  workspaceId: number;
   title: string;
   /** @nullable */
   objective?: string | null;
-  status: CampaignStatus;
-  platforms?: string[];
   /** @nullable */
-  durationWeeks?: number | null;
-  storyCount?: number;
+  missionStatement?: string | null;
+  /** @nullable */
+  successDefinition?: string | null;
+  campaignType?: CampaignType | null;
+  lifecycleStatus: CampaignLifecycleStatus;
+  phase?: CampaignPhase | null;
+  /** @nullable */
+  audience?: string | null;
+  /** @nullable */
+  owner?: string | null;
+  /** @nullable */
+  startAt?: Date | null;
+  /** @nullable */
+  endAt?: Date | null;
+  /** @nullable */
+  reviewCadence?: string | null;
+  /** @nullable */
+  completionCriteria?: string | null;
+  /** @nullable */
+  brandVoice?: string | null;
+  /** @nullable */
+  publishingRhythm?: string | null;
+  /** @nullable */
+  engineeringDomain?: string | null;
+  tags: string[];
+  /** @nullable */
+  color?: string | null;
+  /** @nullable */
+  bannerAssetId?: number | null;
+  /** @nullable */
+  coverAssetId?: number | null;
+  targetStoryCount: number;
+  targetPublicationCount: number;
+  storyCount: number;
+  version: number;
+  /** @nullable */
+  pauseReason?: string | null;
+  /** @nullable */
+  completionNote?: string | null;
+  successAssessment?: CampaignSuccessAssessment | null;
+  /** @nullable */
+  completedAt?: Date | null;
+  /** @nullable */
+  archivedAt?: Date | null;
+  archivedFromStatus?: CampaignLifecycleStatus | null;
   createdAt: Date;
   updatedAt: Date;
 }

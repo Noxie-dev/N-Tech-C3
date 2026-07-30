@@ -549,7 +549,6 @@ export const CreateStoryBody = zod.object({
   "tags": zod.array(zod.string()).optional(),
   "projectId": zod.number().nullish(),
   "workspaceId": zod.number(),
-  "campaignId": zod.number().nullish(),
   "storyType": zod.enum(['EngineeringJournal', 'BlogArticle', 'SocialSeries', 'CaseStudy', 'TechnicalDocumentation', 'ADR', 'ResearchNote', 'LearningNote', 'ProductUpdate', 'ChangelogNarrative', 'InternalMemo', 'Presentation', 'Other']).optional(),
   "author": zod.string().optional(),
   "objective": zod.string().optional(),
@@ -646,7 +645,6 @@ export const UpdateStoryBody = zod.object({
   "tags": zod.array(zod.string()).optional(),
   "projectId": zod.number().nullish(),
   "workspaceId": zod.number().nullish(),
-  "campaignId": zod.number().nullish(),
   "storyType": zod.enum(['EngineeringJournal', 'BlogArticle', 'SocialSeries', 'CaseStudy', 'TechnicalDocumentation', 'ADR', 'ResearchNote', 'LearningNote', 'ProductUpdate', 'ChangelogNarrative', 'InternalMemo', 'Presentation', 'Other']).optional(),
   "author": zod.string().nullish(),
   "objective": zod.string().nullish(),
@@ -1013,14 +1011,47 @@ export const ArchiveStoryResponse = zod.object({
 /**
  * @summary List campaigns
  */
+export const ListCampaignsQueryParams = zod.object({
+  "workspaceId": zod.coerce.number().optional(),
+  "lifecycleStatus": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']).optional(),
+  "campaignType": zod.enum(['EngineeringPhilosophy', 'ProductDevelopment', 'Launch', 'Research', 'Education', 'ThoughtLeadership', 'Community', 'CaseStudy', 'Recruitment', 'BehindTheScenes', 'Conference', 'ReleaseNotes', 'DeveloperDiary']).optional(),
+  "owner": zod.coerce.string().optional(),
+  "search": zod.coerce.string().optional()
+})
+
 export const ListCampaignsResponseItem = zod.object({
   "id": zod.number(),
+  "workspaceId": zod.number(),
   "title": zod.string(),
   "objective": zod.string().nullish(),
-  "status": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),
-  "platforms": zod.array(zod.string()).optional(),
-  "durationWeeks": zod.number().nullish(),
-  "storyCount": zod.number().optional(),
+  "missionStatement": zod.string().nullish(),
+  "successDefinition": zod.string().nullish(),
+  "campaignType": zod.union([zod.enum(['EngineeringPhilosophy', 'ProductDevelopment', 'Launch', 'Research', 'Education', 'ThoughtLeadership', 'Community', 'CaseStudy', 'Recruitment', 'BehindTheScenes', 'Conference', 'ReleaseNotes', 'DeveloperDiary']),zod.null()]).optional(),
+  "lifecycleStatus": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),
+  "phase": zod.union([zod.enum(['Planning', 'Research', 'ContentBuilding', 'Review', 'Distribution', 'Monitoring']),zod.null()]).optional(),
+  "audience": zod.string().nullish(),
+  "owner": zod.string().nullish(),
+  "startAt": zod.coerce.date().nullish(),
+  "endAt": zod.coerce.date().nullish(),
+  "reviewCadence": zod.string().nullish(),
+  "completionCriteria": zod.string().nullish(),
+  "brandVoice": zod.string().nullish(),
+  "publishingRhythm": zod.string().nullish(),
+  "engineeringDomain": zod.string().nullish(),
+  "tags": zod.array(zod.string()),
+  "color": zod.string().nullish(),
+  "bannerAssetId": zod.number().nullish(),
+  "coverAssetId": zod.number().nullish(),
+  "targetStoryCount": zod.number(),
+  "targetPublicationCount": zod.number(),
+  "storyCount": zod.number(),
+  "version": zod.number(),
+  "pauseReason": zod.string().nullish(),
+  "completionNote": zod.string().nullish(),
+  "successAssessment": zod.union([zod.enum(['Achieved', 'PartiallyAchieved', 'NotAchieved']),zod.null()]).optional(),
+  "completedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "archivedFromStatus": zod.union([zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -1032,23 +1063,55 @@ export const ListCampaignsResponse = zod.array(ListCampaignsResponseItem)
  */
 
 
+export const createCampaignBodyTargetStoryCountMin = 0;
+
+
 
 export const CreateCampaignBody = zod.object({
   "title": zod.string().min(1),
+  "workspaceId": zod.number().min(1),
   "objective": zod.string().optional(),
-  "status": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']).optional(),
-  "platforms": zod.array(zod.string()).optional(),
-  "durationWeeks": zod.number().optional()
+  "missionStatement": zod.string().optional(),
+  "successDefinition": zod.string().optional(),
+  "campaignType": zod.enum(['EngineeringPhilosophy', 'ProductDevelopment', 'Launch', 'Research', 'Education', 'ThoughtLeadership', 'Community', 'CaseStudy', 'Recruitment', 'BehindTheScenes', 'Conference', 'ReleaseNotes', 'DeveloperDiary']).optional(),
+  "audience": zod.string().optional(),
+  "owner": zod.string().optional(),
+  "targetStoryCount": zod.number().min(createCampaignBodyTargetStoryCountMin).optional()
 })
 
 export const CreateCampaignResponse = zod.object({
   "id": zod.number(),
+  "workspaceId": zod.number(),
   "title": zod.string(),
   "objective": zod.string().nullish(),
-  "status": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),
-  "platforms": zod.array(zod.string()).optional(),
-  "durationWeeks": zod.number().nullish(),
-  "storyCount": zod.number().optional(),
+  "missionStatement": zod.string().nullish(),
+  "successDefinition": zod.string().nullish(),
+  "campaignType": zod.union([zod.enum(['EngineeringPhilosophy', 'ProductDevelopment', 'Launch', 'Research', 'Education', 'ThoughtLeadership', 'Community', 'CaseStudy', 'Recruitment', 'BehindTheScenes', 'Conference', 'ReleaseNotes', 'DeveloperDiary']),zod.null()]).optional(),
+  "lifecycleStatus": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),
+  "phase": zod.union([zod.enum(['Planning', 'Research', 'ContentBuilding', 'Review', 'Distribution', 'Monitoring']),zod.null()]).optional(),
+  "audience": zod.string().nullish(),
+  "owner": zod.string().nullish(),
+  "startAt": zod.coerce.date().nullish(),
+  "endAt": zod.coerce.date().nullish(),
+  "reviewCadence": zod.string().nullish(),
+  "completionCriteria": zod.string().nullish(),
+  "brandVoice": zod.string().nullish(),
+  "publishingRhythm": zod.string().nullish(),
+  "engineeringDomain": zod.string().nullish(),
+  "tags": zod.array(zod.string()),
+  "color": zod.string().nullish(),
+  "bannerAssetId": zod.number().nullish(),
+  "coverAssetId": zod.number().nullish(),
+  "targetStoryCount": zod.number(),
+  "targetPublicationCount": zod.number(),
+  "storyCount": zod.number(),
+  "version": zod.number(),
+  "pauseReason": zod.string().nullish(),
+  "completionNote": zod.string().nullish(),
+  "successAssessment": zod.union([zod.enum(['Achieved', 'PartiallyAchieved', 'NotAchieved']),zod.null()]).optional(),
+  "completedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "archivedFromStatus": zod.union([zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -1063,12 +1126,37 @@ export const GetCampaignParams = zod.object({
 
 export const GetCampaignResponse = zod.object({
   "id": zod.number(),
+  "workspaceId": zod.number(),
   "title": zod.string(),
   "objective": zod.string().nullish(),
-  "status": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),
-  "platforms": zod.array(zod.string()).optional(),
-  "durationWeeks": zod.number().nullish(),
-  "storyCount": zod.number().optional(),
+  "missionStatement": zod.string().nullish(),
+  "successDefinition": zod.string().nullish(),
+  "campaignType": zod.union([zod.enum(['EngineeringPhilosophy', 'ProductDevelopment', 'Launch', 'Research', 'Education', 'ThoughtLeadership', 'Community', 'CaseStudy', 'Recruitment', 'BehindTheScenes', 'Conference', 'ReleaseNotes', 'DeveloperDiary']),zod.null()]).optional(),
+  "lifecycleStatus": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),
+  "phase": zod.union([zod.enum(['Planning', 'Research', 'ContentBuilding', 'Review', 'Distribution', 'Monitoring']),zod.null()]).optional(),
+  "audience": zod.string().nullish(),
+  "owner": zod.string().nullish(),
+  "startAt": zod.coerce.date().nullish(),
+  "endAt": zod.coerce.date().nullish(),
+  "reviewCadence": zod.string().nullish(),
+  "completionCriteria": zod.string().nullish(),
+  "brandVoice": zod.string().nullish(),
+  "publishingRhythm": zod.string().nullish(),
+  "engineeringDomain": zod.string().nullish(),
+  "tags": zod.array(zod.string()),
+  "color": zod.string().nullish(),
+  "bannerAssetId": zod.number().nullish(),
+  "coverAssetId": zod.number().nullish(),
+  "targetStoryCount": zod.number(),
+  "targetPublicationCount": zod.number(),
+  "storyCount": zod.number(),
+  "version": zod.number(),
+  "pauseReason": zod.string().nullish(),
+  "completionNote": zod.string().nullish(),
+  "successAssessment": zod.union([zod.enum(['Achieved', 'PartiallyAchieved', 'NotAchieved']),zod.null()]).optional(),
+  "completedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "archivedFromStatus": zod.union([zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -1083,36 +1171,728 @@ export const UpdateCampaignParams = zod.object({
 
 
 
+export const updateCampaignBodyTargetStoryCountMin = 0;
+
+export const updateCampaignBodyTargetPublicationCountMin = 0;
+
+
 
 export const UpdateCampaignBody = zod.object({
+  "expectedVersion": zod.number().min(1),
   "title": zod.string().min(1).optional(),
   "objective": zod.string().nullish(),
-  "status": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']).optional(),
-  "platforms": zod.array(zod.string()).optional(),
-  "durationWeeks": zod.number().nullish()
+  "missionStatement": zod.string().nullish(),
+  "successDefinition": zod.string().nullish(),
+  "campaignType": zod.union([zod.enum(['EngineeringPhilosophy', 'ProductDevelopment', 'Launch', 'Research', 'Education', 'ThoughtLeadership', 'Community', 'CaseStudy', 'Recruitment', 'BehindTheScenes', 'Conference', 'ReleaseNotes', 'DeveloperDiary']),zod.null()]).optional(),
+  "audience": zod.string().nullish(),
+  "owner": zod.string().nullish(),
+  "startAt": zod.coerce.date().nullish(),
+  "endAt": zod.coerce.date().nullish(),
+  "reviewCadence": zod.string().nullish(),
+  "completionCriteria": zod.string().nullish(),
+  "brandVoice": zod.string().nullish(),
+  "publishingRhythm": zod.string().nullish(),
+  "engineeringDomain": zod.string().nullish(),
+  "tags": zod.array(zod.string()).optional(),
+  "color": zod.string().nullish(),
+  "bannerAssetId": zod.number().nullish(),
+  "coverAssetId": zod.number().nullish(),
+  "targetStoryCount": zod.number().min(updateCampaignBodyTargetStoryCountMin).optional(),
+  "targetPublicationCount": zod.number().min(updateCampaignBodyTargetPublicationCountMin).optional(),
+  "changeSummary": zod.string().optional()
 })
 
 export const UpdateCampaignResponse = zod.object({
   "id": zod.number(),
+  "workspaceId": zod.number(),
   "title": zod.string(),
   "objective": zod.string().nullish(),
-  "status": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),
-  "platforms": zod.array(zod.string()).optional(),
-  "durationWeeks": zod.number().nullish(),
-  "storyCount": zod.number().optional(),
+  "missionStatement": zod.string().nullish(),
+  "successDefinition": zod.string().nullish(),
+  "campaignType": zod.union([zod.enum(['EngineeringPhilosophy', 'ProductDevelopment', 'Launch', 'Research', 'Education', 'ThoughtLeadership', 'Community', 'CaseStudy', 'Recruitment', 'BehindTheScenes', 'Conference', 'ReleaseNotes', 'DeveloperDiary']),zod.null()]).optional(),
+  "lifecycleStatus": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),
+  "phase": zod.union([zod.enum(['Planning', 'Research', 'ContentBuilding', 'Review', 'Distribution', 'Monitoring']),zod.null()]).optional(),
+  "audience": zod.string().nullish(),
+  "owner": zod.string().nullish(),
+  "startAt": zod.coerce.date().nullish(),
+  "endAt": zod.coerce.date().nullish(),
+  "reviewCadence": zod.string().nullish(),
+  "completionCriteria": zod.string().nullish(),
+  "brandVoice": zod.string().nullish(),
+  "publishingRhythm": zod.string().nullish(),
+  "engineeringDomain": zod.string().nullish(),
+  "tags": zod.array(zod.string()),
+  "color": zod.string().nullish(),
+  "bannerAssetId": zod.number().nullish(),
+  "coverAssetId": zod.number().nullish(),
+  "targetStoryCount": zod.number(),
+  "targetPublicationCount": zod.number(),
+  "storyCount": zod.number(),
+  "version": zod.number(),
+  "pauseReason": zod.string().nullish(),
+  "completionNote": zod.string().nullish(),
+  "successAssessment": zod.union([zod.enum(['Achieved', 'PartiallyAchieved', 'NotAchieved']),zod.null()]).optional(),
+  "completedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "archivedFromStatus": zod.union([zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
 
 
 /**
- * @summary Delete a campaign
+ * @deprecated
+ * @summary Deprecated; archive Campaigns instead
  */
 export const DeleteCampaignParams = zod.object({
   "id": zod.coerce.number()
 })
 
 export const DeleteCampaignResponse = zod.void()
+
+
+export const TransitionCampaignParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const TransitionCampaignBody = zod.object({
+  "expectedVersion": zod.number().min(1),
+  "lifecycleStatus": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),
+  "reason": zod.string().optional()
+})
+
+export const TransitionCampaignResponse = zod.object({
+  "id": zod.number(),
+  "workspaceId": zod.number(),
+  "title": zod.string(),
+  "objective": zod.string().nullish(),
+  "missionStatement": zod.string().nullish(),
+  "successDefinition": zod.string().nullish(),
+  "campaignType": zod.union([zod.enum(['EngineeringPhilosophy', 'ProductDevelopment', 'Launch', 'Research', 'Education', 'ThoughtLeadership', 'Community', 'CaseStudy', 'Recruitment', 'BehindTheScenes', 'Conference', 'ReleaseNotes', 'DeveloperDiary']),zod.null()]).optional(),
+  "lifecycleStatus": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),
+  "phase": zod.union([zod.enum(['Planning', 'Research', 'ContentBuilding', 'Review', 'Distribution', 'Monitoring']),zod.null()]).optional(),
+  "audience": zod.string().nullish(),
+  "owner": zod.string().nullish(),
+  "startAt": zod.coerce.date().nullish(),
+  "endAt": zod.coerce.date().nullish(),
+  "reviewCadence": zod.string().nullish(),
+  "completionCriteria": zod.string().nullish(),
+  "brandVoice": zod.string().nullish(),
+  "publishingRhythm": zod.string().nullish(),
+  "engineeringDomain": zod.string().nullish(),
+  "tags": zod.array(zod.string()),
+  "color": zod.string().nullish(),
+  "bannerAssetId": zod.number().nullish(),
+  "coverAssetId": zod.number().nullish(),
+  "targetStoryCount": zod.number(),
+  "targetPublicationCount": zod.number(),
+  "storyCount": zod.number(),
+  "version": zod.number(),
+  "pauseReason": zod.string().nullish(),
+  "completionNote": zod.string().nullish(),
+  "successAssessment": zod.union([zod.enum(['Achieved', 'PartiallyAchieved', 'NotAchieved']),zod.null()]).optional(),
+  "completedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "archivedFromStatus": zod.union([zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),zod.null()]).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const CompleteCampaignParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+
+export const CompleteCampaignBody = zod.object({
+  "expectedVersion": zod.number().min(1),
+  "completionNote": zod.string().min(1),
+  "successAssessment": zod.enum(['Achieved', 'PartiallyAchieved', 'NotAchieved'])
+})
+
+export const CompleteCampaignResponse = zod.object({
+  "id": zod.number(),
+  "workspaceId": zod.number(),
+  "title": zod.string(),
+  "objective": zod.string().nullish(),
+  "missionStatement": zod.string().nullish(),
+  "successDefinition": zod.string().nullish(),
+  "campaignType": zod.union([zod.enum(['EngineeringPhilosophy', 'ProductDevelopment', 'Launch', 'Research', 'Education', 'ThoughtLeadership', 'Community', 'CaseStudy', 'Recruitment', 'BehindTheScenes', 'Conference', 'ReleaseNotes', 'DeveloperDiary']),zod.null()]).optional(),
+  "lifecycleStatus": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),
+  "phase": zod.union([zod.enum(['Planning', 'Research', 'ContentBuilding', 'Review', 'Distribution', 'Monitoring']),zod.null()]).optional(),
+  "audience": zod.string().nullish(),
+  "owner": zod.string().nullish(),
+  "startAt": zod.coerce.date().nullish(),
+  "endAt": zod.coerce.date().nullish(),
+  "reviewCadence": zod.string().nullish(),
+  "completionCriteria": zod.string().nullish(),
+  "brandVoice": zod.string().nullish(),
+  "publishingRhythm": zod.string().nullish(),
+  "engineeringDomain": zod.string().nullish(),
+  "tags": zod.array(zod.string()),
+  "color": zod.string().nullish(),
+  "bannerAssetId": zod.number().nullish(),
+  "coverAssetId": zod.number().nullish(),
+  "targetStoryCount": zod.number(),
+  "targetPublicationCount": zod.number(),
+  "storyCount": zod.number(),
+  "version": zod.number(),
+  "pauseReason": zod.string().nullish(),
+  "completionNote": zod.string().nullish(),
+  "successAssessment": zod.union([zod.enum(['Achieved', 'PartiallyAchieved', 'NotAchieved']),zod.null()]).optional(),
+  "completedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "archivedFromStatus": zod.union([zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),zod.null()]).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const ChangeCampaignPhaseParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const ChangeCampaignPhaseBody = zod.object({
+  "expectedVersion": zod.number().min(1),
+  "phase": zod.enum(['Planning', 'Research', 'ContentBuilding', 'Review', 'Distribution', 'Monitoring'])
+})
+
+export const ChangeCampaignPhaseResponse = zod.object({
+  "id": zod.number(),
+  "workspaceId": zod.number(),
+  "title": zod.string(),
+  "objective": zod.string().nullish(),
+  "missionStatement": zod.string().nullish(),
+  "successDefinition": zod.string().nullish(),
+  "campaignType": zod.union([zod.enum(['EngineeringPhilosophy', 'ProductDevelopment', 'Launch', 'Research', 'Education', 'ThoughtLeadership', 'Community', 'CaseStudy', 'Recruitment', 'BehindTheScenes', 'Conference', 'ReleaseNotes', 'DeveloperDiary']),zod.null()]).optional(),
+  "lifecycleStatus": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),
+  "phase": zod.union([zod.enum(['Planning', 'Research', 'ContentBuilding', 'Review', 'Distribution', 'Monitoring']),zod.null()]).optional(),
+  "audience": zod.string().nullish(),
+  "owner": zod.string().nullish(),
+  "startAt": zod.coerce.date().nullish(),
+  "endAt": zod.coerce.date().nullish(),
+  "reviewCadence": zod.string().nullish(),
+  "completionCriteria": zod.string().nullish(),
+  "brandVoice": zod.string().nullish(),
+  "publishingRhythm": zod.string().nullish(),
+  "engineeringDomain": zod.string().nullish(),
+  "tags": zod.array(zod.string()),
+  "color": zod.string().nullish(),
+  "bannerAssetId": zod.number().nullish(),
+  "coverAssetId": zod.number().nullish(),
+  "targetStoryCount": zod.number(),
+  "targetPublicationCount": zod.number(),
+  "storyCount": zod.number(),
+  "version": zod.number(),
+  "pauseReason": zod.string().nullish(),
+  "completionNote": zod.string().nullish(),
+  "successAssessment": zod.union([zod.enum(['Achieved', 'PartiallyAchieved', 'NotAchieved']),zod.null()]).optional(),
+  "completedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "archivedFromStatus": zod.union([zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),zod.null()]).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const ReopenCampaignParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+
+export const ReopenCampaignBody = zod.object({
+  "expectedVersion": zod.number().min(1),
+  "reason": zod.string().min(1)
+})
+
+export const ReopenCampaignResponse = zod.object({
+  "id": zod.number(),
+  "workspaceId": zod.number(),
+  "title": zod.string(),
+  "objective": zod.string().nullish(),
+  "missionStatement": zod.string().nullish(),
+  "successDefinition": zod.string().nullish(),
+  "campaignType": zod.union([zod.enum(['EngineeringPhilosophy', 'ProductDevelopment', 'Launch', 'Research', 'Education', 'ThoughtLeadership', 'Community', 'CaseStudy', 'Recruitment', 'BehindTheScenes', 'Conference', 'ReleaseNotes', 'DeveloperDiary']),zod.null()]).optional(),
+  "lifecycleStatus": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),
+  "phase": zod.union([zod.enum(['Planning', 'Research', 'ContentBuilding', 'Review', 'Distribution', 'Monitoring']),zod.null()]).optional(),
+  "audience": zod.string().nullish(),
+  "owner": zod.string().nullish(),
+  "startAt": zod.coerce.date().nullish(),
+  "endAt": zod.coerce.date().nullish(),
+  "reviewCadence": zod.string().nullish(),
+  "completionCriteria": zod.string().nullish(),
+  "brandVoice": zod.string().nullish(),
+  "publishingRhythm": zod.string().nullish(),
+  "engineeringDomain": zod.string().nullish(),
+  "tags": zod.array(zod.string()),
+  "color": zod.string().nullish(),
+  "bannerAssetId": zod.number().nullish(),
+  "coverAssetId": zod.number().nullish(),
+  "targetStoryCount": zod.number(),
+  "targetPublicationCount": zod.number(),
+  "storyCount": zod.number(),
+  "version": zod.number(),
+  "pauseReason": zod.string().nullish(),
+  "completionNote": zod.string().nullish(),
+  "successAssessment": zod.union([zod.enum(['Achieved', 'PartiallyAchieved', 'NotAchieved']),zod.null()]).optional(),
+  "completedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "archivedFromStatus": zod.union([zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),zod.null()]).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const ArchiveCampaignParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const ArchiveCampaignBody = zod.object({
+  "expectedVersion": zod.number().min(1)
+})
+
+export const ArchiveCampaignResponse = zod.object({
+  "id": zod.number(),
+  "workspaceId": zod.number(),
+  "title": zod.string(),
+  "objective": zod.string().nullish(),
+  "missionStatement": zod.string().nullish(),
+  "successDefinition": zod.string().nullish(),
+  "campaignType": zod.union([zod.enum(['EngineeringPhilosophy', 'ProductDevelopment', 'Launch', 'Research', 'Education', 'ThoughtLeadership', 'Community', 'CaseStudy', 'Recruitment', 'BehindTheScenes', 'Conference', 'ReleaseNotes', 'DeveloperDiary']),zod.null()]).optional(),
+  "lifecycleStatus": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),
+  "phase": zod.union([zod.enum(['Planning', 'Research', 'ContentBuilding', 'Review', 'Distribution', 'Monitoring']),zod.null()]).optional(),
+  "audience": zod.string().nullish(),
+  "owner": zod.string().nullish(),
+  "startAt": zod.coerce.date().nullish(),
+  "endAt": zod.coerce.date().nullish(),
+  "reviewCadence": zod.string().nullish(),
+  "completionCriteria": zod.string().nullish(),
+  "brandVoice": zod.string().nullish(),
+  "publishingRhythm": zod.string().nullish(),
+  "engineeringDomain": zod.string().nullish(),
+  "tags": zod.array(zod.string()),
+  "color": zod.string().nullish(),
+  "bannerAssetId": zod.number().nullish(),
+  "coverAssetId": zod.number().nullish(),
+  "targetStoryCount": zod.number(),
+  "targetPublicationCount": zod.number(),
+  "storyCount": zod.number(),
+  "version": zod.number(),
+  "pauseReason": zod.string().nullish(),
+  "completionNote": zod.string().nullish(),
+  "successAssessment": zod.union([zod.enum(['Achieved', 'PartiallyAchieved', 'NotAchieved']),zod.null()]).optional(),
+  "completedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "archivedFromStatus": zod.union([zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),zod.null()]).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const RestoreCampaignParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const RestoreCampaignBody = zod.object({
+  "expectedVersion": zod.number().min(1)
+})
+
+export const RestoreCampaignResponse = zod.object({
+  "id": zod.number(),
+  "workspaceId": zod.number(),
+  "title": zod.string(),
+  "objective": zod.string().nullish(),
+  "missionStatement": zod.string().nullish(),
+  "successDefinition": zod.string().nullish(),
+  "campaignType": zod.union([zod.enum(['EngineeringPhilosophy', 'ProductDevelopment', 'Launch', 'Research', 'Education', 'ThoughtLeadership', 'Community', 'CaseStudy', 'Recruitment', 'BehindTheScenes', 'Conference', 'ReleaseNotes', 'DeveloperDiary']),zod.null()]).optional(),
+  "lifecycleStatus": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),
+  "phase": zod.union([zod.enum(['Planning', 'Research', 'ContentBuilding', 'Review', 'Distribution', 'Monitoring']),zod.null()]).optional(),
+  "audience": zod.string().nullish(),
+  "owner": zod.string().nullish(),
+  "startAt": zod.coerce.date().nullish(),
+  "endAt": zod.coerce.date().nullish(),
+  "reviewCadence": zod.string().nullish(),
+  "completionCriteria": zod.string().nullish(),
+  "brandVoice": zod.string().nullish(),
+  "publishingRhythm": zod.string().nullish(),
+  "engineeringDomain": zod.string().nullish(),
+  "tags": zod.array(zod.string()),
+  "color": zod.string().nullish(),
+  "bannerAssetId": zod.number().nullish(),
+  "coverAssetId": zod.number().nullish(),
+  "targetStoryCount": zod.number(),
+  "targetPublicationCount": zod.number(),
+  "storyCount": zod.number(),
+  "version": zod.number(),
+  "pauseReason": zod.string().nullish(),
+  "completionNote": zod.string().nullish(),
+  "successAssessment": zod.union([zod.enum(['Achieved', 'PartiallyAchieved', 'NotAchieved']),zod.null()]).optional(),
+  "completedAt": zod.coerce.date().nullish(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "archivedFromStatus": zod.union([zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),zod.null()]).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const ListCampaignVersionsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListCampaignVersionsResponseItem = zod.object({
+  "id": zod.number(),
+  "campaignId": zod.number(),
+  "version": zod.number(),
+  "title": zod.string(),
+  "missionStatement": zod.string().nullish(),
+  "successDefinition": zod.string().nullish(),
+  "metadata": zod.record(zod.string(), zod.unknown()),
+  "changeSummary": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListCampaignVersionsResponse = zod.array(ListCampaignVersionsResponseItem)
+
+
+export const ListCampaignStoriesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const listCampaignStoriesResponsePositionMin = 0;
+
+
+
+
+export const ListCampaignStoriesResponseItem = zod.object({
+  "campaignId": zod.number(),
+  "storyId": zod.number(),
+  "title": zod.string(),
+  "status": zod.string(),
+  "storyType": zod.string().nullish(),
+  "role": zod.enum(['Anchor', 'Supporting', 'FollowUp', 'Reference']),
+  "position": zod.number().min(listCampaignStoriesResponsePositionMin),
+  "contributionNote": zod.string().nullish(),
+  "createdBy": zod.string().optional(),
+  "isPrimary": zod.boolean(),
+  "version": zod.number().min(1),
+  "linkedAt": zod.coerce.date()
+})
+export const ListCampaignStoriesResponse = zod.array(ListCampaignStoriesResponseItem)
+
+
+export const AddCampaignStoryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+export const addCampaignStoryBodyIsPrimaryDefault = false;
+
+export const AddCampaignStoryBody = zod.object({
+  "expectedVersion": zod.number().min(1),
+  "storyId": zod.number().min(1),
+  "role": zod.enum(['Anchor', 'Supporting', 'FollowUp', 'Reference']),
+  "contributionNote": zod.string().optional(),
+  "isPrimary": zod.boolean().default(addCampaignStoryBodyIsPrimaryDefault)
+})
+
+export const addCampaignStoryResponsePositionMin = 0;
+
+
+
+
+export const AddCampaignStoryResponse = zod.object({
+  "campaignId": zod.number(),
+  "storyId": zod.number(),
+  "title": zod.string(),
+  "status": zod.string(),
+  "storyType": zod.string().nullish(),
+  "role": zod.enum(['Anchor', 'Supporting', 'FollowUp', 'Reference']),
+  "position": zod.number().min(addCampaignStoryResponsePositionMin),
+  "contributionNote": zod.string().nullish(),
+  "createdBy": zod.string().optional(),
+  "isPrimary": zod.boolean(),
+  "version": zod.number().min(1),
+  "linkedAt": zod.coerce.date()
+})
+
+
+export const ReorderCampaignStoriesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+
+export const ReorderCampaignStoriesBody = zod.object({
+  "expectedVersion": zod.number().min(1),
+  "storyIds": zod.array(zod.number().min(1))
+})
+
+export const reorderCampaignStoriesResponsePositionMin = 0;
+
+
+
+
+export const ReorderCampaignStoriesResponseItem = zod.object({
+  "campaignId": zod.number(),
+  "storyId": zod.number(),
+  "title": zod.string(),
+  "status": zod.string(),
+  "storyType": zod.string().nullish(),
+  "role": zod.enum(['Anchor', 'Supporting', 'FollowUp', 'Reference']),
+  "position": zod.number().min(reorderCampaignStoriesResponsePositionMin),
+  "contributionNote": zod.string().nullish(),
+  "createdBy": zod.string().optional(),
+  "isPrimary": zod.boolean(),
+  "version": zod.number().min(1),
+  "linkedAt": zod.coerce.date()
+})
+export const ReorderCampaignStoriesResponse = zod.array(ReorderCampaignStoriesResponseItem)
+
+
+export const UpdateCampaignStoryParams = zod.object({
+  "id": zod.coerce.number(),
+  "storyId": zod.coerce.number()
+})
+
+
+
+
+
+export const UpdateCampaignStoryBody = zod.object({
+  "expectedCampaignVersion": zod.number().min(1),
+  "expectedMembershipVersion": zod.number().min(1),
+  "role": zod.enum(['Anchor', 'Supporting', 'FollowUp', 'Reference']).optional(),
+  "contributionNote": zod.string().nullish(),
+  "isPrimary": zod.boolean().optional()
+})
+
+export const updateCampaignStoryResponsePositionMin = 0;
+
+
+
+
+export const UpdateCampaignStoryResponse = zod.object({
+  "campaignId": zod.number(),
+  "storyId": zod.number(),
+  "title": zod.string(),
+  "status": zod.string(),
+  "storyType": zod.string().nullish(),
+  "role": zod.enum(['Anchor', 'Supporting', 'FollowUp', 'Reference']),
+  "position": zod.number().min(updateCampaignStoryResponsePositionMin),
+  "contributionNote": zod.string().nullish(),
+  "createdBy": zod.string().optional(),
+  "isPrimary": zod.boolean(),
+  "version": zod.number().min(1),
+  "linkedAt": zod.coerce.date()
+})
+
+
+export const RemoveCampaignStoryParams = zod.object({
+  "id": zod.coerce.number(),
+  "storyId": zod.coerce.number()
+})
+
+
+
+
+export const RemoveCampaignStoryBody = zod.object({
+  "expectedVersion": zod.number().min(1)
+})
+
+export const RemoveCampaignStoryResponse = zod.void()
+
+
+export const ListStoryCampaignBacklinksParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const listStoryCampaignBacklinksResponsePositionMin = 0;
+
+
+
+export const ListStoryCampaignBacklinksResponseItem = zod.object({
+  "campaignId": zod.number(),
+  "title": zod.string(),
+  "lifecycleStatus": zod.enum(['Planning', 'Active', 'Paused', 'Completed', 'Archived']),
+  "role": zod.enum(['Anchor', 'Supporting', 'FollowUp', 'Reference']),
+  "position": zod.number().min(listStoryCampaignBacklinksResponsePositionMin),
+  "contributionNote": zod.string().nullish(),
+  "isPrimary": zod.boolean()
+})
+export const ListStoryCampaignBacklinksResponse = zod.array(ListStoryCampaignBacklinksResponseItem)
+
+
+export const ListCampaignMilestonesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const listCampaignMilestonesResponsePositionMin = 0;
+
+
+
+
+export const ListCampaignMilestonesResponseItem = zod.object({
+  "id": zod.number(),
+  "campaignId": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "position": zod.number().min(listCampaignMilestonesResponsePositionMin),
+  "targetDate": zod.coerce.date().nullish(),
+  "status": zod.enum(['Planned', 'InProgress', 'Completed', 'Skipped']),
+  "completionNote": zod.string().nullish(),
+  "completedAt": zod.coerce.date().nullish(),
+  "version": zod.number().min(1),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListCampaignMilestonesResponse = zod.array(ListCampaignMilestonesResponseItem)
+
+
+export const CreateCampaignMilestoneParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+
+export const CreateCampaignMilestoneBody = zod.object({
+  "expectedVersion": zod.number().min(1),
+  "title": zod.string().min(1),
+  "description": zod.string().optional(),
+  "targetDate": zod.coerce.date().optional()
+})
+
+export const createCampaignMilestoneResponsePositionMin = 0;
+
+
+
+
+export const CreateCampaignMilestoneResponse = zod.object({
+  "id": zod.number(),
+  "campaignId": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "position": zod.number().min(createCampaignMilestoneResponsePositionMin),
+  "targetDate": zod.coerce.date().nullish(),
+  "status": zod.enum(['Planned', 'InProgress', 'Completed', 'Skipped']),
+  "completionNote": zod.string().nullish(),
+  "completedAt": zod.coerce.date().nullish(),
+  "version": zod.number().min(1),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const ReorderCampaignMilestonesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+
+export const ReorderCampaignMilestonesBody = zod.object({
+  "expectedVersion": zod.number().min(1),
+  "milestoneIds": zod.array(zod.number().min(1))
+})
+
+export const reorderCampaignMilestonesResponsePositionMin = 0;
+
+
+
+
+export const ReorderCampaignMilestonesResponseItem = zod.object({
+  "id": zod.number(),
+  "campaignId": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "position": zod.number().min(reorderCampaignMilestonesResponsePositionMin),
+  "targetDate": zod.coerce.date().nullish(),
+  "status": zod.enum(['Planned', 'InProgress', 'Completed', 'Skipped']),
+  "completionNote": zod.string().nullish(),
+  "completedAt": zod.coerce.date().nullish(),
+  "version": zod.number().min(1),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ReorderCampaignMilestonesResponse = zod.array(ReorderCampaignMilestonesResponseItem)
+
+
+export const UpdateCampaignMilestoneParams = zod.object({
+  "id": zod.coerce.number(),
+  "milestoneId": zod.coerce.number()
+})
+
+
+
+
+
+
+export const UpdateCampaignMilestoneBody = zod.object({
+  "expectedCampaignVersion": zod.number().min(1),
+  "expectedMilestoneVersion": zod.number().min(1),
+  "title": zod.string().min(1).optional(),
+  "description": zod.string().nullish(),
+  "targetDate": zod.coerce.date().nullish(),
+  "status": zod.enum(['Planned', 'InProgress', 'Completed', 'Skipped']).optional(),
+  "completionNote": zod.string().nullish()
+})
+
+export const updateCampaignMilestoneResponsePositionMin = 0;
+
+
+
+
+export const UpdateCampaignMilestoneResponse = zod.object({
+  "id": zod.number(),
+  "campaignId": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "position": zod.number().min(updateCampaignMilestoneResponsePositionMin),
+  "targetDate": zod.coerce.date().nullish(),
+  "status": zod.enum(['Planned', 'InProgress', 'Completed', 'Skipped']),
+  "completionNote": zod.string().nullish(),
+  "completedAt": zod.coerce.date().nullish(),
+  "version": zod.number().min(1),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const RemoveCampaignMilestoneParams = zod.object({
+  "id": zod.coerce.number(),
+  "milestoneId": zod.coerce.number()
+})
+
+
+
+
+export const RemoveCampaignMilestoneBody = zod.object({
+  "expectedVersion": zod.number().min(1)
+})
+
+export const RemoveCampaignMilestoneResponse = zod.void()
 
 
 /**

@@ -411,8 +411,6 @@ export interface StoryInput {
   /** @nullable */
   projectId?: number | null;
   workspaceId: number;
-  /** @nullable */
-  campaignId?: number | null;
   storyType?: StoryInputStoryType;
   author?: string;
   objective?: string;
@@ -500,8 +498,6 @@ export interface StoryPatch {
   projectId?: number | null;
   /** @nullable */
   workspaceId?: number | null;
-  /** @nullable */
-  campaignId?: number | null;
   storyType?: StoryPatchStoryType;
   /** @nullable */
   author?: string | null;
@@ -678,71 +674,352 @@ export interface StoryEvent {
   createdAt: string;
 }
 
-export type CampaignStatus = typeof CampaignStatus[keyof typeof CampaignStatus];
+export type CampaignLifecycleStatus = typeof CampaignLifecycleStatus[keyof typeof CampaignLifecycleStatus];
 
 
-export const CampaignStatus = {
+export const CampaignLifecycleStatus = {
   Planning: 'Planning',
   Active: 'Active',
   Paused: 'Paused',
   Completed: 'Completed',
   Archived: 'Archived',
+} as const;
+
+export type CampaignPhase = typeof CampaignPhase[keyof typeof CampaignPhase];
+
+
+export const CampaignPhase = {
+  Planning: 'Planning',
+  Research: 'Research',
+  ContentBuilding: 'ContentBuilding',
+  Review: 'Review',
+  Distribution: 'Distribution',
+  Monitoring: 'Monitoring',
+} as const;
+
+export type CampaignType = typeof CampaignType[keyof typeof CampaignType];
+
+
+export const CampaignType = {
+  EngineeringPhilosophy: 'EngineeringPhilosophy',
+  ProductDevelopment: 'ProductDevelopment',
+  Launch: 'Launch',
+  Research: 'Research',
+  Education: 'Education',
+  ThoughtLeadership: 'ThoughtLeadership',
+  Community: 'Community',
+  CaseStudy: 'CaseStudy',
+  Recruitment: 'Recruitment',
+  BehindTheScenes: 'BehindTheScenes',
+  Conference: 'Conference',
+  ReleaseNotes: 'ReleaseNotes',
+  DeveloperDiary: 'DeveloperDiary',
+} as const;
+
+export type CampaignSuccessAssessment = typeof CampaignSuccessAssessment[keyof typeof CampaignSuccessAssessment];
+
+
+export const CampaignSuccessAssessment = {
+  Achieved: 'Achieved',
+  PartiallyAchieved: 'PartiallyAchieved',
+  NotAchieved: 'NotAchieved',
 } as const;
 
 export interface Campaign {
   id: number;
+  workspaceId: number;
   title: string;
   /** @nullable */
   objective?: string | null;
-  status: CampaignStatus;
-  platforms?: string[];
   /** @nullable */
-  durationWeeks?: number | null;
-  storyCount?: number;
+  missionStatement?: string | null;
+  /** @nullable */
+  successDefinition?: string | null;
+  campaignType?: CampaignType | null;
+  lifecycleStatus: CampaignLifecycleStatus;
+  phase?: CampaignPhase | null;
+  /** @nullable */
+  audience?: string | null;
+  /** @nullable */
+  owner?: string | null;
+  /** @nullable */
+  startAt?: string | null;
+  /** @nullable */
+  endAt?: string | null;
+  /** @nullable */
+  reviewCadence?: string | null;
+  /** @nullable */
+  completionCriteria?: string | null;
+  /** @nullable */
+  brandVoice?: string | null;
+  /** @nullable */
+  publishingRhythm?: string | null;
+  /** @nullable */
+  engineeringDomain?: string | null;
+  tags: string[];
+  /** @nullable */
+  color?: string | null;
+  /** @nullable */
+  bannerAssetId?: number | null;
+  /** @nullable */
+  coverAssetId?: number | null;
+  targetStoryCount: number;
+  targetPublicationCount: number;
+  storyCount: number;
+  version: number;
+  /** @nullable */
+  pauseReason?: string | null;
+  /** @nullable */
+  completionNote?: string | null;
+  successAssessment?: CampaignSuccessAssessment | null;
+  /** @nullable */
+  completedAt?: string | null;
+  /** @nullable */
+  archivedAt?: string | null;
+  archivedFromStatus?: CampaignLifecycleStatus | null;
   createdAt: string;
   updatedAt: string;
 }
 
-export type CampaignInputStatus = typeof CampaignInputStatus[keyof typeof CampaignInputStatus];
-
-
-export const CampaignInputStatus = {
-  Planning: 'Planning',
-  Active: 'Active',
-  Paused: 'Paused',
-  Completed: 'Completed',
-  Archived: 'Archived',
-} as const;
-
 export interface CampaignInput {
   /** @minLength 1 */
   title: string;
+  /** @minimum 1 */
+  workspaceId: number;
   objective?: string;
-  status?: CampaignInputStatus;
-  platforms?: string[];
-  durationWeeks?: number;
+  missionStatement?: string;
+  successDefinition?: string;
+  campaignType?: CampaignType;
+  audience?: string;
+  owner?: string;
+  /** @minimum 0 */
+  targetStoryCount?: number;
 }
 
-export type CampaignPatchStatus = typeof CampaignPatchStatus[keyof typeof CampaignPatchStatus];
-
-
-export const CampaignPatchStatus = {
-  Planning: 'Planning',
-  Active: 'Active',
-  Paused: 'Paused',
-  Completed: 'Completed',
-  Archived: 'Archived',
-} as const;
-
 export interface CampaignPatch {
+  /** @minimum 1 */
+  expectedVersion: number;
   /** @minLength 1 */
   title?: string;
   /** @nullable */
   objective?: string | null;
-  status?: CampaignPatchStatus;
-  platforms?: string[];
   /** @nullable */
-  durationWeeks?: number | null;
+  missionStatement?: string | null;
+  /** @nullable */
+  successDefinition?: string | null;
+  campaignType?: CampaignType | null;
+  /** @nullable */
+  audience?: string | null;
+  /** @nullable */
+  owner?: string | null;
+  /** @nullable */
+  startAt?: string | null;
+  /** @nullable */
+  endAt?: string | null;
+  /** @nullable */
+  reviewCadence?: string | null;
+  /** @nullable */
+  completionCriteria?: string | null;
+  /** @nullable */
+  brandVoice?: string | null;
+  /** @nullable */
+  publishingRhythm?: string | null;
+  /** @nullable */
+  engineeringDomain?: string | null;
+  tags?: string[];
+  /** @nullable */
+  color?: string | null;
+  /** @nullable */
+  bannerAssetId?: number | null;
+  /** @nullable */
+  coverAssetId?: number | null;
+  /** @minimum 0 */
+  targetStoryCount?: number;
+  /** @minimum 0 */
+  targetPublicationCount?: number;
+  changeSummary?: string;
+}
+
+export interface CampaignTransitionInput {
+  /** @minimum 1 */
+  expectedVersion: number;
+  lifecycleStatus: CampaignLifecycleStatus;
+  reason?: string;
+}
+
+export interface CampaignCompletionInput {
+  /** @minimum 1 */
+  expectedVersion: number;
+  /** @minLength 1 */
+  completionNote: string;
+  successAssessment: CampaignSuccessAssessment;
+}
+
+export interface CampaignPhaseInput {
+  /** @minimum 1 */
+  expectedVersion: number;
+  phase: CampaignPhase;
+}
+
+export interface CampaignReasonInput {
+  /** @minimum 1 */
+  expectedVersion: number;
+  /** @minLength 1 */
+  reason: string;
+}
+
+export interface CampaignVersionInput {
+  /** @minimum 1 */
+  expectedVersion: number;
+}
+
+export type CampaignVersionMetadata = { [key: string]: unknown };
+
+export interface CampaignVersion {
+  id: number;
+  campaignId: number;
+  version: number;
+  title: string;
+  /** @nullable */
+  missionStatement?: string | null;
+  /** @nullable */
+  successDefinition?: string | null;
+  metadata: CampaignVersionMetadata;
+  /** @nullable */
+  changeSummary?: string | null;
+  createdAt: string;
+}
+
+export type CampaignStoryRole = typeof CampaignStoryRole[keyof typeof CampaignStoryRole];
+
+
+export const CampaignStoryRole = {
+  Anchor: 'Anchor',
+  Supporting: 'Supporting',
+  FollowUp: 'FollowUp',
+  Reference: 'Reference',
+} as const;
+
+export interface CampaignStoryMembership {
+  campaignId: number;
+  storyId: number;
+  title: string;
+  status: string;
+  /** @nullable */
+  storyType?: string | null;
+  role: CampaignStoryRole;
+  /** @minimum 0 */
+  position: number;
+  /** @nullable */
+  contributionNote?: string | null;
+  createdBy?: string;
+  isPrimary: boolean;
+  /** @minimum 1 */
+  version: number;
+  linkedAt: string;
+}
+
+export interface CampaignStoryInput {
+  /** @minimum 1 */
+  expectedVersion: number;
+  /** @minimum 1 */
+  storyId: number;
+  role: CampaignStoryRole;
+  contributionNote?: string;
+  isPrimary?: boolean;
+}
+
+export interface CampaignStoryPatch {
+  /** @minimum 1 */
+  expectedCampaignVersion: number;
+  /** @minimum 1 */
+  expectedMembershipVersion: number;
+  role?: CampaignStoryRole;
+  /** @nullable */
+  contributionNote?: string | null;
+  isPrimary?: boolean;
+}
+
+export interface CampaignStoryOrderInput {
+  /** @minimum 1 */
+  expectedVersion: number;
+  /** @items.minimum 1 */
+  storyIds: number[];
+}
+
+export interface CampaignStoryBacklink {
+  campaignId: number;
+  title: string;
+  lifecycleStatus: CampaignLifecycleStatus;
+  role: CampaignStoryRole;
+  /** @minimum 0 */
+  position: number;
+  /** @nullable */
+  contributionNote?: string | null;
+  isPrimary: boolean;
+}
+
+export type CampaignMilestoneStatus = typeof CampaignMilestoneStatus[keyof typeof CampaignMilestoneStatus];
+
+
+export const CampaignMilestoneStatus = {
+  Planned: 'Planned',
+  InProgress: 'InProgress',
+  Completed: 'Completed',
+  Skipped: 'Skipped',
+} as const;
+
+export interface CampaignMilestone {
+  id: number;
+  campaignId: number;
+  title: string;
+  /** @nullable */
+  description?: string | null;
+  /** @minimum 0 */
+  position: number;
+  /** @nullable */
+  targetDate?: string | null;
+  status: CampaignMilestoneStatus;
+  /** @nullable */
+  completionNote?: string | null;
+  /** @nullable */
+  completedAt?: string | null;
+  /** @minimum 1 */
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CampaignMilestoneInput {
+  /** @minimum 1 */
+  expectedVersion: number;
+  /** @minLength 1 */
+  title: string;
+  description?: string;
+  targetDate?: string;
+}
+
+export interface CampaignMilestonePatch {
+  /** @minimum 1 */
+  expectedCampaignVersion: number;
+  /** @minimum 1 */
+  expectedMilestoneVersion: number;
+  /** @minLength 1 */
+  title?: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  targetDate?: string | null;
+  status?: CampaignMilestoneStatus;
+  /** @nullable */
+  completionNote?: string | null;
+}
+
+export interface CampaignMilestoneOrderInput {
+  /** @minimum 1 */
+  expectedVersion: number;
+  /** @items.minimum 1 */
+  milestoneIds: number[];
 }
 
 export type EvidenceClassification = typeof EvidenceClassification[keyof typeof EvidenceClassification];
@@ -1795,6 +2072,14 @@ status?: string;
 campaignId?: number | null;
 workspaceId?: number;
 storyType?: string;
+search?: string;
+};
+
+export type ListCampaignsParams = {
+workspaceId?: number;
+lifecycleStatus?: CampaignLifecycleStatus;
+campaignType?: CampaignType;
+owner?: string;
 search?: string;
 };
 

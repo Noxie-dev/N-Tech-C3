@@ -5,15 +5,48 @@
  * N-Tech C³ Engineering Intelligence Operating System API
  * OpenAPI spec version: 0.1.0
  */
-import type { CampaignPatchStatus } from './campaignPatchStatus';
+import type { CampaignType } from './campaignType';
 
 export interface CampaignPatch {
+  /** @minimum 1 */
+  expectedVersion: number;
   /** @minLength 1 */
   title?: string;
   /** @nullable */
   objective?: string | null;
-  status?: CampaignPatchStatus;
-  platforms?: string[];
   /** @nullable */
-  durationWeeks?: number | null;
+  missionStatement?: string | null;
+  /** @nullable */
+  successDefinition?: string | null;
+  campaignType?: CampaignType | null;
+  /** @nullable */
+  audience?: string | null;
+  /** @nullable */
+  owner?: string | null;
+  /** @nullable */
+  startAt?: Date | null;
+  /** @nullable */
+  endAt?: Date | null;
+  /** @nullable */
+  reviewCadence?: string | null;
+  /** @nullable */
+  completionCriteria?: string | null;
+  /** @nullable */
+  brandVoice?: string | null;
+  /** @nullable */
+  publishingRhythm?: string | null;
+  /** @nullable */
+  engineeringDomain?: string | null;
+  tags?: string[];
+  /** @nullable */
+  color?: string | null;
+  /** @nullable */
+  bannerAssetId?: number | null;
+  /** @nullable */
+  coverAssetId?: number | null;
+  /** @minimum 0 */
+  targetStoryCount?: number;
+  /** @minimum 0 */
+  targetPublicationCount?: number;
+  changeSummary?: string;
 }
